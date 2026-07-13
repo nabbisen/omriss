@@ -2,7 +2,7 @@
 //!
 //! [`interpret`] maps a raw keyboard event to an [`AppCommand`] without
 //! reading any application state. Mode-specific dispatch (e.g. Enter means
-//! zoom-in in outline mode but newline in the focus editor) is the caller's
+//! zoom-in in outline mode but newline in the Writing Area) is the caller's
 //! responsibility.
 
 use dioxus::prelude::{KeyboardData, ModifiersInteraction};
@@ -33,11 +33,11 @@ pub enum AppCommand {
     SelectUp,
     /// Move card selection down (↓).
     SelectDown,
-    /// Toggle the raw-source overlay on/off (Ctrl/Cmd+`).
+    /// Toggle the plain file text overlay on/off (Ctrl/Cmd+`).
     ToggleRaw,
     /// Open the search panel (Ctrl/Cmd+F).
     OpenSearch,
-    /// Open the command palette (Ctrl/Cmd+P).
+    /// Open Quick Actions (Ctrl/Cmd+P).
     OpenPalette,
     /// Toggle the Markdown preview pane (Ctrl/Cmd+Shift+P) — RFC-045.
     TogglePreview,

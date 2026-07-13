@@ -1,4 +1,4 @@
-//! Command palette overlay (RFC-022): filter and execute any registered
+//! Quick Actions overlay (RFC-022/RFC-048): filter and execute any registered
 //! command by title. Keyboard help and the palette share one source of truth.
 
 use dioxus::prelude::*;

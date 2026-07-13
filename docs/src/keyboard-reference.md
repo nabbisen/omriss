@@ -16,13 +16,13 @@ Omriss is fully usable with a keyboard. This page lists every shortcut.
 
 | Keys | Action |
 |------|--------|
-| **↑** / **↓** | Move card selection in the outline or overview |
+| **↑** / **↓** | Move selection in the Document Map or overview |
 | **Enter** | Zoom into the selected heading (when in overview) |
 | **Esc** | Dismiss search/palette · zoom out one level (commits pending edit) |
-| Alt+← | Back — return to the previous focus location |
-| Alt+→ | Forward — re-enter the next focus location |
+| Alt+← | Back — return to the previous focus location (commits pending edit) |
+| Alt+→ | Forward — re-enter the next focus location (commits pending edit) |
 
-## Focus Editor: Sibling and Depth Navigation
+## Writing Area: Sibling and Depth Navigation
 
 The navigation bar beneath the section title offers four buttons:
 
@@ -35,19 +35,18 @@ The navigation bar beneath the section title offers four buttons:
 
 Disabled buttons are shown but not interactive; they indicate the edge of the structure.
 
-## Focus Editor: Preview and Structural Actions
+## Writing Area: Preview
 
-Below the body textarea, the editor-actions bar contains:
+Below the section text editor, the footer contains:
 
 | Control | Action |
 |---------|--------|
-| **Done** button | Commit the current draft (visible only when the section has unsaved changes) |
 | **Preview** button | Toggle rendered Markdown preview (same as Ctrl+Shift+P) |
 
-The structural tools are hidden by default behind an **Arrange** toggle below the
-editor actions. Clicking it reveals: Promote, Demote, Move ↑, Move ↓,
-Merge Up, Delete. See
-[Structural Editing](structural-editing.md) for details.
+Structure actions are in the Document Map, not the Writing Area. Top-level
+creation uses `+ Top`; selected-section creation uses `+ Inside` and
+`+ After`.
+See [Structural Editing](structural-editing.md) for details.
 
 ## Editing
 
@@ -58,29 +57,28 @@ Merge Up, Delete. See
 | Ctrl+Shift+Z | Redo (alternative binding) |
 
 > **Note — undo and your text editor:**  
-> While the focus editor holds uncommitted text, **Ctrl+Z** applies the
-> textarea's own undo. Once you save or move away, document-level undo
-> restores the entire section body in one step.
+> While the Writing Area holds uncommitted text, **Ctrl+Z** applies the
+> textarea's own undo. Once you save or move away, document-level undo restores
+> the applied section text in one step.
 
 ## Search and Commands
 
 | Keys | Action |
 |------|--------|
-| Ctrl+F | Open / close the search panel |
-| Ctrl+P | Open / close the command palette |
-| Ctrl+\` | Toggle the read-only raw Markdown source view |
+| Ctrl+F | Open / close the search panel (commits pending edit before opening) |
+| Ctrl+P | Open / close Quick Actions |
+| Ctrl+\` | Toggle the read-only plain file text view (commits pending edit before opening) |
 | Ctrl+Shift+P | Toggle the Markdown preview pane (RFC-045) |
 
 **Search panel** — slide-in panel on the right; type to search case-insensitively
 across the whole document or only the current section. Click a result to focus
 its section.
 
-**Command palette** — floating overlay; type to filter all commands by name.
+**Quick Actions** — floating overlay; type to filter all actions by name.
 Click or press Enter on a result to run the command.
 
 ## Tab and Focus Order
 
-Pressing **Tab** moves through the toolbar buttons, the outline panel items,
+Pressing **Tab** moves through the toolbar buttons, the Document Map items,
 and the main pane content in document order. All interactive elements are
 reachable without a mouse.
-

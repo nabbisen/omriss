@@ -1,7 +1,7 @@
 //! Document Map panel — the single structure-organization surface (RFC-049).
 //!
-//! All structural editing actions (move, promote/demote, join, delete, add)
-//! live here. The right-side `FocusedContentPane` contains none of them.
+//! All structural editing actions (add, rename, move, join, delete) live here.
+//! The right-side `FocusedContentPane` contains none of them.
 //!
 //! ## Reactive design
 //!
@@ -31,13 +31,21 @@ fn to_item_node(n: &DocumentMapNode) -> ItemNode<String> {
     }
 }
 
-fn commit_draft_if_dirty(session: &mut Signal<EditorSession>, draft: &mut Signal<String>) {
+fn commit_draft_if_dirty(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+) -> bool {
     let snap = session.read().current_snapshot();
-    let Some(s) = snap else { return };
+    let Some(s) = snap else { return true };
     let d = draft.read().clone();
     if d != s.body {
-        let _ = session.write().commit_focused_body(&s, d);
+        if session.write().commit_focused_body(&s, d).is_err() {
+            status.set("error.stale_edit".into());
+            return false;
+        }
     }
+    true
 }
 
 fn sync_draft(session: &Signal<EditorSession>, draft: &mut Signal<String>) {
@@ -64,6 +72,8 @@ pub fn DocumentMapPane(
     let mut item_tree = use_signal(|| ItemTree::new().with_display(|s: &String| s.clone()));
     let mut map_root_sig: Signal<Option<DocumentMapNode>> = use_signal(|| None);
     let mut menu_open_for: Signal<Option<u64>> = use_signal(|| None);
+    let mut menu_node_sig: Signal<Option<DocumentMapNode>> = use_signal(|| None);
+    let mut is_raw_sig = use_signal(|| false);
 
     // `session` is subscribed here only. Writing local signals inside this
     // effect is safe: Dioxus 0.7 tracks reactive deps by what is *read*
@@ -72,46 +82,35 @@ pub fn DocumentMapPane(
     use_effect(move || {
         let root_node = session.read().document_map_nodes();
         let view = session.read().view_mode();
-
-        // Check whether the focused node is new BEFORE set_tree adds it.
-        // `is_expanded` returns `None` for ids not yet in the tree.
-        // After set_tree all nodes exist, so the only reliable "new node"
-        // signal is to query before the tree update.
-        let focused_is_new = if let ViewMode::Focus(focused_id) = view {
-            item_tree
-                .read()
-                .is_expanded(SwNodeId(focused_id.0))
-                .is_none()
-        } else {
-            false
-        };
+        let is_raw = session.read().is_raw();
 
         item_tree.write().set_tree(to_item_node(&root_node));
 
-        // Expand ancestors of a newly created focused node so it is visible.
-        // For existing nodes we leave the user's expand/collapse state alone.
-        if focused_is_new {
-            if let ViewMode::Focus(focused_id) = view {
-                let focused_sw = SwNodeId(focused_id.0);
-                let mut ancestors: Vec<SwNodeId> = Vec::new();
-                collect_ancestors(&root_node, focused_sw, &mut ancestors);
-                // ancestors is bottom-up (child before parent); reverse to
-                // expand outermost first so each level becomes visible.
-                ancestors.reverse();
-                for id in ancestors {
-                    if item_tree.read().is_expanded(id) == Some(false) {
-                        item_tree.write().on_toggled(id);
-                    }
+        if let ViewMode::Focus(focused_id) = view {
+            let focused_sw = SwNodeId(focused_id.0);
+
+            // Keep the current editor focus visible in the map, including
+            // focus changes initiated from breadcrumbs, child links, or search.
+            let mut ancestors: Vec<SwNodeId> = Vec::new();
+            collect_ancestors(&root_node, focused_sw, &mut ancestors);
+            // ancestors is bottom-up (child before parent); reverse to expand
+            // outermost first so each level becomes visible.
+            ancestors.reverse();
+            for id in ancestors {
+                if item_tree.read().is_expanded(id) == Some(false) {
+                    item_tree.write().on_toggled(id);
                 }
-                // Sync the tree's visual selection to the new node so it is
-                // highlighted in the left panel, not its parent.
-                item_tree
-                    .write()
-                    .on_selected(focused_sw, SelectionMode::Replace);
             }
+
+            // Sync visual selection for every focused-node change, including
+            // navigation initiated outside the Document Map.
+            item_tree
+                .write()
+                .on_selected(focused_sw, SelectionMode::Replace);
         }
 
         map_root_sig.set(Some(root_node));
+        is_raw_sig.set(is_raw);
     });
 
     let mut on_event = move |ev: ItemTreeEvent| match ev {
@@ -119,18 +118,26 @@ pub fn DocumentMapPane(
             item_tree.write().on_toggled(id);
         }
         ItemTreeEvent::Selected(id, mode) => {
-            item_tree.write().on_selected(id, mode);
             menu_open_for.set(None);
             let section_id = node_id_from_raw(id.0);
-            commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
-            let _ = session.write().focus(section_id);
-            sync_draft(&session, &mut draft.clone());
+            if !commit_draft_if_dirty(
+                &mut session.clone(),
+                &mut draft.clone(),
+                &mut status.clone(),
+            ) {
+                return;
+            }
+            if session.write().focus(section_id).is_ok() {
+                item_tree.write().on_selected(id, mode);
+                sync_draft(&session, &mut draft.clone());
+            }
         }
         ItemTreeEvent::Drag(_) => {}
     };
 
     let close_menu = move |_: Event<MouseData>| {
         menu_open_for.set(None);
+        menu_node_sig.set(None);
     };
 
     // Read local signals only — no session subscription here.
@@ -142,6 +149,16 @@ pub fn DocumentMapPane(
         .as_ref()
         .map(|r| r.children.is_empty())
         .unwrap_or(true);
+    let selected_raw_id = item_tree
+        .read()
+        .visible_rows()
+        .into_iter()
+        .find(|row| row.is_selected && row.id.0 != doc_root_raw_id)
+        .map(|row| row.id.0);
+    let selected_node = selected_raw_id
+        .and_then(|id| map_root.as_ref().and_then(|root| find_node(root, id)))
+        .cloned();
+    let is_raw = *is_raw_sig.read();
     // (view_mode is read only via session signal in use_effect; in_focus not needed here)
 
     rsx! {
@@ -152,15 +169,36 @@ pub fn DocumentMapPane(
 
             h2 { class: "document-map-title", {t(lang, "document_map.title")} }
 
-            button {
-                class: "document-map-add-top",
-                title: t(lang, "document_map.add_top_level"),
-                onclick: move |ev| {
-                    ev.stop_propagation();
-                    status.clone().set("struct.split.pending".into());
-                },
-                "+ "
-                {t(lang, "document_map.add_top_level")}
+            div {
+                class: "document-map-create-actions",
+                "aria-label": t(lang, "document_map.create_actions"),
+                button {
+                    class: "document-map-create-action",
+                    title: t(lang, "document_map.action.add_top_level"),
+                    "aria-label": t(lang, "document_map.action.add_top_level"),
+                    onclick: move |ev| {
+                        ev.stop_propagation();
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
+                        status.clone().set("struct.add_top.pending".into());
+                    },
+                    "+ "
+                    {t(lang, "document_map.add_top_level")}
+                }
+                if let Some(selected) = selected_node.clone() {
+                    SelectedSectionCreateButtons {
+                        node: selected,
+                        session,
+                        locale,
+                        draft,
+                        status,
+                    }
+                }
             }
 
             if is_empty {
@@ -168,8 +206,9 @@ pub fn DocumentMapPane(
                 p { class: "document-map-hint", {t(lang, "document_map.no_headings_hint")} }
             } else {
                 // Render rows directly from item_tree so each row contains
-                // both the tree content and the action buttons in one element.
-                // This eliminates the parallel-column alignment problem.
+                // both the tree content, the action trigger, and any open menu.
+                // This keeps row capabilities visually attached to the row
+                // that owns them.
                 div {
                     class: "document-map-tree",
                     tabindex: "0",
@@ -223,11 +262,21 @@ pub fn DocumentMapPane(
                                 // Clicking anywhere on the row selects it.
                                 onclick: move |ev| {
                                     ev.stop_propagation();
-                                    item_tree.write().on_selected(SwNodeId(raw_id), SelectionMode::Replace);
                                     menu_open_for.set(None);
-                                    commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
-                                    let _ = session.write().focus(node_id);
-                                    sync_draft(&session, &mut draft.clone());
+                                    menu_node_sig.set(None);
+                                    if !commit_draft_if_dirty(
+                                        &mut session.clone(),
+                                        &mut draft.clone(),
+                                        &mut status.clone(),
+                                    ) {
+                                        return;
+                                    }
+                                    if session.write().focus(node_id).is_ok() {
+                                        item_tree
+                                            .write()
+                                            .on_selected(SwNodeId(raw_id), SelectionMode::Replace);
+                                        sync_draft(&session, &mut draft.clone());
+                                    }
                                 },
                                 // Caret toggles expand/collapse
                                 span {
@@ -246,46 +295,60 @@ pub fn DocumentMapPane(
                                     style: "flex: 1; overflow: hidden; text-overflow: ellipsis; pointer-events: none;",
                                     "{row.label}"
                                 }
-                                // Action buttons
+                                // Row mutation/organization menu.
                                 button {
-                                    class: "row-add-btn",
-                                    title: "Add section inside",
-                                    "aria-label": "Add section inside",
+                                    class: "row-menu-btn",
+                                    title: t(lang, "document_map.actions"),
+                                    "aria-label": t(lang, "document_map.actions"),
                                     onmousedown: move |ev| ev.prevent_default(),
                                     onclick: move |ev| {
                                         ev.stop_propagation();
-                                        commit_draft_if_dirty(
+                                        let cur = *menu_open_for.read();
+                                        if cur == Some(raw_id) {
+                                            menu_open_for.set(None);
+                                            menu_node_sig.set(None);
+                                            return;
+                                        }
+                                        menu_open_for.set(None);
+                                        menu_node_sig.set(None);
+                                        if !commit_draft_if_dirty(
                                             &mut session.clone(),
                                             &mut draft.clone(),
-                                        );
+                                            &mut status.clone(),
+                                        ) {
+                                            return;
+                                        }
                                         let _ = session.write().focus(node_id);
                                         sync_draft(&session, &mut draft.clone());
                                         item_tree
                                             .write()
                                             .on_selected(SwNodeId(raw_id), SelectionMode::Replace);
-                                        status.clone().set("struct.split.pending".into());
-                                    },
-                                    "+"
-                                }
-                                button {
-                                    class: "row-menu-btn",
-                                    title: "Section actions",
-                                    "aria-label": "Section actions",
-                                    onmousedown: move |ev| ev.prevent_default(),
-                                    onclick: move |ev| {
-                                        ev.stop_propagation();
-                                        commit_draft_if_dirty(
-                                            &mut session.clone(),
-                                            &mut draft.clone(),
-                                        );
-                                        let _ = session.write().focus(node_id);
-                                        sync_draft(&session, &mut draft.clone());
-                                        let cur = *menu_open_for.read();
-                                        menu_open_for.set(
-                                            if cur == Some(raw_id) { None } else { Some(raw_id) },
-                                        );
+                                        let fresh_root = session.read().document_map_nodes();
+                                        if let Some(menu_node) =
+                                            find_node(&fresh_root, raw_id).cloned()
+                                        {
+                                            map_root_sig.set(Some(fresh_root));
+                                            menu_node_sig.set(Some(menu_node));
+                                            menu_open_for.set(Some(raw_id));
+                                        }
                                     },
                                     "⋯"
+                                }
+                                if *menu_open_for.read() == Some(raw_id) {
+                                    if let Some(menu_node) = menu_node_sig
+                                        .read()
+                                        .as_ref()
+                                        .filter(|node| node.id == raw_id)
+                                        .cloned() {
+                                        NodeRowMenu {
+                                            node: menu_node,
+                                            session,
+                                            locale,
+                                            draft,
+                                            status,
+                                            menu_open_for,
+                                        }
+                                    }
                                 }
                             }
                         })
@@ -293,30 +356,101 @@ pub fn DocumentMapPane(
                 }
             }
 
-            // NodeRowMenu is rendered outside the overlay — it is positioned
-            // absolute relative to the document-map-pane aside, with a right
-            // offset so it appears next to the ⋯ button column.
-            if let (Some(menu_id), Some(root)) = (*menu_open_for.read(), map_root.as_ref()) {
-                if let Some(node) = find_node(root, menu_id) {
-                    NodeRowMenu {
-                        node: node.clone(),
-                        session,
-                        locale,
-                        draft,
-                        status,
-                        menu_open_for,
-                    }
-                }
-            }
-
-            // "Show file text" is anchored at the bottom of the panel (always visible).
+            // Plain-text view toggle is anchored at the bottom of the panel.
             button {
                 class: "document-map-show-raw",
                 onclick: move |ev| {
                     ev.stop_propagation();
+                    if is_raw {
+                        session.write().leave_raw();
+                        return;
+                    }
+                    if !commit_draft_if_dirty(
+                        &mut session.clone(),
+                        &mut draft.clone(),
+                        &mut status.clone(),
+                    ) {
+                        return;
+                    }
                     session.write().show_raw();
                 },
-                {t(lang, "document_map.action.show_plain_text")}
+                if is_raw {
+                    {t(lang, "raw.back")}
+                } else {
+                    {t(lang, "document_map.action.show_plain_text")}
+                }
+            }
+        }
+    }
+}
+
+// ── Selected-section creation buttons ────────────────────────────────────────
+
+#[component]
+fn SelectedSectionCreateButtons(
+    node: DocumentMapNode,
+    session: Signal<EditorSession>,
+    locale: Signal<Locale>,
+    draft: Signal<String>,
+    status: Signal<String>,
+) -> Element {
+    let lang = *locale.read();
+    let caps = node.capabilities.clone();
+    let node_id = node_id_from_raw(node.id);
+
+    rsx! {
+        if !caps.can_add_inside.is_hidden() {
+            button {
+                class: "document-map-create-action",
+                disabled: !caps.can_add_inside.is_allowed(),
+                title: capability_title(
+                    lang,
+                    &caps.can_add_inside,
+                    "document_map.action.add_inside",
+                ),
+                "aria-label": t(lang, "document_map.action.add_inside"),
+                onclick: move |ev| {
+                    ev.stop_propagation();
+                    if !commit_draft_if_dirty(
+                        &mut session.clone(),
+                        &mut draft.clone(),
+                        &mut status.clone(),
+                    ) {
+                        return;
+                    }
+                    let _ = session.write().focus(node_id);
+                    sync_draft(&session, &mut draft.clone());
+                    status.clone().set("struct.add_inside.pending".into());
+                },
+                "+ "
+                {t(lang, "document_map.action.add_inside_short")}
+            }
+        }
+        if !caps.can_add_after.is_hidden() {
+            button {
+                class: "document-map-create-action",
+                disabled: !caps.can_add_after.is_allowed(),
+                title: capability_title(
+                    lang,
+                    &caps.can_add_after,
+                    "document_map.action.add_after",
+                ),
+                "aria-label": t(lang, "document_map.action.add_after"),
+                onclick: move |ev| {
+                    ev.stop_propagation();
+                    if !commit_draft_if_dirty(
+                        &mut session.clone(),
+                        &mut draft.clone(),
+                        &mut status.clone(),
+                    ) {
+                        return;
+                    }
+                    let _ = session.write().focus(node_id);
+                    sync_draft(&session, &mut draft.clone());
+                    status.clone().set("struct.add_after.pending".into());
+                },
+                "+ "
+                {t(lang, "document_map.action.add_after_short")}
             }
         }
     }
@@ -341,7 +475,7 @@ fn NodeRowMenu(
         div {
             class: "row-menu",
             role: "menu",
-            "aria-label": "Section actions",
+            "aria-label": t(lang, "document_map.actions"),
             onclick: move |ev| ev.stop_propagation(),
 
             if !caps.can_move_up.is_hidden() {
@@ -351,7 +485,13 @@ fn NodeRowMenu(
                     disabled: !caps.can_move_up.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_up),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         if session.write().move_focused_up().is_ok() {
                             sync_draft(&session, &mut draft.clone());
@@ -368,7 +508,13 @@ fn NodeRowMenu(
                     disabled: !caps.can_move_down.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_down),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         if session.write().move_focused_down().is_ok() {
                             sync_draft(&session, &mut draft.clone());
@@ -385,7 +531,13 @@ fn NodeRowMenu(
                     disabled: !caps.can_move_inside_previous.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_inside_previous),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         if session.write().demote_focused().is_ok() {
                             sync_draft(&session, &mut draft.clone());
@@ -402,7 +554,13 @@ fn NodeRowMenu(
                     disabled: !caps.can_move_out_one_level.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_out_one_level),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         if session.write().promote_focused().is_ok() {
                             sync_draft(&session, &mut draft.clone());
@@ -413,21 +571,26 @@ fn NodeRowMenu(
                 }
             }
 
-            div { class: "row-menu-sep" }
-
-            if !caps.can_add_inside.is_hidden() {
+            if !caps.can_rename.is_hidden() {
                 button {
                     class: "row-menu-item",
                     role: "menuitem",
-                    disabled: !caps.can_add_inside.is_allowed(),
+                    disabled: !caps.can_rename.is_allowed(),
+                    title: disabled_title(lang, &caps.can_rename),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         sync_draft(&session, &mut draft.clone());
-                        status.clone().set("struct.split.pending".into());
+                        status.clone().set("struct.rename.pending".into());
                         menu_open_for.set(None);
                     },
-                    {t(lang, "document_map.action.add_inside")}
+                    {t(lang, "document_map.action.rename")}
                 }
             }
             if !caps.can_join_with_previous.is_hidden() {
@@ -435,9 +598,20 @@ fn NodeRowMenu(
                     class: "row-menu-item",
                     role: "menuitem",
                     disabled: !caps.can_join_with_previous.is_allowed(),
-                    title: disabled_title(lang, &caps.can_join_with_previous),
+                    title: capability_title(
+                        lang,
+                        &caps.can_join_with_previous,
+                        "document_map.action.join_with_previous.title",
+                    ),
+                    "aria-label": t(lang, "document_map.action.join_with_previous.title"),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         if session.write().merge_focused_up().is_ok() {
                             sync_draft(&session, &mut draft.clone());
@@ -454,7 +628,13 @@ fn NodeRowMenu(
                     role: "menuitem",
                     disabled: !caps.can_delete.is_allowed(),
                     onclick: move |_| {
-                        commit_draft_if_dirty(&mut session.clone(), &mut draft.clone());
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         let _ = session.write().focus(node_id);
                         sync_draft(&session, &mut draft.clone());
                         status.clone().set("struct.delete.pending".into());
@@ -475,6 +655,14 @@ fn disabled_title(lang: Locale, cap: &MapCapability) -> String {
         t(lang, r.catalog_key()).to_string()
     } else {
         String::new()
+    }
+}
+
+fn capability_title(lang: Locale, cap: &MapCapability, enabled_key: &'static str) -> String {
+    if let MapCapability::Disabled(r) = cap {
+        t(lang, r.catalog_key()).to_string()
+    } else {
+        t(lang, enabled_key).to_string()
     }
 }
 

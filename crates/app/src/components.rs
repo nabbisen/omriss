@@ -28,7 +28,7 @@ pub use overview_pane::OverviewPane;
 pub use preview_pane::PreviewPane;
 pub use raw_source::RawSourceView;
 pub use search_panel::SearchPanel;
-pub use split_dialog::{SplitChoice, SplitDialog};
+pub use split_dialog::{SectionTitleAction, SectionTitleChoice, SectionTitleDialog};
 pub use status_bar::StatusBar;
 pub use toolbar::Toolbar;
 pub use unsaved_dialog::{UnsavedChoice, UnsavedDialog};

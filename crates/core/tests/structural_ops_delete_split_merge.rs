@@ -85,17 +85,87 @@ fn split_invalid_offset_rejected() {
     );
 }
 
+// ── Rename ─────────────────────────────────────────────────────────────────
+
+#[test]
+fn rename_atx_heading_preserves_body_children_and_closing_marker() {
+    let src = "# Old ###\nbody\n\n## Child\nchild\n\n# Next\n";
+    let mut d = doc(src);
+    let old = d.outline().root().children[0];
+    d.rename_section(old, "New", d.revision()).unwrap();
+    assert_eq!(d.source(), "# New ###\nbody\n\n## Child\nchild\n\n# Next\n");
+}
+
+#[test]
+fn rename_setext_heading_preserves_underline_and_body() {
+    let src = "Old\n===\nbody\n\n# Next\n";
+    let mut d = doc(src);
+    let old = d.outline().root().children[0];
+    d.rename_section(old, "New", d.revision()).unwrap();
+    assert_eq!(d.source(), "New\n===\nbody\n\n# Next\n");
+}
+
+#[test]
+fn rename_undo_round_trip() {
+    let src = "# Old\nbody\n";
+    let mut d = doc(src);
+    let old = d.outline().root().children[0];
+    d.rename_section(old, "New", d.revision()).unwrap();
+    d.undo().unwrap();
+    assert_eq!(d.source(), src);
+}
+
 // ── Merge ──────────────────────────────────────────────────────────────────
 
 #[test]
-fn merge_removes_heading_of_second_section() {
+fn merge_preserves_heading_title_as_plain_text() {
     let src = "# A\nbody A\n\n# B\nbody B\n";
     let mut d = doc(src);
     let b = *d.outline().root().children.last().unwrap();
     d.merge_with_prev_sibling(b, d.revision()).unwrap();
-    assert!(!d.source().contains("# B\n"), "{:?}", d.source());
-    assert!(d.source().contains("body A"), "{:?}", d.source());
-    assert!(d.source().contains("body B"), "{:?}", d.source());
+    assert_eq!(d.source(), "# A\nbody A\n\nB\nbody B\n");
+    let root_children = &d.outline().root().children;
+    assert_eq!(root_children.len(), 1);
+    assert_eq!(d.outline().node(root_children[0]).unwrap().title, "A");
+}
+
+#[test]
+fn merge_preserves_heading_title_when_section_has_no_body() {
+    let src = "# A\nbody A\n\n# B\n";
+    let mut d = doc(src);
+    let b = *d.outline().root().children.last().unwrap();
+    d.merge_with_prev_sibling(b, d.revision()).unwrap();
+    assert_eq!(d.source(), "# A\nbody A\n\nB\n");
+}
+
+#[test]
+fn merge_third_empty_section_into_second_empty_section() {
+    let src = "# A.\n# B.\n# C.\n";
+    let mut d = doc(src);
+    let c = d.outline().root().children[2];
+    d.merge_with_prev_sibling(c, d.revision()).unwrap();
+    assert_eq!(d.source(), "# A.\n# B.\nC.\n");
+    let root_children = &d.outline().root().children;
+    assert_eq!(root_children.len(), 2);
+    assert_eq!(d.outline().node(root_children[1]).unwrap().title, "B.");
+}
+
+#[test]
+fn merge_preserves_setext_heading_title_as_plain_text() {
+    let src = "A\n===\nbody A\n\nB\n===\nbody B\n";
+    let mut d = doc(src);
+    let b = *d.outline().root().children.last().unwrap();
+    d.merge_with_prev_sibling(b, d.revision()).unwrap();
+    assert_eq!(d.source(), "A\n===\nbody A\n\nB\nbody B\n");
+}
+
+#[test]
+fn merge_preserves_heading_title_line_ending() {
+    let src = "# A\r\nbody A\r\n\r\n# B\r\nbody B\r\n";
+    let mut d = doc(src);
+    let b = *d.outline().root().children.last().unwrap();
+    d.merge_with_prev_sibling(b, d.revision()).unwrap();
+    assert_eq!(d.source(), "# A\r\nbody A\r\n\r\nB\r\nbody B\r\n");
 }
 
 #[test]
@@ -107,6 +177,18 @@ fn merge_first_sibling_rejected() {
         d.merge_with_prev_sibling(a, d.revision()),
         Err(StructuralEditError::NoAdjacentSibling)
     );
+}
+
+#[test]
+fn merge_rejects_when_previous_sibling_has_children() {
+    let src = "# A\n\n## A.1\nchild\n\n# B\nbody B\n";
+    let mut d = doc(src);
+    let b = d.outline().root().children[1];
+    assert_eq!(
+        d.merge_with_prev_sibling(b, d.revision()),
+        Err(StructuralEditError::UnsafePreservation)
+    );
+    assert_eq!(d.source(), src);
 }
 
 #[test]

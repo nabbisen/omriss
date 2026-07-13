@@ -1,19 +1,21 @@
 # Working in Layers
 
-## The outline is the map
+## The Document Map is the map
 
-The outline pane lists top-level sections. Numbers in parentheses show how
-many subsections each one holds.
+The Document Map lists the sections in your file. It is the place to select,
+add, move, join, or delete sections.
 
-## Focus is the work surface
+## The Writing Area is the work surface
 
 Focusing a section shows:
 
 - the **breadcrumb** path from the document root — click any crumb to jump up;
-- the section **body** in an editor (the body excludes subsections, so a
+- the section **text** in an editor (the text excludes subsections, so a
   parent's text and its children never blur together);
-- **subsection cards** — click to descend one more layer;
-- a **structural toolbar** for promote, demote, move, merge, split, and delete.
+- **smaller section links** — click to descend one more layer.
+
+Structure controls stay in the Document Map. The Writing Area is only for the
+selected section's text, preview, and save feedback.
 
 ## Back and forward
 
@@ -21,7 +23,7 @@ Focus navigation keeps browser-style history. **Back** returns to where you
 were; **Forward** retraces. Jumping somewhere new starts a fresh branch.
 
 If an edit removes a section you had visited, dead history entries are
-dropped automatically and the view falls back to the outline.
+dropped automatically and the view falls back to the Document Map.
 
 ## Searching
 

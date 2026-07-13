@@ -5,6 +5,12 @@ use omriss::EditResult;
 impl super::EditorSession {
     // ── Structural editing façade (RFC-023..026) ─────────────────────────────
 
+    fn focused_section_id(&self) -> Result<omriss::NodeId, omriss::StructuralEditError> {
+        self.view
+            .focused()
+            .ok_or(omriss::StructuralEditError::NoFocusedSection)
+    }
+
     /// Whether the focused section can be promoted (not H1, not setext).
     pub fn can_promote(&self) -> bool {
         self.view
@@ -39,16 +45,17 @@ impl super::EditorSession {
         let Some(id) = self.view.focused() else {
             return false;
         };
-        let info = crate::editor::navigation::sibling_info(self.document.outline(), id);
-        info.prev_sibling.is_some()
+        let outline = self.document.outline();
+        let info = crate::editor::navigation::sibling_info(outline, id);
+        info.prev_sibling
+            .and_then(|prev_id| outline.node(prev_id))
+            .map(|prev| prev.children.is_empty())
+            .unwrap_or(false)
     }
 
     /// Promotes the focused section heading one level (RFC-023).
     pub fn promote_focused(&mut self) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+        let id = self.focused_section_id()?;
         let rev = self.document.revision();
         let result = self.document.promote_section(id, rev)?;
         let stale = self.prune_dead_history();
@@ -60,10 +67,7 @@ impl super::EditorSession {
 
     /// Demotes the focused section heading one level (RFC-023).
     pub fn demote_focused(&mut self) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+        let id = self.focused_section_id()?;
         let rev = self.document.revision();
         let result = self.document.demote_section(id, rev)?;
         self.prune_dead_history();
@@ -75,12 +79,7 @@ impl super::EditorSession {
         &mut self,
         target: omriss::MoveTarget,
     ) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::StaleNode(
-                self.document.outline().root_id(),
-            ))?;
+        let id = self.focused_section_id()?;
         let rev = self.document.revision();
         let result = self.document.move_section(id, target, rev)?;
         self.prune_dead_history();
@@ -94,10 +93,7 @@ impl super::EditorSession {
         new_title: &str,
         new_level: omriss::HeadingLevel,
     ) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+        let id = self.focused_section_id()?;
         let rev = self.document.revision();
         self.document
             .split_section(id, offset_in_body, new_title, new_level, rev)
@@ -112,15 +108,12 @@ impl super::EditorSession {
         new_title: &str,
         new_level: omriss::HeadingLevel,
     ) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+        let id = self.focused_section_id()?;
         let node = self
             .document
             .outline()
             .node(id)
-            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+            .ok_or(omriss::StructuralEditError::StaleNode(id))?;
         // offset_in_body must be relative to body_range.start.
         // full_range.end is past all children; body_range.start is after the
         // heading line. Their difference places the new heading at the bottom.
@@ -128,6 +121,37 @@ impl super::EditorSession {
         let rev = self.document.revision();
         self.document
             .split_section(id, offset, new_title, new_level, rev)
+    }
+
+    /// Appends a new sibling section immediately after the focused section and
+    /// its subtree. The new section uses the focused section's heading level.
+    pub fn add_after_focused(
+        &mut self,
+        new_title: &str,
+    ) -> Result<EditResult, omriss::StructuralEditError> {
+        let id = self.focused_section_id()?;
+        let node = self
+            .document
+            .outline()
+            .node(id)
+            .ok_or(omriss::StructuralEditError::StaleNode(id))?;
+        let level = node
+            .level
+            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+        let offset = node.full_range.end - node.body_range.start;
+        let rev = self.document.revision();
+        self.document
+            .split_section(id, offset, new_title, level, rev)
+    }
+
+    /// Renames the focused section heading without changing body or children.
+    pub fn rename_focused(
+        &mut self,
+        new_title: &str,
+    ) -> Result<EditResult, omriss::StructuralEditError> {
+        let id = self.focused_section_id()?;
+        let rev = self.document.revision();
+        self.document.rename_section(id, new_title, rev)
     }
 
     /// Appends a new top-level H1 section at the end of the document —
@@ -156,10 +180,7 @@ impl super::EditorSession {
     /// Deletes the focused section and its subtree (RFC-025).
     /// The UI must confirm with the user before calling.
     pub fn delete_focused(&mut self) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::CannotDeleteRoot)?;
+        let id = self.focused_section_id()?;
         let rev = self.document.revision();
         let result = self.document.delete_section(id, rev)?;
         self.view.show_outline();
@@ -169,10 +190,7 @@ impl super::EditorSession {
 
     /// Merges the focused section with its previous sibling (RFC-025).
     pub fn merge_focused_up(&mut self) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::NoAdjacentSibling)?;
+        let id = self.focused_section_id()?;
         let rev = self.document.revision();
         let result = self.document.merge_with_prev_sibling(id, rev)?;
         self.prune_dead_history();
@@ -181,10 +199,7 @@ impl super::EditorSession {
 
     /// Move the focused section up one position among its siblings (RFC-024).
     pub fn move_focused_up(&mut self) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::NoAdjacentSibling)?;
+        let id = self.focused_section_id()?;
         let info = crate::editor::navigation::sibling_info(self.document.outline(), id);
         let prev = info
             .prev_sibling
@@ -194,10 +209,7 @@ impl super::EditorSession {
 
     /// Move the focused section down one position among its siblings (RFC-024).
     pub fn move_focused_down(&mut self) -> Result<EditResult, omriss::StructuralEditError> {
-        let id = self
-            .view
-            .focused()
-            .ok_or(omriss::StructuralEditError::NoAdjacentSibling)?;
+        let id = self.focused_section_id()?;
         let info = crate::editor::navigation::sibling_info(self.document.outline(), id);
         let next = info
             .next_sibling

@@ -1,8 +1,8 @@
 //! Command registry: a static catalogue of application commands (RFC-022).
 //!
-//! Every command has an id, an i18n title key, an optional default shortcut
-//! string, and an optional description key. The command palette and keyboard-
-//! help page both draw from this single source so they stay consistent.
+//! Every command has an id, an i18n title key, and an optional default
+//! shortcut string. Quick Actions and the keyboard-help page both draw from
+//! this single source so they stay consistent.
 //!
 //! Commands are checked for availability by the desktop shell; the registry
 //! itself carries no runtime state.

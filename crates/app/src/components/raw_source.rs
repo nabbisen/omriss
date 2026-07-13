@@ -1,5 +1,5 @@
-//! Read-only raw Markdown source view (RFC-017): transparent inspection of the
-//! canonical text and recovery path when outline projection is incomplete.
+//! Read-only file text view (RFC-017/RFC-048): transparent inspection of the
+//! canonical text and recovery path when the structure projection is incomplete.
 //!
 //! M3 decision: the view is intentionally read-only. Editable raw source
 //! will follow once RFC-008 and RFC-016 are fully mature.
@@ -9,11 +9,7 @@ use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
 #[component]
-pub fn RawSourceView(
-    session: Signal<EditorSession>,
-    locale: Signal<Locale>,
-    on_back: EventHandler<()>,
-) -> Element {
+pub fn RawSourceView(session: Signal<EditorSession>, locale: Signal<Locale>) -> Element {
     let lang = *locale.read();
     // Snapshot the source once to avoid repeated borrows inside rsx!
     let source = session.read().source().to_string();
@@ -25,11 +21,6 @@ pub fn RawSourceView(
                 h2 { {t(lang, "raw.title")} }
                 span { class: "raw-meta hint-text",
                     "{line_count} lines"
-                }
-                button {
-                    class: "raw-back",
-                    onclick: move |_| on_back.call(()),
-                    {t(lang, "raw.back")}
                 }
             }
             p {

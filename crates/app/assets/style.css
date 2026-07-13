@@ -28,11 +28,9 @@ html, body, #main {
   padding: 8px 10px;
   background: var(--panel);
   border-bottom: 1px solid var(--panel-edge);
+  position: relative;
 }
 .toolbar .spacer { flex: 1; }
-.toolbar select {
-  display: none; /* language switcher moved to status bar */
-}
 
 button {
   background: var(--bg);
@@ -178,35 +176,104 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
 
 .statusbar {
   display: flex;
+  align-items: center;
   gap: 14px;
   padding: 5px 12px;
   font-size: 12px;
   color: var(--muted);
   background: var(--panel);
   border-top: 1px solid var(--panel-edge);
+  position: relative;
 }
 .statusbar .dirty { color: var(--danger); }
 .statusbar .file { text-align: right; }
 .statusbar > span:first-child { flex: 1; }
-.statusbar-locale {
+.toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 31;
+}
+.toolbar-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.toolbar-icon-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--panel-edge);
+  background: var(--panel-2);
+}
+.toolbar-icon-btn:focus {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+.toolbar-icon-btn:disabled {
+  color: color-mix(in oklab, var(--muted), transparent 45%);
+  cursor: default;
+}
+.toolbar-settings {
+  position: relative;
+}
+.toolbar-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: transparent;
+}
+.toolbar-settings-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 168px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 32;
+}
+.toolbar-settings-menu:focus {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+.toolbar-settings-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.toolbar-locale {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
   font-size: 11px;
   cursor: pointer;
-  padding: 0 2px;
+  padding: 3px 4px;
   flex-shrink: 0;
 }
-.statusbar-locale:hover { color: var(--text); }
-.statusbar-locale:focus { outline: 1px solid var(--accent); border-radius: 2px; }
+.toolbar-locale:hover { color: var(--text); }
+.toolbar-locale:focus { outline: 1px solid var(--accent); border-radius: 2px; }
 
 /* ── M2 additions (RFC-010..013, RFC-014) ───────────────────────────────── */
 
 /* Toolbar separators and meta labels */
 .toolbar-sep { width: 1px; height: 18px; background: var(--panel-edge); margin: 0 2px; }
 .dirty-indicator { color: var(--danger); font-size: 14px; }
-.file-label { color: var(--muted); font-size: 12px; max-width: 240px;
-              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Selected outline item (keyboard navigation) */
 .outline-item--selected {
@@ -329,7 +396,6 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
 }
 .raw-toolbar h2 { margin: 0; font-size: 16px; }
 .raw-meta { margin-left: auto; }
-.raw-back { margin-left: 0; }
 .raw-notice { margin: 0 0 10px; }
 .raw-pre {
   flex: 1; overflow: auto;
@@ -632,41 +698,53 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   letter-spacing: 0.08em;
   color: var(--muted);
 }
-.document-map-add-top {
-  display: block;
-  width: 100%;
-  padding: 5px 8px;
+.document-map-create-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--panel-edge);
+}
+.document-map-create-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 8px;
   background: transparent;
-  border: 1px dashed var(--panel-edge);
+  border: 1px solid var(--panel-edge);
   border-radius: 6px;
-  color: var(--muted);
-  text-align: left;
+  color: var(--text);
   font-size: 13px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.document-map-add-top:hover {
+.document-map-create-action:hover:not(:disabled) {
   color: var(--accent);
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+.document-map-create-action:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 .document-map-tree {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
 }
-/* The button column approach is replaced: buttons are inline inside each row.
-/* Each row is a flex container: caret · icon · label · [+ ⋯] */
+/* Each row is a flex container: caret · icon · label · ⋯ */
 .dx-swdir-row {
   display: flex;
   align-items: center;
   cursor: pointer;
+  position: relative;
 }
-/* Action buttons: hidden by default, appear as a horizontal group on hover */
-.row-add-btn,
+/* Row menu trigger stays visible so keyboard and touch users can reach it. */
 .row-menu-btn {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 1.5rem;
@@ -679,14 +757,6 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   border-radius: 3px;
   flex-shrink: 0;
   align-self: stretch;
-}
-.dx-swdir-row:hover .row-add-btn,
-.dx-swdir-row:hover .row-menu-btn {
-  display: flex;
-}
-.row-add-btn:hover {
-  color: var(--accent);
-  background: var(--accent-soft);
 }
 .row-menu-btn:hover {
   color: var(--text);
@@ -724,7 +794,7 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
 /* ── Row ⋯ trigger and menu ──────────────────────────────────────────────── */
 .row-menu {
   position: absolute;
-  top: 40px;   /* below the panel title, clear of the add-top button */
+  top: calc(100% + 2px);
   right: 0;
   z-index: 200;
   min-width: 200px;

@@ -297,6 +297,17 @@ impl Document {
         crate::doc::structural::demote_section(self, id, base_revision)
     }
 
+    /// Renames the section heading while preserving the body, children,
+    /// siblings, and unrelated source bytes.
+    pub fn rename_section(
+        &mut self,
+        id: NodeId,
+        new_title: &str,
+        base_revision: DocumentRevision,
+    ) -> Result<EditResult, crate::doc::structural::StructuralEditError> {
+        crate::doc::structural::rename_section(self, id, new_title, base_revision)
+    }
+
     /// Moves the entire section subtree (heading + body + descendants) to
     /// the given target position. Preserves every byte in the moved range.
     pub fn move_section(

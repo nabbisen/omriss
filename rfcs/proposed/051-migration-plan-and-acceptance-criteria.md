@@ -5,7 +5,7 @@
 **Status.** Proposed
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
-**Depends on:** RFC-048, RFC-049, RFC-050
+**Depends on:** RFC-048, RFC-049, RFC-050, RFC-053 type core
 **Related RFCs:** RFC-052, RFC-053
 
 ---
@@ -65,7 +65,34 @@ Right side: write the selected section.
 - AI generation features.
 - Changing the canonical file format.
 
-## 4. Migration phases
+## 4. Approval and sequencing prerequisites
+
+RFC-048, RFC-049, RFC-050, and this RFC must be reviewed and accepted as one
+M10 bundle before developer handoffs or implementation PRs are authorized.
+RFC-048 is only the directional product decision; the sibling RFCs carry the
+load-bearing behavior, migration, accessibility, and acceptance detail.
+
+The M10 bundle depends on the RFC-053 type core even though RFC-053 belongs to
+M11 as a full adapter architecture. The following RFC-053 concepts are pulled
+forward as M10 prerequisites:
+
+- `DocumentFormat`;
+- `StructureNodeKind`;
+- `NodeCapabilities`, `Capability`, and `CapabilityReason`;
+- `StructureCommand` and `MoveDirection`;
+- `DraftState`;
+- reuse of the existing RFC-006 `NodeId`.
+
+The full JSON/TOML/YAML adapter work remains out of M10 scope.
+
+Any already-written M10/M11-aligned code in the worktree is treated as an
+exploratory spike until this bundle is accepted. It is not evidence that the
+RFCs are accepted, and it must not be used as the source of truth for handoffs.
+Before release authorization, the owner must either accept the reconciled M10
+bundle and move the affected RFCs through the lifecycle, or explicitly hold the
+code behind a release gate/feature flag until that acceptance happens.
+
+## 5. Migration phases
 
 ### Phase 1 — Layout split foundation
 
@@ -115,7 +142,7 @@ Goal: make the right side calmer and easier for non-technical users.
 
 Tasks:
 
-- Replace `Commit` with `Done`.
+- Remove the primary `Commit` / `Done` workflow in favor of apply-on-navigation.
 - Replace `Raw Markdown` with `Show plain file text`.
 - Replace `Command Palette` with `Quick Actions`.
 - Add helpful empty-section text.
@@ -168,7 +195,7 @@ Acceptance:
 - UI component names and data flow can accept `Group`, `List`, `Value`, or `RawRegion` later.
 - No JSON/TOML/YAML parser code is required in this migration.
 
-## 5. Regression risk areas
+## 6. Regression risk areas
 
 | Risk | Mitigation |
 |------|------------|
@@ -179,9 +206,26 @@ Acceptance:
 | Future formats blocked by Markdown-only component names | Add Phase 5 format-neutral readiness review. |
 | Source preservation broken | Re-run byte preservation tests after every structural operation. |
 
-## 6. Test plan
+## 7. Rollback and release-gating decision
 
-### 6.1 Unit tests
+M10 changes the primary UI of shipped software. The default rollout policy is:
+
+- develop on a branch or release gate until the accepted M10 bundle exists;
+- do not open the first RFC-048 implementation PR until the RFC-048 through
+  RFC-056 handoffs are regenerated or patched to current canonical names;
+- keep the previous stable release tag as the rollback target;
+- if the migrated UI reaches a release candidate before acceptance, ship it only
+  behind an explicit feature flag or hold it from release;
+- if Markdown open/edit/save, source preservation, or keyboard accessibility
+  regresses after release, revert the M10 UI migration in the next patch release
+  rather than partially disabling individual controls.
+
+The project may choose a stronger branch-only strategy during implementation,
+but it must not silently ship Proposed RFC behavior as accepted design.
+
+## 8. Test plan
+
+### 8.1 Unit tests
 
 - Section body replacement preserves unrelated text.
 - Rename preserves body and child sections.
@@ -190,16 +234,16 @@ Acceptance:
 - Delete removes only the confirmed section range.
 - Undo/redo works across migrated UI commands.
 
-### 6.2 Component tests
+### 8.2 Component tests
 
 - Document Map selection updates Writing Area.
 - Row menu shows expected actions.
 - Writing Area does not render structure controls.
 - Empty section hint appears.
-- Save status updates after Done and Save.
+- Save status updates after automatic draft application and Save.
 - Unsupported future node placeholder renders safely in test fixture.
 
-### 6.3 Accessibility tests
+### 8.3 Accessibility tests
 
 - Tab order is toolbar → Document Map → Writing Area → status/recovery actions.
 - Row menu is keyboard accessible.
@@ -207,7 +251,7 @@ Acceptance:
 - Esc closes open overlays before changing document focus.
 - Live status messages are emitted.
 
-### 6.4 Manual QA scenarios
+### 8.4 Manual QA scenarios
 
 1. Open Markdown file, select a section, write, save.
 2. Add a section from Document Map, write in it, save.
@@ -219,8 +263,11 @@ Acceptance:
 8. Open raw source view and return to editor.
 9. Close with unsaved changes and cancel.
 10. Confirm no visible structural controls exist in Writing Area.
+11. Have at least one non-technical Markdown user complete open, select,
+    write, organize, save, and undo scenarios without coaching, and record
+    whether the left/right role split is understandable.
 
-## 7. Documentation updates
+## 9. Documentation updates
 
 Required updates:
 
@@ -232,21 +279,23 @@ Required updates:
 - Developer docs: document `DocumentMapPanel` / `FocusedContentPanel` boundaries.
 - Future format note: mention that this split prepares omriss for structured plain-text files later.
 
-## 8. Release criteria
+## 10. Release criteria
 
 The migration is release-ready when:
 
 - all existing source-preservation tests pass;
 - all migrated UI workflows pass manual QA;
+- non-technical-user manual QA for the left/right role split is recorded;
 - no structural controls are visible in the Writing Area;
 - Document Map supports the required Markdown structural operations;
 - keyboard navigation works for the primary workflow;
 - user-facing labels pass the plain-language audit;
 - future format readiness checklist passes without implementing new formats;
 - no new critical or high-severity accessibility issue is open;
+- the rollback/release-gating decision in §7 is followed;
 - all nine RFC-048–056 developer handoffs are regenerated or patched to RFC-053 canonical names and current `NNN-slug.md` filenames **before the first RFC-048 implementation PR opens**.
 
-## 9. Future work after this migration
+## 11. Future work after this migration
 
 After RFC-048–051 are complete and stable, the project may proceed with:
 
@@ -258,7 +307,7 @@ After RFC-048–051 are complete and stable, the project may proceed with:
 
 These must be treated as dependent follow-up work, not as part of the UI split migration itself.
 
-## 10. Acceptance checklist
+## 12. Acceptance checklist
 
 ```text
 [ ] Document Map is visible as the left organization panel.
@@ -275,8 +324,12 @@ These must be treated as dependent follow-up work, not as part of the UI split m
 [ ] Screen-reader labels are plain and useful.
 [ ] Markdown byte preservation tests pass.
 [ ] Internal UI boundary is format-neutral enough for RFC-052+.
+[ ] RFC-053 type core is accepted or explicitly pulled forward for M10.
+[ ] Rollback/release-gating decision is recorded and followed.
+[ ] Non-technical-user manual QA is recorded.
+[ ] RFC-048–056 developer handoffs are regenerated or patched before the first RFC-048 implementation PR.
 ```
 
-## 11. Final decision summary
+## 13. Final decision summary
 
 The migration should proceed in phases. RFC-048–051 remain the foundation of a simpler Markdown UI, but they are updated to avoid Markdown-only UI assumptions. JSON/TOML/YAML support must follow as new RFCs after the split is stable.

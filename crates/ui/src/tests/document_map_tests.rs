@@ -160,6 +160,34 @@ fn second_section_can_join_with_previous() {
 }
 
 #[test]
+fn third_empty_top_level_section_can_join_with_previous_empty_section() {
+    let session = session_with("# A.\n# B.\n# C.\n");
+    let root = session.document_map_nodes();
+    assert_eq!(root.children.len(), 3);
+    assert_eq!(root.children[0].title, "A.");
+    assert_eq!(root.children[1].title, "B.");
+    assert_eq!(root.children[2].title, "C.");
+    assert!(
+        root.children[2]
+            .capabilities
+            .can_join_with_previous
+            .is_allowed(),
+        "third top-level section should be able to merge into the second"
+    );
+}
+
+#[test]
+fn section_cannot_join_when_previous_sibling_has_children() {
+    let session = session_with("# A\n\n## A.1\nchild\n\n# B\nbody\n");
+    let root = session.document_map_nodes();
+    let second = &root.children[1];
+    assert_eq!(
+        second.capabilities.can_join_with_previous,
+        MapCapability::Disabled(CapabilityReason::UnsafePreservation)
+    );
+}
+
+#[test]
 fn selected_node_is_flagged_when_focused() {
     let mut session = session_with("# A\nbody\n\n# B\nbody\n");
     let root = session.document_map_nodes();

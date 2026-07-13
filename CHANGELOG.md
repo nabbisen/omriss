@@ -4,6 +4,36 @@ All notable changes to this project are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **RFC-048 user-facing wording pass** — README, mdBook user pages, architecture
+  notes, and GUI labels now consistently describe the left panel as the
+  Document Map and the right panel as the Writing Area / Focused Content
+  surface. Old "Command Palette" and raw-source labels were replaced with
+  "Quick Actions" and "Plain File Text" wording in the English and Japanese
+  catalogs.
+- **RFC-048 re-review polish** — the RFC metadata now separates dependency
+  and M10-bundle relationships, the wireframe uses the Markdown-facing
+  `Writing Area` label, and the raw-source action consistently reads
+  `Show plain file text`.
+
+### Fixed
+
+- **Focused drafts now apply before leaving the Writing Area** — toolbar and
+  keyboard Back/Forward, search navigation, plain-file-text view, preview, and
+  Open/New guards now account for local uncommitted text before changing view
+  or document state.
+- **Document Map action coverage** — row actions now include Add section after
+  and Rename, backed by source-preserving section operations and undo history.
+
+### Removed
+
+- **Obsolete pre-RFC-048 app components** — removed the unexported legacy
+  `FocusEditor` and `OutlinePane` source files so the tree no longer carries
+  the old right-side structural-toolbar implementation.
+
 ## [0.15.6] - 2026-06-25
 
 ### Changed

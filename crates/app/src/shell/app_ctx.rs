@@ -7,6 +7,8 @@ use std::time::SystemTime;
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
+use crate::components::SectionTitleAction;
+
 // ── Modal state ──────────────────────────────────────────────────────────────
 
 /// Which blocking dialog (if any) is currently visible.
@@ -24,8 +26,11 @@ pub(crate) enum Modal {
         title: String,
         child_count: usize,
     },
-    /// Collect the title for a new child section (RFC-025 split).
-    SplitSection,
+    /// Collect a title for a Document Map structure action.
+    SectionTitle {
+        action: SectionTitleAction,
+        initial_title: String,
+    },
     /// File open failed — surface cause and recovery options (RFC-039).
     OpenError {
         cause: String,
@@ -62,13 +67,30 @@ pub(crate) fn sync_draft(ctx: AppCtx) {
     draft.set(body);
 }
 
+/// True when the Writing Area contains text that has not yet been applied to
+/// the canonical document session.
+pub(crate) fn has_pending_draft(ctx: AppCtx) -> bool {
+    let draft = ctx.draft.read().clone();
+    ctx.session
+        .read()
+        .current_snapshot()
+        .is_some_and(|snapshot| draft != snapshot.body)
+}
+
 /// Commits any pending draft into `omriss` before a save or navigation.
-pub(crate) fn commit_pending(mut ctx: AppCtx) {
+pub(crate) fn commit_pending(mut ctx: AppCtx) -> bool {
     let snap = ctx.session.read().current_snapshot();
     if let Some(snapshot) = snap {
         let d = ctx.draft.read().clone();
         if d != snapshot.body {
-            let _ = ctx.session.write().commit_focused_body(&snapshot, d);
+            return match ctx.session.write().commit_focused_body(&snapshot, d) {
+                Ok(_) => true,
+                Err(_) => {
+                    ctx.status.set("error.stale_edit".into());
+                    false
+                }
+            };
         }
     }
+    true
 }

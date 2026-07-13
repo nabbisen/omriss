@@ -8,8 +8,8 @@
 **Omriss Editor** — a next-generation text editor that helps you clarify ideas
 and refine them, consideration by consideration, **layer by layer**.
 
-omriss treats a Markdown document as a stack of layers: the document outline
-is the map, and each section is a layer you can focus on in isolation. You
+omriss treats a Markdown document as a stack of layers: the Document Map is
+the map, and each section is a layer you can focus on in isolation. You
 zoom into one section, refine just that thought, and zoom back out — without
 the rest of the document getting in the way, and without the editor ever
 rewriting a byte you didn't touch.
@@ -73,13 +73,13 @@ cargo run -p omriss-app
 
 ## Using omriss
 
-* The left pane lists the top-level sections of the open document.
-* Click a section to **focus** it: you see its breadcrumb path, its body in
-  an editor, and its direct subsections as cards.
+* The left Document Map lists and organizes sections of the open document.
+* Click a section to **focus** it: you see its breadcrumb path, its text in
+  the Writing Area, and its direct subsections as navigation links.
 * Edit the body and commit; only that section's bytes change.
 * **Back / Forward** retrace your focus history like a browser.
 * **Undo / Redo** restore the document text byte-exactly.
-* Switch the GUI language (English / 日本語) from the toolbar at any time.
+* Switch the GUI language (English / 日本語) from the status bar at any time.
 
 ## Platform Support
 

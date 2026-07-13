@@ -38,12 +38,18 @@ pub enum StructuralEditError {
     CannotMoveIntoDescendant,
     /// Cannot move a section before/after itself.
     CannotMoveSelf,
+    /// The operation requires a focused section, but no section is focused.
+    NoFocusedSection,
     /// Cannot delete the synthetic root node.
     CannotDeleteRoot,
     /// No adjacent sibling of the right kind to merge with.
     NoAdjacentSibling,
+    /// Operation would risk moving content under the wrong section.
+    UnsafePreservation,
     /// Split offset falls outside the section's body range.
     InvalidSplitOffset,
+    /// Section title is empty or cannot be represented safely.
+    InvalidTitle,
     /// The underlying text replacement failed (re-index error or invalid range).
     Edit(EditError),
 }
@@ -71,9 +77,12 @@ impl std::fmt::Display for StructuralEditError {
                 write!(f, "cannot move a section into its own descendant")
             }
             Self::CannotMoveSelf => write!(f, "source and target are the same section"),
+            Self::NoFocusedSection => write!(f, "no focused section"),
             Self::CannotDeleteRoot => write!(f, "cannot delete the root node"),
             Self::NoAdjacentSibling => write!(f, "no adjacent sibling to merge with"),
+            Self::UnsafePreservation => write!(f, "operation could change unrelated structure"),
             Self::InvalidSplitOffset => write!(f, "split offset is outside the section body"),
+            Self::InvalidTitle => write!(f, "section title is empty or invalid"),
             Self::Edit(e) => write!(f, "underlying edit error: {e}"),
         }
     }
@@ -139,7 +148,8 @@ fn adjusted_marker(current_level: HeadingLevel, delta: i8) -> Option<String> {
     Some("#".repeat(new_depth as usize))
 }
 
-/// Core of promote/demote: replaces only the `#` characters in the heading line.
+/// Core of promote/demote: shifts the selected section subtree one heading
+/// level while preserving its internal parent/child relationships.
 fn change_heading_level(
     doc: &mut Document,
     id: NodeId,
@@ -152,29 +162,86 @@ fn change_heading_level(
         .node(id)
         .ok_or(StructuralEditError::StaleNode(id))?;
     let level = node.level.ok_or(StructuralEditError::StaleNode(id))?;
-    let heading_start = node.heading_range.start;
-    let source = doc.source();
+    adjusted_marker(level, delta).ok_or(StructuralEditError::InvalidLevel)?;
 
-    // ATX guard: heading line must start with '#'.
-    if source.as_bytes().get(heading_start) != Some(&b'#') {
-        return Err(StructuralEditError::UnsupportedHeadingStyle);
+    let source = doc.source();
+    let outline = doc.outline();
+    let subtree_ids: Vec<NodeId> = outline
+        .iter()
+        .filter(|candidate| is_descendant(outline, id, candidate.id))
+        .map(|candidate| candidate.id)
+        .collect();
+    let mut marker_edits = Vec::with_capacity(subtree_ids.len());
+    for node_id in subtree_ids {
+        let n = outline
+            .node(node_id)
+            .ok_or(StructuralEditError::StaleNode(node_id))?;
+        let level = n.level.ok_or(StructuralEditError::StaleNode(node_id))?;
+        let heading_start = n.heading_range.start;
+        if source.as_bytes().get(heading_start) != Some(&b'#') {
+            return Err(StructuralEditError::UnsupportedHeadingStyle);
+        }
+        let new_marker = adjusted_marker(level, delta).ok_or(StructuralEditError::InvalidLevel)?;
+        let old_marker_len = level.as_u8() as usize;
+        marker_edits.push((heading_start, old_marker_len, new_marker));
     }
 
-    let new_marker = adjusted_marker(level, delta).ok_or(StructuralEditError::InvalidLevel)?;
-    let old_marker_len = level.as_u8() as usize;
-    let marker_range = ByteRange::new(heading_start, heading_start + old_marker_len).unwrap();
+    let mut shifted_subtree = source[node.full_range.as_range()].to_string();
+    for (heading_start, old_marker_len, new_marker) in marker_edits.iter().rev() {
+        let local_start = heading_start - node.full_range.start;
+        shifted_subtree.replace_range(local_start..local_start + old_marker_len, new_marker);
+    }
 
-    let old_text = source[marker_range.as_range()].to_string();
-    let result = doc.apply_replacement(marker_range, &new_marker)?;
+    let new_source = if delta < 0 && has_following_sibling(outline, id)? {
+        let parent_id = node.parent_id.ok_or(StructuralEditError::InvalidLevel)?;
+        let parent = outline
+            .node(parent_id)
+            .ok_or(StructuralEditError::StaleNode(parent_id))?;
+        let range = node.full_range;
+        let mut s = String::with_capacity(source.len() - range.len() + shifted_subtree.len());
+        s.push_str(&source[..range.start]);
+        s.push_str(&source[range.end..parent.full_range.end]);
+        s.push_str(&shifted_subtree);
+        s.push_str(&source[parent.full_range.end..]);
+        s
+    } else {
+        let range = node.full_range;
+        let mut s = String::with_capacity(source.len() - range.len() + shifted_subtree.len());
+        s.push_str(&source[..range.start]);
+        s.push_str(&shifted_subtree);
+        s.push_str(&source[range.end..]);
+        s
+    };
+
+    let full_range = ByteRange {
+        start: 0,
+        end: source.len(),
+    };
+    let old_source = source.to_string();
+    let result = doc.apply_replacement(full_range, &new_source)?;
     doc.record_history(EditRecord {
         replaced_range: result.replaced_range,
-        old_text,
+        old_text: old_source,
         new_range: result.new_range,
-        new_text: new_marker,
+        new_text: new_source,
         revision_before: result.old_revision,
         revision_after: result.new_revision,
     });
     Ok(result)
+}
+
+fn has_following_sibling(outline: &Outline, id: NodeId) -> Result<bool, StructuralEditError> {
+    let node = outline.node(id).ok_or(StructuralEditError::StaleNode(id))?;
+    let Some(parent_id) = node.parent_id else {
+        return Ok(false);
+    };
+    let parent = outline
+        .node(parent_id)
+        .ok_or(StructuralEditError::StaleNode(parent_id))?;
+    let Some(position) = parent.children.iter().position(|child| *child == id) else {
+        return Err(StructuralEditError::StaleNode(id));
+    };
+    Ok(position + 1 < parent.children.len())
 }
 
 pub(crate) fn promote_section(
@@ -191,6 +258,89 @@ pub(crate) fn demote_section(
     base_rev: DocumentRevision,
 ) -> Result<EditResult, StructuralEditError> {
     change_heading_level(doc, id, base_rev, 1)
+}
+
+// ── Rename section (RFC-049) ─────────────────────────────────────────────────
+
+pub(crate) fn rename_section(
+    doc: &mut Document,
+    id: NodeId,
+    new_title: &str,
+    base_rev: DocumentRevision,
+) -> Result<EditResult, StructuralEditError> {
+    check_revision(doc, base_rev)?;
+    let new_title = new_title.trim();
+    if new_title.is_empty() || new_title.contains('\n') || new_title.contains('\r') {
+        return Err(StructuralEditError::InvalidTitle);
+    }
+
+    let node = doc
+        .outline()
+        .node(id)
+        .ok_or(StructuralEditError::StaleNode(id))?;
+    if node.is_root() {
+        return Err(StructuralEditError::CannotDeleteRoot);
+    }
+
+    let source = doc.source();
+    let heading = &source[node.heading_range.as_range()];
+    let line_len = heading.find('\n').unwrap_or(heading.len());
+    let line = &heading[..line_len];
+    let title_range = if line.starts_with('#') {
+        atx_title_range(node.heading_range.start, line).ok_or(StructuralEditError::InvalidTitle)?
+    } else {
+        ByteRange::new(
+            node.heading_range.start,
+            node.heading_range.start + line_len,
+        )
+        .map_err(|_| StructuralEditError::InvalidTitle)?
+    };
+
+    let old_text = source[title_range.as_range()].to_string();
+    let result = doc.apply_replacement(title_range, new_title)?;
+    doc.record_history(EditRecord {
+        replaced_range: result.replaced_range,
+        old_text,
+        new_range: result.new_range,
+        new_text: new_title.to_string(),
+        revision_before: result.old_revision,
+        revision_after: result.new_revision,
+    });
+    Ok(result)
+}
+
+fn atx_title_range(line_start: usize, line: &str) -> Option<ByteRange> {
+    let bytes = line.as_bytes();
+    let marker_len = bytes.iter().take_while(|&&b| b == b'#').count();
+    if marker_len == 0 || marker_len > 6 {
+        return None;
+    }
+
+    let mut title_start = marker_len;
+    while matches!(bytes.get(title_start), Some(b' ' | b'\t')) {
+        title_start += 1;
+    }
+
+    let mut title_end = line.len();
+    while title_end > title_start && matches!(bytes[title_end - 1], b' ' | b'\t') {
+        title_end -= 1;
+    }
+
+    let mut hash_start = title_end;
+    while hash_start > title_start && bytes[hash_start - 1] == b'#' {
+        hash_start -= 1;
+    }
+    if hash_start < title_end && hash_start > title_start {
+        let mut before_hash = hash_start;
+        while before_hash > title_start && matches!(bytes[before_hash - 1], b' ' | b'\t') {
+            before_hash -= 1;
+        }
+        if before_hash < hash_start {
+            title_end = before_hash;
+        }
+    }
+
+    ByteRange::new(line_start + title_start, line_start + title_end).ok()
 }
 
 // ── Delete section (RFC-025) ──────────────────────────────────────────────────
@@ -274,8 +424,9 @@ pub(crate) fn split_section(
 
 // ── Merge with previous sibling (RFC-025) ─────────────────────────────────────
 
-/// Removes the heading line of `id`, effectively merging its body into the
-/// preceding sibling's body. Both sections must share the same parent.
+/// Removes the heading marker of `id`, preserving its title as plain leading
+/// text and merging its body into the preceding sibling's body. Both sections
+/// must share the same parent.
 pub(crate) fn merge_with_prev_sibling(
     doc: &mut Document,
     id: NodeId,
@@ -302,19 +453,43 @@ pub(crate) fn merge_with_prev_sibling(
     if pos == 0 {
         return Err(StructuralEditError::NoAdjacentSibling);
     }
-    // Remove the heading line of `id` to merge its body into the previous section.
+    let prev = doc
+        .outline()
+        .node(siblings[pos - 1])
+        .ok_or(StructuralEditError::StaleNode(id))?;
+    if !prev.children.is_empty() {
+        return Err(StructuralEditError::UnsafePreservation);
+    }
+    // Replace the heading element with its parsed plain title so merging does
+    // not silently drop user-authored heading text.
     let heading_range = node.heading_range;
+    let replacement =
+        plain_heading_replacement(&doc.source()[heading_range.as_range()], &node.title);
     let old_text = doc.source()[heading_range.as_range()].to_string();
-    let result = doc.apply_replacement(heading_range, "")?;
+    let result = doc.apply_replacement(heading_range, &replacement)?;
     doc.record_history(EditRecord {
         replaced_range: result.replaced_range,
         old_text,
         new_range: result.new_range,
-        new_text: String::new(),
+        new_text: replacement,
         revision_before: result.old_revision,
         revision_after: result.new_revision,
     });
     Ok(result)
+}
+
+fn plain_heading_replacement(heading_source: &str, title: &str) -> String {
+    if title.is_empty() {
+        return String::new();
+    }
+    let newline = if heading_source.ends_with("\r\n") {
+        "\r\n"
+    } else if heading_source.ends_with('\n') {
+        "\n"
+    } else {
+        ""
+    };
+    format!("{title}{newline}")
 }
 
 // ── Move section (RFC-024) ────────────────────────────────────────────────────

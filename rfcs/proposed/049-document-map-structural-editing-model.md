@@ -157,7 +157,7 @@ explanation via the i18n catalog (RFC-043).
 |--------------------|-------------------|
 | promote heading | Move out one level |
 | demote heading | Move inside previous section |
-| merge section up | Join with section above |
+| merge section up | Merge into previous section content |
 
 The UI must not expose “promote”, “demote”, “H1”, “H2”, or “heading level” as normal labels unless advanced details are explicitly shown.
 

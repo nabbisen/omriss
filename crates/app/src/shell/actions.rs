@@ -6,9 +6,11 @@
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
-use crate::components::{ConfirmDeleteChoice, ExtModifiedChoice, SplitChoice, UnsavedChoice};
+use crate::components::{
+    ConfirmDeleteChoice, ExtModifiedChoice, SectionTitleAction, SectionTitleChoice, UnsavedChoice,
+};
 use crate::file::file_dialog::{self, OpenOutcome, SaveOutcome};
-use crate::shell::app_ctx::{AppCtx, Modal, commit_pending, sync_draft};
+use crate::shell::app_ctx::{AppCtx, Modal, commit_pending, has_pending_draft, sync_draft};
 use crate::storage::settings::AppSettings;
 
 // ── File operations ──────────────────────────────────────────────────────────
@@ -60,7 +62,7 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
 
 /// Open a file, guarded by an unsaved-changes check.
 pub(crate) fn handle_open_guarded(mut ctx: AppCtx) {
-    if ctx.session.read().is_dirty() {
+    if ctx.session.read().is_dirty() || has_pending_draft(ctx) {
         ctx.modal.set(Modal::UnsavedBeforeOpen);
     } else {
         handle_load(file_dialog::open_markdown(), ctx);
@@ -69,7 +71,9 @@ pub(crate) fn handle_open_guarded(mut ctx: AppCtx) {
 
 /// Save the current document (`force_new_path = true` triggers Save As).
 pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
-    commit_pending(ctx);
+    if !commit_pending(ctx) {
+        return;
+    }
     let existing = if force_new_path {
         None
     } else {
@@ -107,7 +111,7 @@ pub(crate) fn handle_new(mut ctx: AppCtx) {
 
 /// Create a blank document, guarded by an unsaved-changes check.
 pub(crate) fn handle_new_guarded(mut ctx: AppCtx) {
-    if ctx.session.read().is_dirty() {
+    if ctx.session.read().is_dirty() || has_pending_draft(ctx) {
         ctx.modal.set(Modal::UnsavedBeforeNew);
     } else {
         handle_new(ctx);
@@ -150,7 +154,9 @@ pub(crate) fn handle_ext_modified_choice(choice: ExtModifiedChoice, mut ctx: App
     ctx.modal.set(Modal::None);
     match choice {
         ExtModifiedChoice::Overwrite => {
-            commit_pending(ctx);
+            if !commit_pending(ctx) {
+                return;
+            }
             let existing = ctx.session.read().file_name().map(|s| s.to_string());
             let profile = ctx.session.read().profile().clone();
             let outcome = file_dialog::save_markdown(
@@ -188,59 +194,67 @@ pub(crate) fn handle_confirm_delete(choice: ConfirmDeleteChoice, mut ctx: AppCtx
     }
 }
 
-/// Handle the user's response to the split-section dialog.
-pub(crate) fn handle_split_choice(choice: SplitChoice, mut ctx: AppCtx) {
+/// Handle the user's response to a Document Map title dialog.
+pub(crate) fn handle_section_title_choice(
+    action: SectionTitleAction,
+    choice: SectionTitleChoice,
+    mut ctx: AppCtx,
+) {
     ctx.modal.set(Modal::None);
-    if let SplitChoice::Confirm(title) = choice {
-        // Determine whether we have a focused section to split inside, or
-        // whether we are adding a new top-level section from overview mode.
+    if let SectionTitleChoice::Confirm(title) = choice {
         let has_focus = ctx.session.read().current_snapshot().is_some();
 
-        let result = if has_focus {
-            // Compute the child heading level from the focused snapshot.
-            let level = ctx
-                .session
-                .read()
-                .current_snapshot()
-                .and_then(|s| s.level)
-                .map(|l| {
-                    use omriss::HeadingLevel::*;
-                    match l {
-                        H1 => H2,
-                        H2 => H3,
-                        H3 => H4,
-                        H4 => H5,
-                        _ => H6,
-                    }
-                })
-                .unwrap_or(omriss::HeadingLevel::H2);
-            // append_child_to_focused inserts at full_range.end so the new
-            // section always appears after all existing children.
-            ctx.session.write().append_child_to_focused(&title, level)
-        } else {
-            ctx.session.write().add_top_level_section(&title)
+        let result = match action {
+            SectionTitleAction::AddTopLevel => ctx.session.write().add_top_level_section(&title),
+            SectionTitleAction::AddInside => {
+                // Compute the child heading level from the focused snapshot.
+                let level = ctx
+                    .session
+                    .read()
+                    .current_snapshot()
+                    .and_then(|s| s.level)
+                    .map(|l| {
+                        use omriss::HeadingLevel::*;
+                        match l {
+                            H1 => H2,
+                            H2 => H3,
+                            H3 => H4,
+                            H4 => H5,
+                            _ => H6,
+                        }
+                    })
+                    .unwrap_or(omriss::HeadingLevel::H2);
+                // append_child_to_focused inserts at full_range.end so the
+                // new section always appears after all existing children.
+                ctx.session.write().append_child_to_focused(&title, level)
+            }
+            SectionTitleAction::AddAfter => ctx.session.write().add_after_focused(&title),
+            SectionTitleAction::Rename => ctx.session.write().rename_focused(&title),
         };
 
         match result {
             Ok(_) => {
-                // Navigate to the newly created child so it is immediately
-                // visible and editable. For split_focused: last child of
-                // the currently focused section. For add_top_level_section:
-                // last top-level item.
-                let new_child = if has_focus {
-                    ctx.session
-                        .read()
-                        .current_snapshot()
-                        .and_then(|s| s.children.last().map(|c| c.id))
-                } else {
-                    ctx.session
+                let new_focus = match action {
+                    SectionTitleAction::AddTopLevel => ctx
+                        .session
                         .read()
                         .outline_items()
                         .last()
-                        .map(|item| item.id)
+                        .map(|item| item.id),
+                    SectionTitleAction::AddInside if has_focus => ctx
+                        .session
+                        .read()
+                        .current_snapshot()
+                        .and_then(|s| s.children.last().map(|c| c.id)),
+                    SectionTitleAction::AddInside => None,
+                    SectionTitleAction::AddAfter if has_focus => {
+                        ctx.session.read().sibling_info().next_sibling
+                    }
+                    SectionTitleAction::AddAfter => None,
+                    SectionTitleAction::Rename => None,
                 };
-                if let Some(child_id) = new_child {
-                    let _ = ctx.session.write().focus(child_id);
+                if let Some(id) = new_focus {
+                    let _ = ctx.session.write().focus(id);
                 }
                 // Sync draft to the new section's body (empty for a freshly
                 // created section) so the textarea reflects reality.

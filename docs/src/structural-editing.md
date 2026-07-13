@@ -1,30 +1,32 @@
 # Structural Editing
 
 omriss lets you reorganise your document's heading hierarchy without touching
-the body text. The **Arrange** button below the editor actions reveals
-Promote, Demote, Move ↑, Move ↓, Merge Up, and Delete for the focused
-section. **Add section** is always visible at the bottom of the child-sections
-area.
+the body text. Structure actions live in the **Document Map**, not in the
+Writing Area. Use `+ Top` to create a new top-level section. Select a
+section row to use the same creation strip for `+ Inside` and `+ After`, or
+use its `...` actions to rename, move, join, or delete sections.
 
 ---
 
-## Promote and Demote
+## Move Out and Move Inside
 
-**Promote** raises the heading level by one step (for example H3 → H2),
-making the section a higher-level concept in the hierarchy. **Demote** lowers
-it (H2 → H3). Only the heading marker changes; the body text and all child
-sections are untouched.
+**Move out one level** raises the heading level by one step (for example H3
+to H2), making the section a higher-level concept in the hierarchy. **Move
+inside previous section** lowers it (H2 to H3). The selected section's
+subtree moves with it, so child sections remain children of the moved section.
 
 Buttons are disabled when the operation would be invalid:
 
-- You cannot promote an H1 heading (it is already at the top level).
-- You cannot demote an H6 heading.
-- Setext-style headings (`Title\n======`) are not supported; use the raw
-  Markdown view to convert them to ATX headings first.
+- You cannot move an H1 heading farther out; it is already at the top level.
+- You cannot move an H6 heading deeper.
+- Setext-style headings (`Title\n======`) are not supported for these actions;
+  use the plain file text view to inspect them before converting them to ATX
+  headings in an external editor.
 
-> **Child headings are not adjusted.** If you promote a section from H2 to
-> H1, any H3 children become one step further removed in the hierarchy. Use
-> additional promote/demote operations to bring them into alignment.
+When moving a non-last child out one level, omriss places the moved section
+after the parent section's remaining children. This keeps following siblings
+under their original parent instead of accidentally making them children of
+the moved section.
 
 ---
 
@@ -36,22 +38,39 @@ are disabled when the section is already at the top or bottom of its siblings.
 
 ---
 
-## Merge Up
+## Merge Into Previous Section Content
 
-Removes the focused section's heading line and makes its body a continuation
-of the previous sibling's body. The section's children become children of the
-previous sibling.
+**Merge into previous section content** removes the focused section's heading
+marker and keeps its heading text and body text as part of the previous
+sibling's content. The focused section is no longer a section after this
+operation. When safe, its child sections become children of the previous
+sibling.
 
-This operation cannot be undone by clicking Merge Up again — use **Ctrl+Z**
+This action is disabled when the previous sibling already has subsections. In
+that shape, removing the focused heading could make the joined text belong to
+the previous sibling's last child instead of the previous sibling itself.
+
+This operation cannot be undone by merging again — use **Ctrl+Z**
 (Undo) to restore the heading.
 
 ---
 
 ## Add section
 
-Opens a dialog where you enter a title. A new child heading is appended at
-the end of the focused section's body at the next depth level. You can then
-move or redistribute body text by editing normally.
+The Document Map's `+ Top` button opens a dialog where you enter a title. It
+always creates a new top-level section.
+
+After you select a section row, `+ Inside` creates a child heading at the end
+of the selected section at the next depth level. `+ After` creates a sibling
+after the selected section and its child sections. You can then move or
+redistribute body text by editing normally.
+
+---
+
+## Rename
+
+Rename changes only the selected section's heading text. The body text, child
+sections, sibling order, and surrounding file text are preserved.
 
 ---
 

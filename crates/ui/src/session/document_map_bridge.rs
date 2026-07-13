@@ -108,9 +108,16 @@ fn compute_capabilities(outline: &Outline, id: NodeId) -> MapNodeCapabilities {
         }
     };
 
-    // can_join_with_previous: needs a previous sibling
-    let can_join_with_previous = if info.prev_sibling.is_some() {
-        MapCapability::Allowed
+    // can_join_with_previous: needs a previous sibling without children.
+    // Removing a heading after a sibling subtree can make the joined body
+    // parse under the previous sibling's last child instead of the sibling.
+    let can_join_with_previous = if let Some(prev_id) = info.prev_sibling {
+        let prev = outline.node(prev_id).expect("sibling id is valid");
+        if prev.children.is_empty() {
+            MapCapability::Allowed
+        } else {
+            MapCapability::Disabled(CapabilityReason::UnsafePreservation)
+        }
     } else {
         MapCapability::Disabled(CapabilityReason::NoSibling)
     };

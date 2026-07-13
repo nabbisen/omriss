@@ -58,22 +58,6 @@ pub fn StatusBar(
             if !file.is_empty() {
                 span { class: "file", "{file}" }
             }
-            select {
-                class: "statusbar-locale",
-                "aria-label": t(lang, "menu.language"),
-                onchange: move |event| {
-                    if let Some(picked) = Locale::from_tag(&event.value()) {
-                        locale.set(picked);
-                    }
-                },
-                for entry in Locale::ALL {
-                    option {
-                        value: entry.tag(),
-                        selected: *entry == lang,
-                        {entry.native_name()}
-                    }
-                }
-            }
         }
     }
 }

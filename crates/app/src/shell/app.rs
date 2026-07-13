@@ -12,17 +12,17 @@ use omriss_ui::{EditorSession, ViewMode};
 use crate::components::{
     CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
-    SearchPanel, SplitChoice, SplitDialog, StatusBar, Toolbar, UnsavedChoice, UnsavedDialog,
-    WelcomeScreen,
+    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, Toolbar,
+    UnsavedChoice, UnsavedDialog, WelcomeScreen,
 };
 use crate::file::file_dialog;
 use crate::input::keyboard;
 use crate::shell::actions::{
     handle_confirm_delete, handle_ext_modified_choice, handle_load, handle_new_guarded,
-    handle_open_guarded, handle_save, handle_split_choice, handle_unsaved_choice,
+    handle_open_guarded, handle_save, handle_section_title_choice, handle_unsaved_choice,
 };
 use crate::shell::app_ctx::{AppCtx, Modal};
-use crate::shell::dispatch::{dispatch_command, dispatch_palette};
+use crate::shell::dispatch::{dispatch_command, dispatch_palette, open_search_if_available};
 use crate::storage::settings::AppSettings;
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -70,7 +70,11 @@ pub fn App() -> Element {
         use_callback(move |choice: ExtModifiedChoice| handle_ext_modified_choice(choice, ctx));
     let on_confirm_delete_choice =
         use_callback(move |choice: ConfirmDeleteChoice| handle_confirm_delete(choice, ctx));
-    let on_split_choice = use_callback(move |choice: SplitChoice| handle_split_choice(choice, ctx));
+    let on_section_title_choice = use_callback(
+        move |(action, choice): (SectionTitleAction, SectionTitleChoice)| {
+            handle_section_title_choice(action, choice, ctx)
+        },
+    );
 
     let on_keydown = use_callback(move |event: Event<KeyboardData>| {
         let Some(cmd) = keyboard::interpret(&event.data()) else {
@@ -83,8 +87,8 @@ pub fn App() -> Element {
     let on_palette_execute = use_callback(move |id| dispatch_palette(id, ctx, search_open));
 
     // ── structural sentinel intercept (RFC-025) ───────────────────────────────
-    // FocusEditor writes a sentinel into `status` to request a modal; detect
-    // and replace it here on each render pass.
+    // DocumentMapPane writes a sentinel into `status` to request a modal;
+    // detect and replace it here on each render pass.
     {
         let st = status.read().clone();
         if st == "struct.delete.pending" {
@@ -97,10 +101,60 @@ pub fn App() -> Element {
                 modal.set(Modal::ConfirmDelete { title, child_count });
             }
             status.set("status.ready".into());
-        } else if st == "struct.split.pending" {
+        } else if st == "struct.add_top.pending" {
             let mut modal = modal;
             let mut status = status;
-            modal.set(Modal::SplitSection);
+            modal.set(Modal::SectionTitle {
+                action: SectionTitleAction::AddTopLevel,
+                initial_title: String::new(),
+            });
+            status.set("status.ready".into());
+            spawn(async move {
+                let _ = document::eval(
+                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
+                );
+            });
+        } else if matches!(
+            st.as_str(),
+            "struct.add_inside.pending" | "struct.split.pending"
+        ) {
+            let mut modal = modal;
+            let mut status = status;
+            modal.set(Modal::SectionTitle {
+                action: SectionTitleAction::AddInside,
+                initial_title: String::new(),
+            });
+            status.set("status.ready".into());
+            spawn(async move {
+                let _ = document::eval(
+                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
+                );
+            });
+        } else if st == "struct.add_after.pending" {
+            let mut modal = modal;
+            let mut status = status;
+            modal.set(Modal::SectionTitle {
+                action: SectionTitleAction::AddAfter,
+                initial_title: String::new(),
+            });
+            status.set("status.ready".into());
+            spawn(async move {
+                let _ = document::eval(
+                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
+                );
+            });
+        } else if st == "struct.rename.pending" {
+            let mut modal = modal;
+            let mut status = status;
+            let initial_title = session
+                .read()
+                .current_snapshot()
+                .map(|s| s.title)
+                .unwrap_or_default();
+            modal.set(Modal::SectionTitle {
+                action: SectionTitleAction::Rename,
+                initial_title,
+            });
             status.set("status.ready".into());
             // Focus the dialog input after the DOM fully settles.
             // The + button's session.write().focus() triggers DocumentMapPane's
@@ -132,6 +186,10 @@ pub fn App() -> Element {
                 on_open: move |()| do_open_guarded.call(()),
                 on_save: move |()| do_save.call(()),
                 on_save_as: move |()| do_save_as.call(()),
+                search_available: !is_welcome,
+                on_search: move |()| {
+                    open_search_if_available(ctx, search_open);
+                },
             }
 
             if is_welcome {
@@ -152,10 +210,6 @@ pub fn App() -> Element {
                         RawSourceView {
                             session,
                             locale,
-                            on_back: move |()| {
-                                let mut session = session;
-                                session.write().leave_raw();
-                            },
                         }
                     } else {
                         match mode {
@@ -183,6 +237,15 @@ pub fn App() -> Element {
                     on_navigate: move |id| {
                         let mut session = session;
                         let mut draft = draft;
+                        let mut status = status;
+                        let snap = session.read().current_snapshot();
+                        if let Some(s) = snap {
+                            let d = draft.read().clone();
+                            if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
+                                status.set("error.stale_edit".into());
+                                return;
+                            }
+                        }
                         let _ = session.write().focus(id);
                         let body = session.read().current_snapshot()
                             .map(|s| s.body).unwrap_or_default();
@@ -221,10 +284,12 @@ pub fn App() -> Element {
                         on_choice: move |c| on_confirm_delete_choice.call(c),
                     }
                 },
-                Modal::SplitSection => rsx! {
-                    SplitDialog {
+                Modal::SectionTitle { action, ref initial_title } => rsx! {
+                    SectionTitleDialog {
                         locale,
-                        on_choice: move |c| on_split_choice.call(c),
+                        action,
+                        initial_title: initial_title.clone(),
+                        on_choice: move |c| on_section_title_choice.call((action, c)),
                     }
                 },
                 Modal::OpenError { ref cause } => rsx! {

@@ -8,11 +8,11 @@ first.
 
 ## Data Safety Limitations
 
-### Raw Source Editing Is Read-Only
+### Plain File Text Editing Is Read-Only
 
-The Raw Markdown Source view (Ctrl+\`) shows the full document source but
-does not currently support editing. Changes must be made through the Focus
-Editor or an external text editor.
+The plain file text view (Ctrl+\`) shows the full document source but
+does not currently support editing. Changes must be made through the Writing
+Area or an external text editor.
 
 **Why:** Editing raw source requires re-indexing the entire document after
 every commit, and handling the case where heading titles are changed during
@@ -26,17 +26,18 @@ make your changes, then re-open the file in omriss.
 
 ## Heading Style Limitations
 
-### Setext Headings Cannot Be Promoted or Demoted
+### Setext Headings Cannot Be Moved In or Out
 
 Setext headings (underlined with `===` or `---`) are displayed correctly in
-the outline but cannot be promoted or demoted using the structural toolbar.
+the Document Map but cannot be moved in or out using structure actions.
 
 **Why:** ATX headings use a simple prefix change (`##` → `#`); Setext
 headings require replacing the underline character on a different line, which
 creates a more complex source range replacement.
 
-**Workaround:** Use the Raw Source view to manually convert the Setext heading
-to an ATX heading, then use promote/demote normally.
+**Workaround:** Use the plain file text view to inspect the heading, then
+convert it to an ATX heading in an external editor before using the structure
+actions normally.
 
 ---
 
@@ -51,8 +52,8 @@ rather than back to the specific heading card that was zoomed into.
 requires JavaScript `element.focus()` calls that are not yet implemented in
 this release.
 
-**Workaround:** Press Tab to move focus into the outline panel, then use
-arrow keys to navigate.
+**Workaround:** Press Tab to move focus into the Document Map, then use arrow
+keys to navigate.
 
 ---
 
@@ -96,7 +97,7 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
 
 - Markdown source is **never silently modified** by omriss. If you open a
   file, navigate around, and close without saving, the file is unchanged.
-- All structural operations (promote, demote, move, split, delete, merge)
+- All structural operations (move in/out, move up/down, add, delete, join)
   are **undoable** via Ctrl+Z.
 - Saved files are **standard UTF-8 Markdown**. They open correctly in any
   text editor, with no omriss-specific metadata.

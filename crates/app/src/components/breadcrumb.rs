@@ -10,6 +10,7 @@ pub fn Breadcrumb(
     session: Signal<EditorSession>,
     locale: Signal<Locale>,
     draft: Signal<String>,
+    status: Signal<String>,
 ) -> Element {
     let lang = *locale.read();
     let Some(snapshot) = session.read().current_snapshot() else {
@@ -68,9 +69,13 @@ pub fn Breadcrumb(
                                         let snap = session.read().current_snapshot();
                                         if let Some(snapshot) = snap {
                                             let d = draft.read().clone();
-                                            if d != snapshot.body {
-                                                let _ = session.write()
-                                                    .commit_focused_body(&snapshot, d);
+                                            if d != snapshot.body
+                                                && session.write()
+                                                    .commit_focused_body(&snapshot, d)
+                                                    .is_err()
+                                            {
+                                                status.set("error.stale_edit".into());
+                                                return;
                                             }
                                         }
                                         if item.level.is_none() {
@@ -101,8 +106,9 @@ pub fn Breadcrumb(
                     let snap = session.read().current_snapshot();
                     if let Some(s) = snap {
                         let d = draft.read().clone();
-                        if d != s.body {
-                            let _ = session.write().commit_focused_body(&s, d);
+                        if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
+                            status.set("error.stale_edit".into());
+                            return;
                         }
                     }
                     session.write().zoom_out();

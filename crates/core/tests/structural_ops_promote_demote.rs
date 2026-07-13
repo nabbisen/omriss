@@ -56,9 +56,12 @@ fn promote_preserves_unrelated_bytes() {
     let target = node_ids(&d)[2];
     let old = d.source().to_string();
     d.promote_section(target, d.revision()).unwrap();
-    let new = d.source();
-    assert!(new.ends_with("## Sibling\nkeep\n"), "suffix: {:?}", new);
-    assert_ne!(new, old);
+    assert_eq!(
+        d.source(),
+        "# Root\n\n## Sibling\nkeep\n# Target\nbody\n\n",
+        "moving out a non-last child must not absorb following siblings"
+    );
+    assert_ne!(d.source(), old);
 }
 
 #[test]
@@ -69,4 +72,87 @@ fn promote_undo_round_trip() {
     d.promote_section(b, d.revision()).unwrap();
     d.undo().unwrap();
     assert_eq!(d.source(), src);
+}
+
+#[test]
+fn promote_non_last_child_preserves_following_sibling_under_parent() {
+    let src = "# One\n\n## One One\nbody\n\n## One Two\nkeep\n\n# Two\n";
+    let mut d = doc(src);
+    let one_one = node_ids(&d)[2];
+
+    d.promote_section(one_one, d.revision()).unwrap();
+
+    assert_eq!(
+        d.source(),
+        "# One\n\n## One Two\nkeep\n\n# One One\nbody\n\n# Two\n"
+    );
+    let root_titles: Vec<&str> = d
+        .outline()
+        .children(d.outline().root_id())
+        .unwrap()
+        .into_iter()
+        .map(|node| node.title.as_str())
+        .collect();
+    assert_eq!(root_titles, vec!["One", "One One", "Two"]);
+    let one = d.outline().root().children[0];
+    let one_children: Vec<&str> = d
+        .outline()
+        .children(one)
+        .unwrap()
+        .into_iter()
+        .map(|node| node.title.as_str())
+        .collect();
+    assert_eq!(one_children, vec!["One Two"]);
+}
+
+#[test]
+fn promote_shifts_descendants_to_preserve_subtree() {
+    let src = "# One\n\n## One One\nbody\n\n### Child\nchild\n\n# Two\n";
+    let mut d = doc(src);
+    let one_one = node_ids(&d)[2];
+
+    d.promote_section(one_one, d.revision()).unwrap();
+
+    assert_eq!(
+        d.source(),
+        "# One\n\n# One One\nbody\n\n## Child\nchild\n\n# Two\n"
+    );
+    let promoted = d.outline().root().children[1];
+    let child_titles: Vec<&str> = d
+        .outline()
+        .children(promoted)
+        .unwrap()
+        .into_iter()
+        .map(|node| node.title.as_str())
+        .collect();
+    assert_eq!(child_titles, vec!["Child"]);
+}
+
+#[test]
+fn demote_shifts_descendants_to_preserve_subtree() {
+    let src = "# One\n\n# Two\nbody\n\n## Child\nchild\n";
+    let mut d = doc(src);
+    let two = d.outline().root().children[1];
+
+    d.demote_section(two, d.revision()).unwrap();
+
+    assert_eq!(d.source(), "# One\n\n## Two\nbody\n\n### Child\nchild\n");
+    let one = d.outline().root().children[0];
+    let one_children: Vec<&str> = d
+        .outline()
+        .children(one)
+        .unwrap()
+        .into_iter()
+        .map(|node| node.title.as_str())
+        .collect();
+    assert_eq!(one_children, vec!["Two"]);
+    let demoted = d.outline().children(one).unwrap()[0].id;
+    let child_titles: Vec<&str> = d
+        .outline()
+        .children(demoted)
+        .unwrap()
+        .into_iter()
+        .map(|node| node.title.as_str())
+        .collect();
+    assert_eq!(child_titles, vec!["Child"]);
 }

@@ -1,4 +1,4 @@
-use omriss::EditError;
+use omriss::{EditError, StructuralEditError};
 
 use crate::editor::view_state::ViewMode;
 use crate::session::EditorSession;
@@ -301,4 +301,96 @@ fn add_top_level_section_twice_preserves_order() {
         vec!["One", "Two", "Alpha", "Beta"],
         "Alpha then Beta must appear in addition order, got: {titles:?}"
     );
+}
+
+#[test]
+fn add_after_focused_adds_sibling_after_subtree() {
+    let mut session = session();
+    let one = id_of(&session, "One");
+    session.focus(one).unwrap();
+    session.add_after_focused("Between").unwrap();
+
+    let items = session.outline_items();
+    let titles: Vec<&str> = items.iter().map(|i| i.title.as_str()).collect();
+    assert_eq!(titles, vec!["One", "Between", "Two"]);
+}
+
+#[test]
+fn rename_focused_preserves_body_and_children() {
+    let mut session = session();
+    let one = id_of(&session, "One");
+    session.focus(one).unwrap();
+    session.rename_focused("Renamed").unwrap();
+
+    let snap = session.current_snapshot().unwrap();
+    assert_eq!(snap.title, "Renamed");
+    assert_eq!(snap.body, "\nBody one.\n\n");
+    assert_eq!(snap.children.len(), 1);
+    assert!(session.source().contains("# Renamed\n\nBody one."));
+    assert!(session.source().contains("## Child\n\nChild body."));
+}
+
+#[test]
+fn committing_new_child_body_preserves_following_top_level_sibling() {
+    let mut session =
+        EditorSession::open("# One\n\n# Two\n\nBody two.\n".to_string(), None).unwrap();
+    let one = id_of(&session, "One");
+    session.focus(one).unwrap();
+    session
+        .append_child_to_focused("One One", omriss::HeadingLevel::H2)
+        .unwrap();
+
+    let child = session.current_snapshot().unwrap().children[0].id;
+    let child_snapshot = session.focus(child).unwrap();
+    session
+        .commit_focused_body(&child_snapshot, "Child body".to_string())
+        .unwrap();
+
+    let titles: Vec<String> = session
+        .outline_items()
+        .into_iter()
+        .map(|item| item.title)
+        .collect();
+    assert_eq!(titles, vec!["One", "Two"]);
+    let one_snapshot = session.focus(one).unwrap();
+    assert_eq!(one_snapshot.children[0].title, "One One");
+    assert!(
+        session.source().contains("Child body\n# Two"),
+        "following top-level heading must stay on its own line:\n{}",
+        session.source()
+    );
+}
+
+#[test]
+fn committing_last_section_body_without_trailing_newline_remains_verbatim() {
+    let mut session = EditorSession::open(
+        "# One\n\nBody one.\n\n# Two\n\nBody two.\n".to_string(),
+        None,
+    )
+    .unwrap();
+    let two = id_of(&session, "Two");
+    let two_snapshot = session.focus(two).unwrap();
+    session
+        .commit_focused_body(&two_snapshot, "Tail body".to_string())
+        .unwrap();
+
+    assert!(
+        session.source().ends_with("# Two\nTail body"),
+        "last section should not gain a synthetic trailing newline:\n{}",
+        session.source()
+    );
+}
+
+#[test]
+fn focused_structural_actions_report_missing_focus() {
+    let mut session = session();
+
+    assert!(matches!(
+        session.add_after_focused("After").unwrap_err(),
+        StructuralEditError::NoFocusedSection
+    ));
+    assert!(matches!(
+        session.rename_focused("Renamed").unwrap_err(),
+        StructuralEditError::NoFocusedSection
+    ));
 }

@@ -9,7 +9,7 @@
 //! - save status feedback;
 //! - read-only child section navigation links (navigation only, no structure controls).
 //!
-//! **Structure controls (promote, demote, move, merge, delete, add section)
+//! **Structure controls (move in/out, move up/down, join, delete, add section)
 //! are NOT here.** They live in `DocumentMapPane`. Any structural operation
 //! triggered here (e.g. from keyboard shortcuts) is routed through the session
 //! by the parent `App`, not this component.
@@ -67,7 +67,7 @@ pub fn FocusedContentPane(
             class: "focused-content-pane",
             "aria-label": t(lang, "focused_content.title"),
 
-            Breadcrumb { session, locale, draft }
+            Breadcrumb { session, locale, draft, status }
 
             // ── Section title ─────────────────────────────────────────────
             h1 {
@@ -123,8 +123,11 @@ pub fn FocusedContentPane(
                                 let snap = session.read().current_snapshot();
                                 if let Some(s) = snap {
                                     let d = draft.read().clone();
-                                    if d != s.body {
-                                        let _ = session.write().commit_focused_body(&s, d);
+                                    if d != s.body
+                                        && session.write().commit_focused_body(&s, d).is_err()
+                                    {
+                                        status.clone().set("error.stale_edit".into());
+                                        return;
                                     }
                                 }
                             }
@@ -163,8 +166,11 @@ pub fn FocusedContentPane(
                                 let snap = session.read().current_snapshot();
                                 if let Some(s) = snap {
                                     let d = draft.read().clone();
-                                    if d != s.body {
-                                        let _ = session.write().commit_focused_body(&s, d);
+                                    if d != s.body
+                                        && session.write().commit_focused_body(&s, d).is_err()
+                                    {
+                                        status.clone().set("error.stale_edit".into());
+                                        return;
                                     }
                                 }
                                 let _ = session.write().focus(child.id);

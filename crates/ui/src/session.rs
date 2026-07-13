@@ -219,7 +219,7 @@ impl EditorSession {
     /// - In overview mode: the top-level items (same as [`outline_items`]).
     /// - In focus mode: the immediate children of the focused section.
     ///
-    /// Used to populate the left outline pane and the card list for keyboard
+    /// Used to populate the Document Map and the card list for keyboard
     /// selection (RFC-011, RFC-014).
     pub fn current_children(&self) -> Vec<OutlineItem> {
         match self.view.focused() {
@@ -290,6 +290,7 @@ impl EditorSession {
         base: &FocusSnapshot,
         new_body: String,
     ) -> Result<EditResult, EditError> {
+        let new_body = self.body_for_focused_editor_commit(base, new_body)?;
         let result = self.document.replace_section_body(ReplaceSectionBody {
             node_id: base.node_id,
             base_revision: base.revision,
@@ -297,6 +298,25 @@ impl EditorSession {
         })?;
         self.prune_dead_history();
         Ok(result)
+    }
+
+    fn body_for_focused_editor_commit(
+        &self,
+        base: &FocusSnapshot,
+        mut new_body: String,
+    ) -> Result<String, EditError> {
+        let node = self
+            .document
+            .outline()
+            .node(base.node_id)
+            .ok_or(EditError::StaleNode(base.node_id))?;
+        if !new_body.is_empty()
+            && !new_body.ends_with('\n')
+            && node.body_range.end < self.document.source().len()
+        {
+            new_body.push('\n');
+        }
+        Ok(new_body)
     }
 
     /// Undoes the most recent edit (RFC-044) and prunes dead focus targets.

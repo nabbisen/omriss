@@ -1,33 +1,64 @@
-//! Split-section dialog: the user enters a title for the new child section
-//! to be appended at the end of the focused body (RFC-025).
+//! Section-title dialog for Document Map structure actions (RFC-049).
 
 use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SplitChoice {
-    /// Insert the new heading with the given title.
+pub enum SectionTitleChoice {
     Confirm(String),
     Cancel,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SectionTitleAction {
+    AddTopLevel,
+    AddInside,
+    AddAfter,
+    Rename,
+}
+
+impl SectionTitleAction {
+    fn title_key(self) -> &'static str {
+        match self {
+            Self::AddTopLevel => "dialog.section_title.add_top_level.title",
+            Self::AddInside => "dialog.section_title.add_inside.title",
+            Self::AddAfter => "dialog.section_title.add_after.title",
+            Self::Rename => "dialog.section_title.rename.title",
+        }
+    }
+
+    fn confirm_key(self) -> &'static str {
+        match self {
+            Self::AddTopLevel | Self::AddInside | Self::AddAfter => {
+                "dialog.section_title.add.confirm"
+            }
+            Self::Rename => "dialog.section_title.rename.confirm",
+        }
+    }
+}
+
 #[component]
-pub fn SplitDialog(locale: Signal<Locale>, on_choice: EventHandler<SplitChoice>) -> Element {
+pub fn SectionTitleDialog(
+    locale: Signal<Locale>,
+    action: SectionTitleAction,
+    initial_title: String,
+    on_choice: EventHandler<SectionTitleChoice>,
+) -> Element {
     let lang = *locale.read();
-    let mut title = use_signal(String::new);
+    let mut title = use_signal(move || initial_title);
 
     rsx! {
         div {
             class: "modal-overlay",
             role: "dialog",
             "aria-modal": "true",
-            "aria-labelledby": "split-title-label",
+            "aria-labelledby": "section-title-label",
             div { class: "modal",
-                h2 { id: "split-title-label", {t(lang, "dialog.split.title")} }
+                h2 { id: "section-title-label", {t(lang, action.title_key())} }
                 input {
                     class: "search-input split-dialog-input",
                     r#type: "text",
-                    placeholder: t(lang, "dialog.split.placeholder"),
+                    placeholder: t(lang, "dialog.section_title.placeholder"),
                     value: "{title}",
                     oninput: move |evt| title.set(evt.value()),
                     onkeydown: move |evt| {
@@ -35,9 +66,9 @@ pub fn SplitDialog(locale: Signal<Locale>, on_choice: EventHandler<SplitChoice>)
                         match evt.data().code() {
                             Code::Enter if !title.read().trim().is_empty() => {
                                 let t = title.read().trim().to_string();
-                                on_choice.call(SplitChoice::Confirm(t));
+                                on_choice.call(SectionTitleChoice::Confirm(t));
                             }
-                            Code::Escape => on_choice.call(SplitChoice::Cancel),
+                            Code::Escape => on_choice.call(SectionTitleChoice::Cancel),
                             _ => {}
                         }
                     },
@@ -50,15 +81,15 @@ pub fn SplitDialog(locale: Signal<Locale>, on_choice: EventHandler<SplitChoice>)
                             move |_| {
                                 let t = title.read().trim().to_string();
                                 if !t.is_empty() {
-                                    on_choice.call(SplitChoice::Confirm(t));
+                                    on_choice.call(SectionTitleChoice::Confirm(t));
                                 }
                             }
                         },
-                        {t(lang, "dialog.split.confirm")}
+                        {t(lang, action.confirm_key())}
                     }
                     button {
-                        onclick: move |_| on_choice.call(SplitChoice::Cancel),
-                        {t(lang, "dialog.split.cancel")}
+                        onclick: move |_| on_choice.call(SectionTitleChoice::Cancel),
+                        {t(lang, "dialog.section_title.cancel")}
                     }
                 }
             }
