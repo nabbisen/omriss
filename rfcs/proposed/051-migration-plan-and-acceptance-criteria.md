@@ -263,9 +263,11 @@ but it must not silently ship Proposed RFC behavior as accepted design.
 8. Open raw source view and return to editor.
 9. Close with unsaved changes and cancel.
 10. Confirm no visible structural controls exist in Writing Area.
-11. Have at least one non-technical Markdown user complete open, select,
-    write, organize, save, and undo scenarios without coaching, and record
-    whether the left/right role split is understandable.
+11. Confirm the role-split smoke check: normal UI labels make the left/right
+    responsibilities visible (`Document Map`, `Writing Area`, `Quick Actions`,
+    and `Show plain file text`). Full non-technical-user walkthrough validation
+    is deferred to RFC-061 and must not be marked passed by this M10 smoke
+    check.
 
 ## 9. Documentation updates
 
@@ -285,13 +287,17 @@ The migration is release-ready when:
 
 - all existing source-preservation tests pass;
 - all migrated UI workflows pass manual QA;
-- non-technical-user manual QA for the left/right role split is recorded;
+- role-split smoke checks are recorded;
 - no structural controls are visible in the Writing Area;
 - Document Map supports the required Markdown structural operations;
 - keyboard navigation works for the primary workflow;
 - user-facing labels pass the plain-language audit;
 - future format readiness checklist passes without implementing new formats;
-- no new critical or high-severity accessibility issue is open;
+- no known new critical or high-severity accessibility issue is open;
+- full accessibility/screen-reader validation remains tracked by RFC-060 and
+  is not claimed as complete by M10;
+- full non-technical-user walkthrough validation remains tracked by RFC-061 and
+  is not claimed as complete by M10;
 - the rollback/release-gating decision in §7 is followed;
 - all nine RFC-048–056 developer handoffs are regenerated or patched to RFC-053 canonical names and current `NNN-slug.md` filenames **before the first RFC-048 implementation PR opens**.
 
@@ -321,12 +327,16 @@ These must be treated as dependent follow-up work, not as part of the UI split m
 [ ] Ctrl+S applies valid pending draft before save.
 [ ] Current item remains highlighted in Document Map.
 [ ] Keyboard-only workflow succeeds.
-[ ] Screen-reader labels are plain and useful.
+[ ] Role labels are visible and plain (`Document Map`, `Writing Area`,
+    `Quick Actions`, and `Show plain file text`).
 [ ] Markdown byte preservation tests pass.
 [ ] Internal UI boundary is format-neutral enough for RFC-052+.
 [ ] RFC-053 type core is accepted or explicitly pulled forward for M10.
 [ ] Rollback/release-gating decision is recorded and followed.
-[ ] Non-technical-user manual QA is recorded.
+[ ] Full accessibility/screen-reader validation is deferred to RFC-060 and not
+    marked passed by M10.
+[ ] Full non-technical-user walkthrough validation is deferred to RFC-061 and
+    not marked passed by M10.
 [ ] RFC-048–056 developer handoffs are regenerated or patched before the first RFC-048 implementation PR.
 ```
 
