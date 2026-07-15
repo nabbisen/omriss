@@ -14,7 +14,7 @@ default-members = [
 ]
 
 [workspace.package]
-version = "0.15.6"
+version = "0.16.0"
 edition                 = "2024"
 rust-version            = "1.88"
 license                 = "Apache-2.0"
@@ -22,8 +22,8 @@ authors                 = ["nabbisen"]
 repository              = "https://github.com/nabbisen/omriss"
 
 [workspace.dependencies]
-omriss              = { version = "0.15", path = "crates/core" }
-omriss-ui           = { version = "0.15", path = "crates/ui" }
+omriss              = { version = "0", path = "crates/core" }
+omriss-ui           = { version = "0", path = "crates/ui" }
 
 # UI
 dioxus              = { version = "0.7", features = ["desktop"] }

@@ -6,6 +6,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-07-15
+
 ### Changed
 
 - **RFC-048 user-facing wording pass** — README, mdBook user pages, architecture
