@@ -79,11 +79,12 @@ policy in [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 059 | [Keyboard Focus Follow-Up Controls](./proposed/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
 | 060 | [Accessibility and Screen-Reader Validation Plan](./proposed/060-accessibility-screen-reader-validation-plan.md) | M15 |
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
+| 062 | [Crate Package Name Exchange](./proposed/062-crate-package-name-exchange.md) | Post-0.16 cleanup |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **062**.
+Next free RFC number: **063**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.

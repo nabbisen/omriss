@@ -12,7 +12,8 @@ requires platform WebView libraries to build — see `PLATFORMS.md`). The
 outline/tree UI uses `dioxus-swdir-tree`.
 
 Current proposed roadmap work is tracked in [`rfcs/README.md`](rfcs/README.md).
-At this snapshot, RFC-048 through RFC-061 are proposed for M10–M15:
+At this snapshot, RFC-048 through RFC-062 are proposed for M10–M15 and
+post-0.16 cleanup:
 
 - M10: RFC-048 through RFC-051, UI role separation.
 - M10 follow-up: RFC-059, keyboard focus and pending-draft UX hardening.
@@ -22,6 +23,7 @@ At this snapshot, RFC-048 through RFC-061 are proposed for M10–M15:
 - M14: RFC-058, placement-complete Document Map creation controls.
 - M15: RFC-060 and RFC-061, accessibility/screen-reader and non-technical-user
   validation.
+- Post-0.16 cleanup: RFC-062, crate package name exchange.
 
 The RFC index is authoritative for exact titles, lifecycle state, and next free
 RFC number.
