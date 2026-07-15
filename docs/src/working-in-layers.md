@@ -27,9 +27,10 @@ dropped automatically and the view falls back to the Document Map.
 
 ## Searching
 
-Press **Ctrl+F** to open the search panel. Search runs case-insensitively
-across either the focused section body or the whole document. Selecting a
-result navigates directly to the matching section.
+Click **Search** in the header, or press **Ctrl+F**, to open the search panel.
+Search runs case-insensitively across either the focused section body or the
+whole document. Selecting a result applies any valid pending draft first, then
+navigates directly to the matching section.
 
 ## Preview
 

@@ -31,6 +31,7 @@ pub fn UnsavedDialog(locale: Signal<Locale>, on_choice: EventHandler<UnsavedChoi
             role: "dialog",
             "aria-modal": "true",
             "aria-labelledby": "unsaved-title",
+            tabindex: "-1",
             div { class: "modal",
                 h2 { id: "unsaved-title", {t(lang, "dialog.unsaved.title")} }
                 p { {t(lang, "dialog.unsaved.body")} }

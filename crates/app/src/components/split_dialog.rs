@@ -53,6 +53,7 @@ pub fn SectionTitleDialog(
             role: "dialog",
             "aria-modal": "true",
             "aria-labelledby": "section-title-label",
+            tabindex: "-1",
             div { class: "modal",
                 h2 { id: "section-title-label", {t(lang, action.title_key())} }
                 input {

@@ -18,6 +18,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
   and M10-bundle relationships, the wireframe uses the Markdown-facing
   `Writing Area` label, and the raw-source action consistently reads
   `Show plain file text`.
+- **Header Search and Settings** — Search is now pointer-discoverable in the
+  header, Settings contains the language selector, and the file path is shown
+  in the footer only.
 
 ### Fixed
 
@@ -27,6 +30,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
   or document state.
 - **Document Map action coverage** — row actions now include Add section after
   and Rename, backed by source-preserving section operations and undo history.
+
+### Known Limitations
+
+- **Quick Actions reverse Tab traversal deferred** — Quick Actions supports
+  search, arrow-key command selection, Enter execution, and Escape/Ctrl+P
+  dismissal, but Shift+Tab focus traversal inside the panel remains a known
+  keyboard limitation tracked under RFC-059.
 
 ### Removed
 

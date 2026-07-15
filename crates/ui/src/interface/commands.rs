@@ -71,6 +71,11 @@ pub static COMMANDS: &[CommandSpec] = &[
         shortcut: Some("Ctrl+`"),
     },
     CommandSpec {
+        id: "view.preview",
+        title_key: "editor.preview",
+        shortcut: Some("Ctrl+Shift+P"),
+    },
+    CommandSpec {
         id: "search.open",
         title_key: "search.title",
         shortcut: Some("Ctrl+F"),

@@ -57,6 +57,78 @@ fn sync_draft(session: &Signal<EditorSession>, draft: &mut Signal<String>) {
     draft.set(body);
 }
 
+fn row_menu_focus_first_script(row_id: u64) -> String {
+    format!(
+        r#"
+requestAnimationFrame(() => requestAnimationFrame(() => {{
+  const root = document.querySelector('.row-menu[role="menu"][data-row-menu-id="{row_id}"]');
+  if (!root) return;
+  const items = Array.from(root.querySelectorAll('.row-menu-item:not([disabled])'));
+  (items[0] || root).focus();
+}}))
+"#
+    )
+}
+
+const ROW_MENU_FOCUS_NEXT: &str = r#"
+(() => {
+  const root = document.querySelector('.row-menu[role="menu"]');
+  if (!root) return;
+  const items = Array.from(root.querySelectorAll('.row-menu-item:not([disabled])'));
+  if (!items.length) {
+    root.focus();
+    return;
+  }
+  const index = items.indexOf(document.activeElement);
+  items[index < 0 ? 0 : (index + 1) % items.length].focus();
+})()
+"#;
+
+const ROW_MENU_FOCUS_PREVIOUS: &str = r#"
+(() => {
+  const root = document.querySelector('.row-menu[role="menu"]');
+  if (!root) return;
+  const items = Array.from(root.querySelectorAll('.row-menu-item:not([disabled])'));
+  if (!items.length) {
+    root.focus();
+    return;
+  }
+  const index = items.indexOf(document.activeElement);
+  items[index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length].focus();
+})()
+"#;
+
+const ROW_MENU_FOCUS_FIRST_ITEM: &str = r#"
+(() => {
+  const root = document.querySelector('.row-menu[role="menu"]');
+  if (!root) return;
+  const items = Array.from(root.querySelectorAll('.row-menu-item:not([disabled])'));
+  (items[0] || root).focus();
+})()
+"#;
+
+const ROW_MENU_FOCUS_LAST_ITEM: &str = r#"
+(() => {
+  const root = document.querySelector('.row-menu[role="menu"]');
+  if (!root) return;
+  const items = Array.from(root.querySelectorAll('.row-menu-item:not([disabled])'));
+  (items[items.length - 1] || root).focus();
+})()
+"#;
+
+fn focus_open_row_menu(row_id: u64) {
+    let script = row_menu_focus_first_script(row_id);
+    spawn(async move {
+        let _ = document::eval(&script);
+    });
+}
+
+fn move_open_row_menu_focus(script: &'static str) {
+    spawn(async move {
+        let _ = document::eval(script);
+    });
+}
+
 // ── component ─────────────────────────────────────────────────────────────────
 
 #[component]
@@ -230,7 +302,11 @@ pub fn DocumentMapPane(
                             shift: evt.modifiers().shift(),
                             ctrl: evt.modifiers().ctrl(),
                         };
-                        if let Some(ev) = item_tree.read().handle_key(tree_key, mods) {
+                        let event = {
+                            let tree = item_tree.read();
+                            tree.handle_key(tree_key, mods)
+                        };
+                        if let Some(ev) = event {
                             evt.prevent_default();
                             on_event(ev);
                         }
@@ -300,6 +376,8 @@ pub fn DocumentMapPane(
                                     class: "row-menu-btn",
                                     title: t(lang, "document_map.actions"),
                                     "aria-label": t(lang, "document_map.actions"),
+                                    "aria-haspopup": "menu",
+                                    "aria-expanded": if *menu_open_for.read() == Some(raw_id) { "true" } else { "false" },
                                     onmousedown: move |ev| ev.prevent_default(),
                                     onclick: move |ev| {
                                         ev.stop_propagation();
@@ -330,6 +408,45 @@ pub fn DocumentMapPane(
                                             map_root_sig.set(Some(fresh_root));
                                             menu_node_sig.set(Some(menu_node));
                                             menu_open_for.set(Some(raw_id));
+                                            focus_open_row_menu(raw_id);
+                                        }
+                                    },
+                                    onkeydown: move |ev| {
+                                        let activates_menu = matches!(ev.key(), Key::Enter)
+                                            || matches!(ev.key(), Key::Character(ref ch) if ch == " ");
+                                        if !activates_menu {
+                                            return;
+                                        }
+                                        ev.stop_propagation();
+                                        ev.prevent_default();
+                                        let cur = *menu_open_for.read();
+                                        if cur == Some(raw_id) {
+                                            menu_open_for.set(None);
+                                            menu_node_sig.set(None);
+                                            return;
+                                        }
+                                        menu_open_for.set(None);
+                                        menu_node_sig.set(None);
+                                        if !commit_draft_if_dirty(
+                                            &mut session.clone(),
+                                            &mut draft.clone(),
+                                            &mut status.clone(),
+                                        ) {
+                                            return;
+                                        }
+                                        let _ = session.write().focus(node_id);
+                                        sync_draft(&session, &mut draft.clone());
+                                        item_tree
+                                            .write()
+                                            .on_selected(SwNodeId(raw_id), SelectionMode::Replace);
+                                        let fresh_root = session.read().document_map_nodes();
+                                        if let Some(menu_node) =
+                                            find_node(&fresh_root, raw_id).cloned()
+                                        {
+                                            map_root_sig.set(Some(fresh_root));
+                                            menu_node_sig.set(Some(menu_node));
+                                            menu_open_for.set(Some(raw_id));
+                                            focus_open_row_menu(raw_id);
                                         }
                                     },
                                     "⋯"
@@ -471,12 +588,46 @@ fn NodeRowMenu(
     let caps = node.capabilities.clone();
     let node_id = node_id_from_raw(node.id);
 
+    use_effect(move || {
+        focus_open_row_menu(node.id);
+    });
+
     rsx! {
         div {
             class: "row-menu",
             role: "menu",
             "aria-label": t(lang, "document_map.actions"),
+            "data-row-menu-id": "{node.id}",
+            tabindex: "-1",
             onclick: move |ev| ev.stop_propagation(),
+            onkeydown: move |ev| {
+                let activates_item = matches!(ev.key(), Key::Enter)
+                    || matches!(ev.key(), Key::Character(ref ch) if ch == " ");
+                if activates_item {
+                    ev.stop_propagation();
+                    return;
+                }
+                let focus_script = match ev.key() {
+                    Key::Tab if ev.modifiers().shift() => Some(ROW_MENU_FOCUS_PREVIOUS),
+                    Key::Tab => Some(ROW_MENU_FOCUS_NEXT),
+                    Key::ArrowDown => Some(ROW_MENU_FOCUS_NEXT),
+                    Key::ArrowUp => Some(ROW_MENU_FOCUS_PREVIOUS),
+                    Key::Home => Some(ROW_MENU_FOCUS_FIRST_ITEM),
+                    Key::End => Some(ROW_MENU_FOCUS_LAST_ITEM),
+                    Key::Escape => {
+                        ev.stop_propagation();
+                        ev.prevent_default();
+                        menu_open_for.set(None);
+                        return;
+                    }
+                    _ => None,
+                };
+                if let Some(script) = focus_script {
+                    ev.stop_propagation();
+                    ev.prevent_default();
+                    move_open_row_menu_focus(script);
+                }
+            },
 
             if !caps.can_move_up.is_hidden() {
                 button {

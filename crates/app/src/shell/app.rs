@@ -13,7 +13,8 @@ use crate::components::{
     CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
     SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, Toolbar,
-    UnsavedChoice, UnsavedDialog, WelcomeScreen,
+    UnsavedChoice, UnsavedDialog, WelcomeScreen, focus_active_modal, focus_active_palette,
+    trap_modal_tab,
 };
 use crate::file::file_dialog;
 use crate::input::keyboard;
@@ -77,6 +78,64 @@ pub fn App() -> Element {
     );
 
     let on_keydown = use_callback(move |event: Event<KeyboardData>| {
+        let active_modal = modal.read().clone();
+        if !matches!(active_modal, Modal::None) {
+            if trap_modal_tab(&event) {
+                return;
+            }
+            if matches!(event.key(), Key::Escape) {
+                event.stop_propagation();
+                event.prevent_default();
+                match active_modal {
+                    Modal::UnsavedBeforeOpen | Modal::UnsavedBeforeNew => {
+                        on_unsaved_choice.call(UnsavedChoice::Cancel);
+                    }
+                    Modal::ExternalModified => {
+                        on_ext_modified_choice.call(ExtModifiedChoice::Cancel);
+                    }
+                    Modal::ConfirmDelete { .. } => {
+                        on_confirm_delete_choice.call(ConfirmDeleteChoice::Cancel);
+                    }
+                    Modal::SectionTitle { action, .. } => {
+                        on_section_title_choice.call((action, SectionTitleChoice::Cancel));
+                    }
+                    Modal::OpenError { .. } => {
+                        let mut modal = modal;
+                        modal.set(Modal::None);
+                    }
+                    Modal::None => {}
+                }
+            }
+            return;
+        }
+
+        if *palette_open.read() {
+            if matches!(
+                keyboard::interpret(&event.data()),
+                Some(keyboard::AppCommand::OpenPalette)
+            ) {
+                event.stop_propagation();
+                event.prevent_default();
+                let mut po = palette_open;
+                po.set(false);
+                return;
+            }
+            if matches!(event.key(), Key::Escape) {
+                event.stop_propagation();
+                event.prevent_default();
+                let mut po = palette_open;
+                po.set(false);
+                return;
+            }
+            if !matches!(
+                event.key(),
+                Key::ArrowDown | Key::ArrowUp | Key::Home | Key::End | Key::Enter | Key::Tab
+            ) {
+                focus_active_palette();
+            }
+            return;
+        }
+
         let Some(cmd) = keyboard::interpret(&event.data()) else {
             return;
         };
@@ -84,7 +143,14 @@ pub fn App() -> Element {
         dispatch_command(cmd, mode, ctx, search_open, palette_open, preview_open);
     });
 
-    let on_palette_execute = use_callback(move |id| dispatch_palette(id, ctx, search_open));
+    let on_palette_execute =
+        use_callback(move |id| dispatch_palette(id, ctx, search_open, preview_open));
+
+    use_effect(move || {
+        if !matches!(*modal.read(), Modal::None) {
+            focus_active_modal();
+        }
+    });
 
     // ── structural sentinel intercept (RFC-025) ───────────────────────────────
     // DocumentMapPane writes a sentinel into `status` to request a modal;

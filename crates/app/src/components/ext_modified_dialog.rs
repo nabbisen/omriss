@@ -30,6 +30,7 @@ pub fn ExtModifiedDialog(
             role: "dialog",
             "aria-modal": "true",
             "aria-labelledby": "extmod-title",
+            tabindex: "-1",
             div { class: "modal",
                 h2 { id: "extmod-title", {t(lang, "dialog.ext_modified.title")} }
                 p { {t(lang, "dialog.ext_modified.body")} }

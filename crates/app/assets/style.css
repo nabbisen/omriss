@@ -483,6 +483,14 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
   padding-top: 80px;
   z-index: 1100;
 }
+.palette-sentinel {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .palette-inner {
   background: var(--panel);
   border: 1px solid var(--panel-edge);
@@ -508,7 +516,9 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
   border: none; background: transparent;
   margin-bottom: 2px;
 }
-.palette-item:hover { background: var(--accent-soft); }
+.palette-item:hover,
+.palette-item:focus-visible,
+.palette-item--active { background: var(--accent-soft); }
 .palette-title { flex: 1; font-size: 14px; }
 .palette-shortcut { font-size: 11px; font-family: ui-monospace, monospace; }
 .palette-empty { padding: 12px; font-style: italic; }

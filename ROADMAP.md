@@ -12,9 +12,10 @@ requires platform WebView libraries to build — see `PLATFORMS.md`). The
 outline/tree UI uses `dioxus-swdir-tree`.
 
 Current proposed roadmap work is tracked in [`rfcs/README.md`](rfcs/README.md).
-At this snapshot, RFC-048 through RFC-058 are proposed for M10–M14:
+At this snapshot, RFC-048 through RFC-059 are proposed for M10–M14:
 
 - M10: RFC-048 through RFC-051, UI role separation.
+- M10 follow-up: RFC-059, keyboard focus and pending-draft UX hardening.
 - M11: RFC-052 and RFC-053, structured plain-text policy and adapter foundation.
 - M12: RFC-054 through RFC-056, JSON/TOML/YAML follow-up work.
 - M13: RFC-057, multi-document workspace and tabs.

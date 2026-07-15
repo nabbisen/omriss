@@ -29,3 +29,16 @@ sections from the Document Map.
 The status bar shows when the text differs from what is on disk. Undoing back
 to the exact saved bytes clears the indicator — omriss compares content, not
 edit counts.
+
+## Files changed on disk
+
+When you save an existing file, omriss checks whether the file on disk has a
+newer modification time than the version it opened or last saved. If another
+process changed the file, omriss shows a **File Changed on Disk** dialog before
+writing. Choose **Overwrite** to replace the disk file with the current omriss
+document, **Save As** to write to a different path, or **Cancel** to leave the
+disk file untouched.
+
+This check happens before saving, not continuously while you edit or navigate.
+It is a practical protection against accidental overwrite, not a hard security
+boundary against every filesystem race.

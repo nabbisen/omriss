@@ -76,10 +76,12 @@ cargo run -p omriss-app
 * The left Document Map lists and organizes sections of the open document.
 * Click a section to **focus** it: you see its breadcrumb path, its text in
   the Writing Area, and its direct subsections as navigation links.
-* Edit the body and commit; only that section's bytes change.
+* Edit the body; valid drafts apply before navigation, preview, search, or
+  save. Only that section's bytes change.
 * **Back / Forward** retrace your focus history like a browser.
 * **Undo / Redo** restore the document text byte-exactly.
-* Switch the GUI language (English / 日本語) from the status bar at any time.
+* Use header **Search** to find text, and header **Settings** to switch the GUI
+  language (English / 日本語).
 
 ## Platform Support
 

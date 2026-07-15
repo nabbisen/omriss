@@ -70,12 +70,14 @@ See [Structural Editing](structural-editing.md) for details.
 | Ctrl+\` | Toggle the read-only plain file text view (commits pending edit before opening) |
 | Ctrl+Shift+P | Toggle the Markdown preview pane (RFC-045) |
 
-**Search panel** — slide-in panel on the right; type to search case-insensitively
-across the whole document or only the current section. Click a result to focus
-its section.
+**Search panel** — open it from the header Search button or with **Ctrl+F**.
+Type to search case-insensitively across the whole document or only the current
+section. Click a result to focus its section.
 
 **Quick Actions** — floating overlay; type to filter all actions by name.
 Click or press Enter on a result to run the command.
+
+**Settings** — header menu for switching the GUI language.
 
 ## Tab and Focus Order
 

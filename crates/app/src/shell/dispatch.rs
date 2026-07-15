@@ -6,7 +6,7 @@
 use dioxus::prelude::*;
 use omriss_ui::ViewMode;
 
-use crate::components::CommandId;
+use crate::components::{CommandId, focus_active_palette};
 use crate::input::keyboard::AppCommand;
 use crate::shell::actions::{handle_new_guarded, handle_open_guarded, handle_save};
 use crate::shell::app_ctx::{AppCtx, commit_pending, has_pending_draft, sync_draft};
@@ -63,6 +63,9 @@ pub(crate) fn dispatch_command(
         AppCommand::OpenPalette => {
             let v = !*palette_open.read();
             palette_open.set(v);
+            if v {
+                focus_active_palette();
+            }
         }
         AppCommand::TogglePreview => {
             if !commit_pending(ctx) {
@@ -158,7 +161,12 @@ pub(crate) fn dispatch_command(
 // ── Palette dispatch ──────────────────────────────────────────────────────────
 
 /// Handle a command selected from Quick Actions.
-pub(crate) fn dispatch_palette(id: CommandId, ctx: AppCtx, search_open: Signal<bool>) {
+pub(crate) fn dispatch_palette(
+    id: CommandId,
+    ctx: AppCtx,
+    search_open: Signal<bool>,
+    mut preview_open: Signal<bool>,
+) {
     let AppCtx { mut session, .. } = ctx;
     match id {
         "file.open" => handle_open_guarded(ctx),
@@ -170,6 +178,12 @@ pub(crate) fn dispatch_palette(id: CommandId, ctx: AppCtx, search_open: Signal<b
                 session.write().leave_raw();
             } else if commit_pending(ctx) {
                 session.write().show_raw();
+            }
+        }
+        "view.preview" => {
+            if commit_pending(ctx) {
+                let v = !*preview_open.read();
+                preview_open.set(v);
             }
         }
         "search.open" => open_search_if_available(ctx, search_open),

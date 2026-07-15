@@ -36,6 +36,7 @@ pub fn ErrorDialog(
             "aria-modal": "true",
             "aria-labelledby": "err-title",
             "aria-describedby": "err-cause",
+            tabindex: "-1",
             div { class: "modal",
                 h2 { id: "err-title", class: "error-title", {title_text} }
                 if !cause.is_empty() {

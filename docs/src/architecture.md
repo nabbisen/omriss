@@ -63,8 +63,8 @@ This is enforced by signal ownership:
 | Current draft body | `draft: Signal<String>` | every keystroke |
 | Status message | `status: Signal<String>` | operation result |
 | Selected overview card | `selected_card: Signal<usize>` | keyboard nav |
-| Active locale | `locale: Signal<Locale>` | language switcher |
-| Search open | `search_open: Signal<bool>` | Ctrl+F |
+| Active locale | `locale: Signal<Locale>` | header Settings language switcher |
+| Search open | `search_open: Signal<bool>` | header Search / Ctrl+F |
 | Palette open | `palette_open: Signal<bool>` | Ctrl+P |
 | Preview open | `preview_open: Signal<bool>` | Ctrl+Shift+P / button |
 | Modal state | `modal: Signal<Modal>` | operation guard |

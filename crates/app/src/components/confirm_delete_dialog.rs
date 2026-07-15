@@ -29,6 +29,7 @@ pub fn ConfirmDeleteDialog(
             role: "dialog",
             "aria-modal": "true",
             "aria-labelledby": "del-title",
+            tabindex: "-1",
             div { class: "modal",
                 h2 { id: "del-title", {t(lang, "dialog.confirm_delete.title")} }
                 p {

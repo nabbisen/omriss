@@ -19,6 +19,14 @@ pub fn PreviewPane(
         .map(|s| s.title)
         .unwrap_or_default();
 
+    use_effect(move || {
+        spawn(async move {
+            let _ = document::eval(
+                "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.preview-back')?.focus()))",
+            );
+        });
+    });
+
     rsx! {
         div {
             class: "preview-pane",
@@ -28,6 +36,7 @@ pub fn PreviewPane(
                 h2 { class: "preview-title", "{title}" }
                 button {
                     class: "preview-back",
+                    autofocus: true,
                     onclick: move |_| on_close.call(()),
                     "aria-label": t(lang, "editor.source"),
                     "\u{2190} {t(lang, \"editor.source\")}"

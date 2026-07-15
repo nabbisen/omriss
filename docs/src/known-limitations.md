@@ -43,6 +43,20 @@ actions normally.
 
 ## Navigation Limitations
 
+### Quick Actions Reverse Tab Traversal Is Deferred
+
+Quick Actions opens with Ctrl+P and supports search, arrow-key command
+selection, Enter execution, and Escape/Ctrl+P dismissal. Reverse Tab traversal
+inside the Quick Actions panel is a known keyboard focus limitation in this
+release.
+
+**Why:** Repeated fixes around native Shift+Tab traversal and focus trapping
+were brittle in the Dioxus WebView event stack. The remaining focus model work
+is tracked as an RFC-059 keyboard follow-up.
+
+**Workaround:** Use the search field and arrow keys to choose a command, then
+press Enter. Use Escape or Ctrl+P to dismiss Quick Actions.
+
 ### Focus Does Not Return to Card After Zoom Out (WebView constraint)
 
 When pressing Esc to zoom out, keyboard focus moves to the document body
