@@ -197,7 +197,7 @@ fn selected_node_is_flagged_when_focused() {
     assert!(!root.children[1].is_selected);
 
     // Focus B.
-    let _ = session.focus(omriss::NodeId(id_b));
+    let _ = session.focus(omriss_core::NodeId(id_b));
     let root2 = session.document_map_nodes();
     assert!(
         root2.children[1].is_selected,

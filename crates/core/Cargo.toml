@@ -1,5 +1,5 @@
 [package]
-name = "omriss"
+name = "omriss-core"
 description = "Source-preserving Markdown document engine for Omriss (canonical text, outline index, edit operations)"
 readme = "../../README.md"
 version.workspace       = true

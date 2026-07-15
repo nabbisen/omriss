@@ -30,7 +30,7 @@ Acceptance:
 
 Suggested checks:
 
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 - targeted component/session tests if available
 
 ## PR 2 - Keyboard, Focus, and Menu Dismissal
@@ -57,7 +57,7 @@ Acceptance:
 
 Suggested checks:
 
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 - `cargo test -p omriss-ui`
 
 ## PR 3 - QA Record and Review Package
@@ -82,7 +82,7 @@ Acceptance:
 Suggested checks:
 
 - `cargo fmt --check`
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 - `cargo test -p omriss-ui`
 - `git diff --check`
 

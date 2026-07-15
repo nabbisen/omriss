@@ -1,6 +1,6 @@
 //! Editor session: one open document plus everything the GUI needs around it.
 //!
-//! `EditorSession` glues `omriss::Document` to the view state: it owns
+//! `EditorSession` glues `omriss_core::Document` to the view state: it owns
 //! dirty tracking (content-based, so undoing back to the saved bytes clears
 //! the flag), routes focused-body edits through the core command API, and
 //! prunes navigation history when sections disappear after structural edits.
@@ -9,7 +9,7 @@
 
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use omriss::{
+use omriss_core::{
     Document, DocumentError, DocumentRevision, EditError, EditResult, FocusSnapshot, NodeId,
     OutlineItem, ReplaceSectionBody,
 };
@@ -446,7 +446,7 @@ impl EditorSession {
     pub fn preview_html(&self) -> String {
         self.view
             .focused()
-            .and_then(|id| omriss::section_html(&self.document, id))
+            .and_then(|id| omriss_core::section_html(&self.document, id))
             .unwrap_or_default()
     }
 }

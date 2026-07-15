@@ -6,7 +6,7 @@
 //! - preserves every byte across a round-trip edit on the first section body;
 //! - has a valid line-ending profile detectable by `FileTextProfile`.
 
-use omriss::{Document, ReplaceSectionBody};
+use omriss_core::{Document, ReplaceSectionBody};
 
 fn load(name: &str) -> Document {
     let path = format!("{}/tests/fixtures/{}", env!("CARGO_MANIFEST_DIR"), name);

@@ -4,7 +4,7 @@
 //! ASCII text and reasonable approximations for CJK-heavy documents where
 //! space-based word segmentation is conventional enough for a writing aid.
 
-use omriss::{Document, NodeId, Outline};
+use omriss_core::{Document, NodeId, Outline};
 
 /// Lightweight statistics for the status bar display.
 #[derive(Debug, Clone, Copy, Default)]
@@ -47,7 +47,7 @@ fn non_root_section_count(outline: &Outline) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omriss::Document;
+    use omriss_core::Document;
 
     fn doc(md: &str) -> Document {
         Document::parse(md.to_string()).unwrap()
@@ -88,7 +88,7 @@ mod tests {
         let mut d = doc("# A\none two\n");
         let a_id = d.outline().root().children[0];
         let before = compute_stats(&d, Some(a_id));
-        d.replace_section_body(omriss::ReplaceSectionBody {
+        d.replace_section_body(omriss_core::ReplaceSectionBody {
             node_id: a_id,
             base_revision: d.revision(),
             new_body: "one two three four\n".into(),

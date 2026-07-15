@@ -64,7 +64,7 @@ Exit criteria:
 Suggested checks:
 
 - `cargo fmt`
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 - `bash scripts/check-rfcs.sh`
 
 ## PR 2 - Document Map Owns Structure Operations
@@ -98,9 +98,9 @@ Exit criteria:
 
 Suggested checks:
 
-- `cargo test -p omriss`
+- `cargo test -p omriss-core`
 - `cargo test -p omriss-ui`
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 
 ## PR 3 - Writing Area Draft Lifecycle
 
@@ -134,9 +134,9 @@ Exit criteria:
 
 Suggested checks:
 
-- `cargo test -p omriss`
+- `cargo test -p omriss-core`
 - `cargo test -p omriss-ui`
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 
 ## PR 4 - Accessibility, Keyboard, and Safety
 
@@ -201,8 +201,8 @@ Exit criteria:
 Suggested checks:
 
 - `cargo fmt`
-- `cargo test -p omriss -p omriss-ui`
-- `cargo check -p omriss-app`
+- `cargo test -p omriss-core -p omriss-ui`
+- `cargo check -p omriss`
 - `mdbook build docs`
 - `bash scripts/check-rfcs.sh`
 - `git diff --check`

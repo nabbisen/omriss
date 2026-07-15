@@ -12,8 +12,8 @@
 
 - [ ] `Workspace`, `Tab`, `TabId`, `DocumentIdentity`, and the `FocusedDraft`
       seam exist in `omriss-ui` (Dioxus-free).
-- [ ] `omriss` core crate has no workspace/tab/TabId concept.
-- [ ] `omriss-app` owns the Dioxus tab strip rendering and the hot-draft local
+- [ ] `omriss-core` crate has no workspace/tab/TabId concept.
+- [ ] `omriss` app package owns the Dioxus tab strip rendering and the hot-draft local
       signal.
 - [ ] `TabId` is stable across close/open during one app process; never reused.
 - [ ] App modals target tabs by `TabId`, not raw index.

@@ -15,7 +15,7 @@
 //! ## Quick example
 //!
 //! ```
-//! use omriss::{Document, ReplaceSectionBody};
+//! use omriss_core::{Document, ReplaceSectionBody};
 //!
 //! let mut doc = Document::parse("# A\nbody\n\n# B\nkeep me\n".to_string()).unwrap();
 //! let first = doc.outline().root().children[0];

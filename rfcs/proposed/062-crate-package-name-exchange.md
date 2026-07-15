@@ -45,7 +45,7 @@ cargo run -p omriss
 The current command is:
 
 ```sh
-cargo run -p omriss-app
+cargo run -p omriss
 ```
 
 This is understandable from an internal boundary perspective, but it is less

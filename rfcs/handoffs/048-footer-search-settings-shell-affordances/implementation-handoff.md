@@ -74,7 +74,7 @@ While creating this handoff package, no build or test command was run.
 
 Required after implementation:
 
-- `cargo check -p omriss-app`
+- `cargo check -p omriss`
 - `cargo test -p omriss-ui`
 - `cargo fmt --check`
 - `git diff --check`

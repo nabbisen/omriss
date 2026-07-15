@@ -77,7 +77,7 @@ External change detected -> prompt: overwrite / save as / cancel
 
 ### Desktop Boundary
 
-Filesystem operations live in `omriss-app` or an app service layer, not `omriss`. Core only imports/exports text.
+Filesystem operations live in the `omriss` app package or an app service layer, not `omriss-core`. Core only imports/exports text.
 
 ## 6. Validation and Test Plan
 

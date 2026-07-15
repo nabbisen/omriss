@@ -1,12 +1,12 @@
 //! Move section tests (RFC-024).
 
-use omriss::{Document, MoveTarget, StructuralEditError};
+use omriss_core::{Document, MoveTarget, StructuralEditError};
 
 fn doc(md: &str) -> Document {
     Document::parse(md.to_string()).unwrap()
 }
 
-fn node_ids(d: &Document) -> Vec<omriss::NodeId> {
+fn node_ids(d: &Document) -> Vec<omriss_core::NodeId> {
     d.outline().iter().map(|n| n.id).collect()
 }
 

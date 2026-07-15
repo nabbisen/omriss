@@ -93,7 +93,7 @@ pub enum DocumentFormat {
 }
 
 // NodeId is the EXISTING shipped core identity type from RFC-006
-// (`omriss::NodeId(pub u64)`). It is reused as-is, never redefined, and never
+// (`omriss_core::NodeId(pub u64)`). It is reused as-is, never redefined, and never
 // shown in normal UI. There is no separate `FocusedNodeId`; focus is a state
 // role over `NodeId`.
 
@@ -174,7 +174,7 @@ pub enum Capability {
 }
 
 // Typed, core-owned reason. It must NOT be a UI message key: `NodeCapabilities`
-// is produced in the `omriss` core crate, which never depends on `omriss-ui`
+// is produced in the `omriss-core` crate, which never depends on `omriss-ui`
 // (RFC-001). `omriss-ui` maps `CapabilityReason` to localized catalog text
 // (RFC-043) at render time.
 pub enum CapabilityReason {
@@ -499,7 +499,7 @@ YAML adapter must start as a candidate/read-only feasibility adapter. Editable Y
 ## 18. Open questions
 
 1. Should adapters be static enum dispatch or trait objects?
-2. **Resolved.** Format adapters are modules inside the `omriss` core crate (`omriss::formats::{markdown, json, toml, yaml}`). Separate `omriss-json` / `omriss-toml` crates are deferred until a measured need (dependency weight, feature-flag maintenance, or independent release/test).
+2. **Resolved.** Format adapters are modules inside the `omriss-core` crate (`omriss_core::formats::{markdown, json, toml, yaml}`). Separate `omriss-json` / `omriss-toml` crates are deferred until a measured need (dependency weight, feature-flag maintenance, or independent release/test).
 3. Should adapters support format-specific settings?
 4. Should a future plugin system be allowed to register adapters?
 5. Should `DetectionConfidence` live in core or a dedicated detection-registry module? (Not blocking.)

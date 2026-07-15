@@ -6,6 +6,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **RFC-062 crate package name exchange** — the reusable document engine package
+  is now `omriss-core`, while the desktop app package is now `omriss`. This
+  makes `cargo run -p omriss` run the app. Library users should migrate Rust
+  imports from `omriss::...` to `omriss_core::...`. The app package is marked
+  `publish = false`; `omriss-core` is the publishable library package.
+
 ## [0.16.0] - 2026-07-15
 
 ### Changed

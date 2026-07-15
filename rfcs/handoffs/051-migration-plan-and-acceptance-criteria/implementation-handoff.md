@@ -51,8 +51,8 @@ checks recorded by the parent task.
 Final M10 gate must include:
 
 - `cargo fmt`
-- `cargo test -p omriss -p omriss-ui`
-- `cargo check -p omriss-app`
+- `cargo test -p omriss-core -p omriss-ui`
+- `cargo check -p omriss`
 - `mdbook build docs`
 - `bash scripts/check-rfcs.sh`
 - `git diff --check`

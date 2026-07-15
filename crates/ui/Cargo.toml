@@ -10,4 +10,4 @@ authors.workspace       = true
 repository.workspace    = true
 
 [dependencies]
-omriss              = { workspace = true }
+omriss-core         = { workspace = true }

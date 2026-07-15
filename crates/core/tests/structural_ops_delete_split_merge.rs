@@ -1,6 +1,6 @@
 //! Delete, split, and merge tests (RFC-025).
 
-use omriss::{Document, HeadingLevel, StructuralEditError};
+use omriss_core::{Document, HeadingLevel, StructuralEditError};
 
 fn doc(md: &str) -> Document {
     Document::parse(md.to_string()).unwrap()

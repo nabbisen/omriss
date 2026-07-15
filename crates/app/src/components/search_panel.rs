@@ -10,7 +10,7 @@ pub fn SearchPanel(
     session: Signal<EditorSession>,
     locale: Signal<Locale>,
     on_close: EventHandler<()>,
-    on_navigate: EventHandler<omriss::NodeId>,
+    on_navigate: EventHandler<omriss_core::NodeId>,
 ) -> Element {
     let lang = *locale.read();
     let mut query = use_signal(String::new);

@@ -63,7 +63,7 @@ recent files, settings) remain singular.
 The central design claim is that **the document boundary is already clean
 enough to multiply**. `EditorSession` is fully self-contained — it owns its
 `Document`, view state, dirty flag, file name, and format profile, and assumes
-no global singleton state. Multiplying it does not touch the `omriss` core
+no global singleton state. Multiplying it does not touch the `omriss-core`
 crate at all and touches `omriss-ui` only to add a thin `Workspace`/`Tab`
 container. The work is almost entirely in the app shell.
 
@@ -164,7 +164,7 @@ focused local signal and is applied to the tab only at commit boundaries
 
 ### 3.7 The core crate does not learn about tabs
 
-`omriss` stays document-scoped. The `Workspace` type lives in `omriss-ui`. The
+`omriss-core` stays document-scoped. The `Workspace` type lives in `omriss-ui`. The
 app shell renders the tab strip. RFC-001 crate boundaries are unchanged: no
 Dioxus in core, no multi-document concept in core.
 
@@ -783,7 +783,7 @@ closes search on switch, and does not persist tabs across restarts.
 - Save, Save As, external-modification check (RFC-015), and dirty state
   (RFC-016) are unchanged at the document level; they now operate on the active
   tab's session.
-- No core (`omriss`) change. Document Map / Focused Content panels read the
+- No core (`omriss-core`) change. Document Map / Focused Content panels read the
   active tab; their props are unchanged if the shell passes the active tab's
   signals through.
 - Existing single-document tests pass unchanged: a one-tab workspace behaves
@@ -838,7 +838,7 @@ shortcuts/i18n/search+status cleanup; cross-platform QA.
 - `Ctrl+W`/`Cmd+W` closes the active tab through the normal guard; new tab
   shortcuts are verified collision-free against `keyboard::interpret` (§ 10).
 - All new strings exist in both catalogs, sorted, no untranslated fallback.
-- No change to the `omriss` core crate; RFC-001 boundaries hold.
+- No change to the `omriss-core` crate; RFC-001 boundaries hold.
 - **Gates:** the required gates are the existing project gates —
   `cargo fmt --check`, `cargo test`, and `scripts/check-rfcs.sh`. `cargo
   clippy` is **recommended**, not required, unless and until RFC-040/CI policy

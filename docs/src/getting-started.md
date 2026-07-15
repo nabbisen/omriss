@@ -15,10 +15,10 @@ packages first:
 ```sh
 sudo apt-get install libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev \
                      libgtk-3-dev libxdo-dev libssl-dev
-cargo run -p omriss-app
+cargo run -p omriss
 ```
 
-On Windows and macOS, `cargo run -p omriss-app` is enough.
+On Windows and macOS, `cargo run -p omriss` is enough.
 
 ## Your first session
 

@@ -6,7 +6,7 @@
 //! be activated from any mode; it preserves the underlying mode so the user
 //! returns to where they were. None of this touches the document text.
 
-use omriss::NodeId;
+use omriss_core::NodeId;
 
 /// What the main pane is currently showing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

@@ -5,7 +5,7 @@ members = [
     "crates/ui",
     "crates/app",
 ]
-# `omriss-app` links against the platform WebView stack (wry/tao); building it
+# The `omriss` app package links against the platform WebView stack (wry/tao); building it
 # requires native system libraries (e.g. webkit2gtk on Linux). Core and UI logic
 # build and test everywhere, so they are the default members (RFC-001).
 default-members = [
@@ -22,7 +22,7 @@ authors                 = ["nabbisen"]
 repository              = "https://github.com/nabbisen/omriss"
 
 [workspace.dependencies]
-omriss              = { version = "0", path = "crates/core" }
+omriss-core         = { version = "0", path = "crates/core" }
 omriss-ui           = { version = "0", path = "crates/ui" }
 
 # UI

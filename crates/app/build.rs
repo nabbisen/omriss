@@ -1,4 +1,4 @@
-//! Build script for omriss-app.
+//! Build script for the omriss app package.
 //!
 //! Checks for the required WebKit2GTK system library on Linux and prints
 //! an actionable install command when it is missing, so users see a helpful
@@ -36,7 +36,7 @@ fn check_linux_deps() {
         // compiler error, giving the user an immediate fix.
         println!("cargo:warning=");
         println!("cargo:warning=╔══════════════════════════════════════════════════════════════╗");
-        println!("cargo:warning=║  MISSING SYSTEM LIBRARIES — omriss-app cannot build     ║");
+        println!("cargo:warning=║  MISSING SYSTEM LIBRARIES — omriss app cannot build     ║");
         println!("cargo:warning=╠══════════════════════════════════════════════════════════════╣");
         println!("cargo:warning=║  The following pkg-config packages were not found:            ║");
         for lib in &missing {

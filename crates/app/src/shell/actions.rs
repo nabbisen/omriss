@@ -214,7 +214,7 @@ pub(crate) fn handle_section_title_choice(
                     .current_snapshot()
                     .and_then(|s| s.level)
                     .map(|l| {
-                        use omriss::HeadingLevel::*;
+                        use omriss_core::HeadingLevel::*;
                         match l {
                             H1 => H2,
                             H2 => H3,
@@ -223,7 +223,7 @@ pub(crate) fn handle_section_title_choice(
                             _ => H6,
                         }
                     })
-                    .unwrap_or(omriss::HeadingLevel::H2);
+                    .unwrap_or(omriss_core::HeadingLevel::H2);
                 // append_child_to_focused inserts at full_range.end so the
                 // new section always appears after all existing children.
                 ctx.session.write().append_child_to_focused(&title, level)

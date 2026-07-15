@@ -66,10 +66,10 @@ the wrong place.
 ## 4. Ownership map
 
 ```text
-omriss        document/session operations; NO workspace/tab/TabId concept
+omriss-core   document/session operations; NO workspace/tab/TabId concept
 omriss-ui     Workspace, Tab, TabId, DocumentIdentity, FocusedDraft seam,
               workspace mutators + unit tests
-omriss-app    Dioxus tab strip, modal wiring, shortcuts, shell integration,
+omriss        Dioxus tab strip, modal wiring, shortcuts, shell integration,
               local hot-draft signal
 ```
 
@@ -356,6 +356,6 @@ session restore are future-RFC candidates.
 - `preview_open` per-tab; search closes on switch; status active-tab scoped.
 - Shortcuts collision-verified; i18n complete in both catalogs.
 - Typing does not re-render chrome (render-boundary test passes).
-- No `omriss` core change; RFC-001 holds.
+- No `omriss-core` change; RFC-001 holds.
 - Required gates pass: `cargo fmt --check`, `cargo test`,
   `scripts/check-rfcs.sh`. clippy recommended, not required.

@@ -1,11 +1,11 @@
 //! Builds a `DocumentMapNode` tree from the current session outline (RFC-049).
 //!
-//! This bridges `omriss::Outline` (Markdown-only, RFC-006/007) to the
+//! This bridges `omriss_core::Outline` (Markdown-only, RFC-006/007) to the
 //! format-neutral `DocumentMapNode` used by the left-panel Document Map.
 //! When JSON/TOML adapters arrive (RFC-053/054/055) they will provide their
 //! own bridge implementations; the Dioxus component is unchanged.
 
-use omriss::{NodeId, Outline};
+use omriss_core::{NodeId, Outline};
 
 use crate::editor::navigation::sibling_info;
 use crate::interface::document_map::{
@@ -75,7 +75,7 @@ fn compute_capabilities(outline: &Outline, id: NodeId) -> MapNodeCapabilities {
         // Also check heading level limit (H6 cannot be demoted further)
         let at_max_depth = node
             .level
-            .map(|l| l == omriss::HeadingLevel::H6)
+            .map(|l| l == omriss_core::HeadingLevel::H6)
             .unwrap_or(false);
         if at_max_depth {
             MapCapability::Disabled(CapabilityReason::NoSibling)
@@ -98,7 +98,7 @@ fn compute_capabilities(outline: &Outline, id: NodeId) -> MapNodeCapabilities {
             // Also check heading level limit (H1 cannot be promoted further)
             let at_min_depth = node
                 .level
-                .map(|l| l == omriss::HeadingLevel::H1)
+                .map(|l| l == omriss_core::HeadingLevel::H1)
                 .unwrap_or(false);
             if at_min_depth {
                 MapCapability::Disabled(CapabilityReason::NoParent)

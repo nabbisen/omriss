@@ -1,6 +1,6 @@
 //! Revision-mismatch guard tests (RFC-026).
 
-use omriss::{Document, StructuralEditError};
+use omriss_core::{Document, StructuralEditError};
 
 fn doc(md: &str) -> Document {
     Document::parse(md.to_string()).unwrap()
@@ -11,7 +11,7 @@ fn structural_revision_mismatch_rejected() {
     let mut d = doc("# A\n");
     let a = d.outline().root().children[0];
     let stale_rev = d.revision();
-    d.replace_section_body(omriss::ReplaceSectionBody {
+    d.replace_section_body(omriss_core::ReplaceSectionBody {
         node_id: a,
         base_revision: d.revision(),
         new_body: "changed\n".into(),

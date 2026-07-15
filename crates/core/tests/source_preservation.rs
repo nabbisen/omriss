@@ -4,7 +4,7 @@
 //! section's body must leave each byte outside the replaced range untouched,
 //! and a subsequent undo must restore the original source byte-for-byte.
 
-use omriss::{Document, NodeId, ReplaceSectionBody};
+use omriss_core::{Document, NodeId, ReplaceSectionBody};
 
 const FIXTURES: &[(&str, &str)] = &[
     ("nested_atx.md", include_str!("fixtures/nested_atx.md")),

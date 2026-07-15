@@ -2,7 +2,7 @@
 //!
 //! Detection happens at load time; the profile is stored in the session so
 //! the status bar and save logic can report and preserve file characteristics.
-//! `omriss` stays UTF-8 plain text; profile data never affects source
+//! `omriss-core` stays UTF-8 plain text; profile data never affects source
 //! bytes outside the edited range.
 
 /// Dominant newline style detected in the source file.

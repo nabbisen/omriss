@@ -1,8 +1,8 @@
 # omriss
 
-[![crates.io](https://img.shields.io/crates/v/omriss?label=rust)](https://crates.io/crates/omriss)
-[![Rust Documentation](https://docs.rs/omriss/badge.svg?version=latest)](https://docs.rs/omriss)
-[![Dependency Status](https://deps.rs/crate/omriss/latest/status.svg)](https://deps.rs/crate/omriss)
+[![crates.io](https://img.shields.io/crates/v/omriss-core?label=rust)](https://crates.io/crates/omriss-core)
+[![Rust Documentation](https://docs.rs/omriss-core/badge.svg?version=latest)](https://docs.rs/omriss-core)
+[![Dependency Status](https://deps.rs/crate/omriss-core/latest/status.svg)](https://deps.rs/crate/omriss-core)
 [![License](https://img.shields.io/github/license/nabbisen/omriss)](LICENSE)
 
 **Omriss Editor** — a next-generation text editor that helps you clarify ideas
@@ -37,9 +37,9 @@ rewriting a byte you didn't touch.
 
 | Crate | Role |
 | --- | --- |
-| `crates/omriss` | Document engine: canonical text, outline index over `pulldown-cmark`, section-body edits, undo/redo. No GUI dependencies. |
-| `crates/omriss-ui` | Renderer-independent GUI logic: editor session, focus navigation with back/forward history, i18n catalogs. |
-| `crates/omriss-app` | Desktop shell: Dioxus components on the system WebView, file dialogs via `rfd`. |
+| `crates/core` (`omriss-core`) | Document engine: canonical text, outline index over `pulldown-cmark`, section-body edits, undo/redo. No GUI dependencies. |
+| `crates/ui` (`omriss-ui`) | Renderer-independent GUI logic: editor session, focus navigation with back/forward history, i18n catalogs. |
+| `crates/app` (`omriss`) | Desktop shell: Dioxus components on the system WebView, file dialogs via `rfd`. |
 
 Design documents live in [`rfcs/`](rfcs/) (see the
 [RFC index](rfcs/README.md) and the lifecycle policy in
@@ -51,24 +51,24 @@ The user guide sources live in [`docs/`](docs/) as an mdBook.
 Requires Rust 1.88+ (edition 2024). Core and UI logic build everywhere:
 
 ```sh
-cargo build            # builds omriss and omriss-ui (default members)
+cargo build            # builds omriss-core and omriss-ui (default members)
 cargo test             # runs the full unit + golden integration suite
 ```
 
 ### Desktop GUI
 
-`omriss-app` links the platform WebView, so it is excluded from the
+The `omriss` app package links the platform WebView, so it is excluded from the
 default members. On Linux (Debian/Ubuntu) install the native packages first:
 
 ```sh
 sudo apt-get install libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev
-cargo run -p omriss-app
+cargo run -p omriss
 ```
 
 Windows (WebView2) and macOS (WKWebView) need no extra packages:
 
 ```sh
-cargo run -p omriss-app
+cargo run -p omriss
 ```
 
 ## Using omriss

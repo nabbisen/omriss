@@ -3,7 +3,7 @@
 //! These are pure functions over the `Outline`; they carry no state and are
 //! called from `EditorSession` convenience wrappers.
 
-use omriss::{NodeId, Outline};
+use omriss_core::{NodeId, Outline};
 
 /// Availability of the four spatial navigation actions from a given node.
 #[derive(Debug, Clone, Default)]

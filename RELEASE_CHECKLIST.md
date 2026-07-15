@@ -13,6 +13,10 @@ product owner. No automated process may bypass this gate.
 - [ ] `CHANGELOG.md` entry written for this version
 - [ ] Version bumped in `Cargo.toml` workspace package
 - [ ] RFC index up to date: `./scripts/check-rfcs.sh`
+- [ ] Package roles verified before publication:
+      `omriss-core` is the publishable library package, and the `omriss` app
+      package remains `publish = false` unless an explicit release review
+      authorises crates.io app distribution.
 
 ---
 

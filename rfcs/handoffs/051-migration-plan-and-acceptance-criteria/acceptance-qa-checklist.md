@@ -35,8 +35,8 @@
 
 ```text
 cargo fmt
-cargo test -p omriss -p omriss-ui
-cargo check -p omriss-app
+cargo test -p omriss-core -p omriss-ui
+cargo check -p omriss
 mdbook build docs
 bash scripts/check-rfcs.sh
 git diff --check

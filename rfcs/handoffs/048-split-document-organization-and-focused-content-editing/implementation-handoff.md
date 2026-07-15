@@ -122,8 +122,8 @@ session:
 Earlier local observations from this thread, not durable release evidence:
 
 - `cargo fmt` completed.
-- `cargo test -p omriss -p omriss-ui` passed.
-- `cargo check -p omriss-app` passed.
+- `cargo test -p omriss-core -p omriss-ui` passed.
+- `cargo check -p omriss` passed.
 - `mdbook build docs` passed, and the generated `docs/book` artifact was
   removed afterward.
 - `bash scripts/check-rfcs.sh` passed.

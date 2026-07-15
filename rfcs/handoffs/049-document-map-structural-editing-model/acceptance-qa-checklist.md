@@ -33,9 +33,9 @@
 ## Required Commands
 
 ```text
-cargo test -p omriss
+cargo test -p omriss-core
 cargo test -p omriss-ui
-cargo check -p omriss-app
+cargo check -p omriss
 bash scripts/check-rfcs.sh
 git diff --check
 ```

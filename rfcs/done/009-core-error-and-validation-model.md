@@ -71,7 +71,7 @@ pub enum EditError {
 
 ### Result Boundary
 
-`omriss` returns structured errors. `omriss-ui` decides wording, status display, and modal behavior. `omriss-app` handles filesystem errors separately but can map them into a common UI error channel.
+`omriss-core` returns structured errors. `omriss-ui` decides wording, status display, and modal behavior. The `omriss` app package handles filesystem errors separately but can map them into a common UI error channel.
 
 ## 6. Validation and Test Plan
 

@@ -50,7 +50,7 @@ Use this checklist for the `RFC048-QA-009` implementation.
 Run after final implementation changes:
 
 ```text
-cargo check -p omriss-app
+cargo check -p omriss
 cargo test -p omriss-ui
 cargo fmt --check
 git diff --check

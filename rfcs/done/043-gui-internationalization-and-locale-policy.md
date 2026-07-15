@@ -45,7 +45,7 @@ stable identifiers, with English as the authoritative fallback locale.
 ```text
 omriss    structured errors and data only; no user-facing prose
 omriss-ui      owns message catalogs and key lookup; renders localized text
-omriss-app detects OS locale at startup; persists explicit user choice in settings
+The `omriss` app package detects OS locale at startup; persists explicit user choice in settings
 ```
 
 This mirrors the RFC-009 result boundary: core emits `EditError::RevisionMismatch`,

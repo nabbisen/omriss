@@ -1,12 +1,12 @@
 //! Promote / demote tests (RFC-023).
 
-use omriss::{Document, StructuralEditError};
+use omriss_core::{Document, StructuralEditError};
 
 fn doc(md: &str) -> Document {
     Document::parse(md.to_string()).unwrap()
 }
 
-fn node_ids(d: &Document) -> Vec<omriss::NodeId> {
+fn node_ids(d: &Document) -> Vec<omriss_core::NodeId> {
     d.outline().iter().map(|n| n.id).collect()
 }
 

@@ -2,7 +2,7 @@
 //!
 //! Catalogs are static key→string tables compiled into the binary. Lookup
 //! falls back in this order: requested locale → English → the key itself.
-//! `omriss` stays locale-free; only GUI strings live here.
+//! `omriss-core` stays locale-free; only GUI strings live here.
 
 mod en;
 mod ja;

@@ -43,7 +43,7 @@ Windows: current supported desktop versions chosen by release policy
 
 ### Runtime Principle
 
-The WebView is a rendering layer. Document logic remains native Rust. Platform-specific behavior must be isolated in `omriss-app`.
+The WebView is a rendering layer. Document logic remains native Rust. Platform-specific behavior must be isolated in the `omriss` app package.
 
 ### Known Caveat Policy
 

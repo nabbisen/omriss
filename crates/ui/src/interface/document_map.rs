@@ -1,6 +1,6 @@
 //! Document Map view-model types (RFC-049, RFC-053).
 //!
-//! This module defines the format-neutral tree that `omriss-app` renders in
+//! This module defines the format-neutral tree that the `omriss` app renders in
 //! the left panel. It is built by `EditorSession::document_map_nodes()` and
 //! contains only plain Rust — no Dioxus, no WebView dependency.
 //!
@@ -9,7 +9,7 @@
 //! exactly which actions are disabled and why, without the Document Map
 //! needing to know Markdown internals.
 
-use omriss::NodeId;
+use omriss_core::NodeId;
 
 // ── Draft state ───────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ impl DraftState {
 
 /// Why an action is disabled on a particular node.
 ///
-/// This is a core-owned type (RFC-001): it may appear in `omriss` crate types
+/// This is a core-owned type (RFC-001): it may appear in `omriss-core` crate types
 /// that are returned to `omriss-ui`. `omriss-ui` maps it to i18n catalog keys
 /// at render time; it never contains UI-layer types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

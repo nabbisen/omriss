@@ -41,7 +41,7 @@ Adopted layout (design review, v0.1.0):
 omriss/
   Cargo.toml
   crates/
-    omriss/
+    core/
       src/document.rs
       src/outline.rs
       src/index.rs
@@ -57,30 +57,30 @@ omriss/
       src/view_state.rs
       src/i18n/
       src/tests/
-    omriss-app/
+    app/
       src/main.rs
       src/app.rs        (Dioxus components)
       src/file_dialog.rs
 ```
 
 The original draft placed the Dioxus components in `omriss-ui`. Review moved
-them one level out, to `omriss-app`, and made `omriss-ui` fully
+them one level out, to the app package, and made `omriss-ui` fully
 renderer-independent (session state, focus navigation, i18n catalogs — plain
 Rust, no Dioxus dependency at all). Rationale: this extends the RFC's own
 goal — headless `cargo test` — from core to the entire editor logic, and it
 confines the WebView/windowing dependency to a single leaf crate that hosts
 nothing but the thin `rsx!` projection and platform glue. If the component
 layer grows beyond a thin projection, splitting a Dioxus-dependent
-`omriss-components` crate out of `omriss-app` is the planned follow-up.
+`omriss-components` crate out of the app package is the planned follow-up.
 
 ### Dependency Direction
 
 ```text
-omriss-app -> omriss-ui -> omriss
+omriss -> omriss-ui -> omriss-core
 ```
 
-No reverse dependency is allowed. `omriss` and `omriss-ui` must compile
-on stable Rust with no desktop runtime feature; only `omriss-app` links
+No reverse dependency is allowed. `omriss-core` and `omriss-ui` must compile
+on stable Rust with no desktop runtime feature; only the `omriss` app package links
 the platform WebView stack, and it is excluded from the workspace default
 members so `cargo build`/`cargo test` work on hosts without GUI libraries.
 
@@ -88,14 +88,14 @@ members so `cargo build`/`cargo test` work on hosts without GUI libraries.
 
 | Crate | Owns | Must Not Own |
 |---|---|---|
-| `omriss` | Markdown text, outline index, ranges, edit commands, validation | Dioxus components, file dialogs, WebView state, user-facing prose |
+| `omriss-core` | Markdown text, outline index, ranges, edit commands, validation | Dioxus components, file dialogs, WebView state, user-facing prose |
 | `omriss-ui` | Editor session, dirty tracking, focus/view navigation state, i18n catalogs | Dioxus/WebView dependencies, raw filesystem policy, parser internals |
-| `omriss-app` | entrypoint, Dioxus components, platform integration, native file dialogs, app lifecycle | section edit semantics, document state |
+| `omriss` | entrypoint, Dioxus components, platform integration, native file dialogs, app lifecycle | section edit semantics, document state |
 
 ### Command Flow
 
 ```text
-User event -> omriss-ui command -> omriss operation -> EditResult -> UI state update
+User event -> omriss-ui command -> omriss-core operation -> EditResult -> UI state update
 ```
 
 The command flow is an in-process Rust call boundary, not a serialized IPC protocol.
@@ -104,20 +104,20 @@ The command flow is an in-process Rust call boundary, not a serialized IPC proto
 
 ### Internal Dependency Enforcement
 
-- Use workspace-level linting to deny accidental dependencies from `omriss` to UI/runtime crates.
-- Add a CI check that runs `cargo tree -p omriss` and fails if forbidden crates appear.
-- Keep `omriss` feature flags minimal. Optional parser or rope features must remain internal implementation details until stabilized.
+- Use workspace-level linting to deny accidental dependencies from `omriss-core` to UI/runtime crates.
+- Add a CI check that runs `cargo tree -p omriss-core` and fails if forbidden crates appear.
+- Keep `omriss-core` feature flags minimal. Optional parser or rope features must remain internal implementation details until stabilized.
 
 ## 6. Validation and Test Plan
 
-- `cargo test -p omriss` runs without desktop dependencies.
-- Forbidden dependency smoke test for `omriss`.
+- `cargo test -p omriss-core` runs without desktop dependencies.
+- Forbidden dependency smoke test for `omriss-core`.
 - Example CLI-like test can parse and edit Markdown using core only.
 
 ## 7. Acceptance Criteria
 
 - Workspace builds with the three-crate dependency direction.
-- No Dioxus, wry, tao, or file-dialog dependency is present in `omriss`.
+- No Dioxus, wry, tao, or file-dialog dependency is present in `omriss-core`.
 - Core tests can validate source-preserving replacement independently of UI.
 ## 8. Dependencies
 

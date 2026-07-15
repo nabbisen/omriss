@@ -1,6 +1,6 @@
-//! Performance benchmarks for omriss (RFC-031).
+//! Performance benchmarks for omriss-core (RFC-031).
 //!
-//! Run with: `cargo bench -p omriss`
+//! Run with: `cargo bench -p omriss-core`
 //!
 //! Measurement points per RFC-031 §4:
 //! - full parse + index build on small, medium, and large fixtures;
@@ -11,7 +11,7 @@
 //! string is kept in memory so file I/O does not skew timing.
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use omriss::{Document, HeadingLevel, MoveTarget, ReplaceSectionBody};
+use omriss_core::{Document, HeadingLevel, MoveTarget, ReplaceSectionBody};
 use std::path::PathBuf;
 
 fn fixture_path(name: &str) -> PathBuf {

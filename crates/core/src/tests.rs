@@ -1,4 +1,4 @@
-//! Unit tests for `omriss`, validating the design specifications
+//! Unit tests for `omriss-core`, validating the design specifications
 //! (RFC-002..009, RFC-044) rather than incidental implementation details.
 
 mod api_tests;

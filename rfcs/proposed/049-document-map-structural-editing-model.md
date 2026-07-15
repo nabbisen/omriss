@@ -361,14 +361,14 @@ capability state).
 
 Crate boundaries (RFC-001):
 
-- `omriss` (core) owns the canonical structure and capability types from
+- `omriss-core` owns the canonical structure and capability types from
   RFC-053: `StructureCommand`, `MoveDirection`, `NodeCapabilities`,
   `Capability`, `CapabilityReason`, `DocumentFormat`, and `NodeId`. The UI
   consumes these; it does not own or redefine them.
 - `omriss-ui` owns the Dioxus-free Document Map view model (`MapNodeView`),
   selection state, expanded/collapsed state, row-menu state, and the mapping
   from `CapabilityReason` to i18n keys (RFC-043) — no Dioxus.
-- `omriss-app` owns the rendered Dioxus component, the `⋯` row menus, the
+- the `omriss` app package owns the rendered Dioxus component, the `⋯` row menus, the
   confirmation dialogs, and any `dioxus-swdir-tree` integration.
 
 Whether to extend `ItemTreeView` (a first-party crate) with action-slot and

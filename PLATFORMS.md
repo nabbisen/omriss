@@ -55,7 +55,7 @@ find /usr -name 'webkit2gtk-4.1.pc' 2>/dev/null
 
 # Export its directory and retry
 export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig   # adjust path as found
-cargo run -p omriss-app
+cargo run -p omriss
 ```
 
 On Debian/Ubuntu the `.pc` files are usually at
@@ -69,7 +69,7 @@ On Debian/Ubuntu the `.pc` files are usually at
 ### Keyboard Modifiers
 
 On macOS the Cmd key is used where Linux/Windows use Ctrl. The keyboard
-handler in `omriss-app/src/keyboard.rs` normalises this automatically
+handler in `crates/app/src/input/keyboard.rs` normalises this automatically
 using the `keyboard-types` crate's modifier detection.
 
 ### File Dialogs
@@ -97,8 +97,8 @@ Settings are stored in platform-appropriate locations (RFC-036):
 
 ## Policy for Platform-Specific Code
 
-All platform-specific behavior must be isolated in `omriss-app`.
-`omriss` and `omriss-ui` must compile and test on any host without
+All platform-specific behavior must be isolated in the `omriss` app package.
+`omriss-core` and `omriss-ui` must compile and test on any host without
 GUI libraries (RFC-001, RFC-010 boundary rule).
 
 Platform-specific workarounds should be documented inline with a reference

@@ -26,7 +26,7 @@ pub struct OutlineNode {
     pub children: Vec<OutlineNode>,
 }
 
-fn build_outline_node(outline: &omriss::Outline, id: omriss::NodeId) -> OutlineNode {
+fn build_outline_node(outline: &omriss_core::Outline, id: omriss_core::NodeId) -> OutlineNode {
     let node = outline
         .node(id)
         .expect("NodeId from same outline always valid");

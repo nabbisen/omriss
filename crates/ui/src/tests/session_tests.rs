@@ -1,4 +1,4 @@
-use omriss::{EditError, StructuralEditError};
+use omriss_core::{EditError, StructuralEditError};
 
 use crate::editor::view_state::ViewMode;
 use crate::session::EditorSession;
@@ -10,7 +10,7 @@ fn session() -> EditorSession {
     EditorSession::open(DOC.to_string(), Some("draft.md".into())).unwrap()
 }
 
-fn id_of(session: &EditorSession, title: &str) -> omriss::NodeId {
+fn id_of(session: &EditorSession, title: &str) -> omriss_core::NodeId {
     session
         .outline_items()
         .into_iter()
@@ -247,7 +247,7 @@ fn append_child_to_focused_adds_at_bottom_when_children_exist() {
     let one = id_of(&session, "One");
     session.focus(one).unwrap();
     session
-        .append_child_to_focused("Second Child", omriss::HeadingLevel::H2)
+        .append_child_to_focused("Second Child", omriss_core::HeadingLevel::H2)
         .unwrap();
     // Re-read the snapshot for "One" after the split.
     let snap = session.current_snapshot().unwrap();
@@ -266,7 +266,7 @@ fn append_child_to_focused_adds_at_bottom_when_no_children() {
     let two = id_of(&session, "Two");
     session.focus(two).unwrap();
     session
-        .append_child_to_focused("New", omriss::HeadingLevel::H2)
+        .append_child_to_focused("New", omriss_core::HeadingLevel::H2)
         .unwrap();
     let snap = session.current_snapshot().unwrap();
     let titles: Vec<&str> = snap.children.iter().map(|c| c.title.as_str()).collect();
@@ -337,7 +337,7 @@ fn committing_new_child_body_preserves_following_top_level_sibling() {
     let one = id_of(&session, "One");
     session.focus(one).unwrap();
     session
-        .append_child_to_focused("One One", omriss::HeadingLevel::H2)
+        .append_child_to_focused("One One", omriss_core::HeadingLevel::H2)
         .unwrap();
 
     let child = session.current_snapshot().unwrap().children[0].id;

@@ -1,7 +1,8 @@
 [package]
-name = "omriss-app"
+name = "omriss"
 description = "Desktop GUI shell for Omriss (Dioxus + system WebView)"
 readme = "../../README.md"
+publish = false
 version.workspace       = true
 edition.workspace       = true
 rust-version.workspace  = true
@@ -18,7 +19,7 @@ repository.workspace    = true
 # `cargo test` works on hosts without GUI libraries (RFC-001).
 
 [dependencies]
-omriss              = { workspace = true }
+omriss-core         = { workspace = true }
 omriss-ui           = { workspace = true }
 
 dioxus              = { workspace = true }

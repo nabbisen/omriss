@@ -4,7 +4,7 @@
 //! grouped by section node so the UI can show the containing path and the
 //! user can navigate directly to the matching section.
 
-use omriss::{ByteRange, Document, NodeId, OutlineItem};
+use omriss_core::{ByteRange, Document, NodeId, OutlineItem};
 
 /// One match of a search query inside the canonical source text.
 #[derive(Debug, Clone)]
@@ -170,7 +170,7 @@ pub fn search_section(doc: &Document, scope_node: NodeId, query: &str) -> Vec<Se
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omriss::Document;
+    use omriss_core::Document;
 
     fn doc(md: &str) -> Document {
         Document::parse(md.to_string()).unwrap()

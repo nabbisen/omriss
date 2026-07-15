@@ -4,7 +4,7 @@
 //! focus navigation state, file text profile, search, command registry,
 //! document statistics, and internationalized UI strings. Everything here
 //! is plain Rust with no windowing or WebView dependency, so it builds and
-//! tests on any host; the desktop shell in `omriss-app` wires these
+//! tests on any host; the desktop shell in the `omriss` app package wires these
 //! types to Dioxus.
 //!
 //! ```
@@ -48,4 +48,4 @@ pub use interface::document_map::{
 };
 pub use session::{EditorSession, OutlineNode};
 // Structural editing types re-exported for the desktop crate.
-pub use omriss::{MoveTarget, StructuralEditError};
+pub use omriss_core::{MoveTarget, StructuralEditError};

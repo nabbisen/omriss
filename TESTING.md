@@ -22,12 +22,12 @@ invariant for the new operation. No release may ship with a known violation.
  Few     Manual smoke tests per platform (RELEASE_CHECKLIST)
 ──────────────────────────────────────────────────────────
  Some    omriss-ui integration tests (session + view state)
-         omriss-app pure-logic tests (keyboard mapping, recent files)
+         omriss app pure-logic tests (keyboard mapping, recent files)
 ──────────────────────────────────────────────────────────
- Many    omriss golden fixture tests
-         omriss structural operation tests
+ Many    omriss-core golden fixture tests
+         omriss-core structural operation tests
 ──────────────────────────────────────────────────────────
- Many    omriss unit tests (range, revision, history)
+ Many    omriss-core unit tests (range, revision, history)
 ──────────────────────────────────────────────────────────
 ```
 
@@ -37,20 +37,20 @@ invariant for the new operation. No release may ship with a known violation.
 
 | Suite | Path | What it tests |
 |-------|------|---------------|
-| Core unit | `crates/omriss/src/` (inline) | data structures, range arithmetic, UTF-8 boundaries |
-| Source preservation | `crates/omriss/tests/source_preservation.rs` | golden byte-exact edit tests |
-| Structural ops | `crates/omriss/tests/structural_ops.rs` | promote/demote/move/split/delete/merge + undo |
-| Fixture catalog | `crates/omriss/tests/fixture_catalog.rs` | all fixtures load, outline is correct, round-trip edit preserves source |
-| UI unit | `crates/omriss-ui/src/tests/` | i18n parity, session behavior, search, commands |
-| Desktop pure-logic | `crates/omriss-app/src/keyboard.rs`, `settings.rs` (inline) | keyboard shortcut mapping, recent-files dedup/cap |
-| Benchmarks | `crates/omriss/benches/indexing.rs` | performance regression detection (run manually) |
+| Core unit | `crates/core/src/` (inline) | data structures, range arithmetic, UTF-8 boundaries |
+| Source preservation | `crates/core/tests/source_preservation.rs` | golden byte-exact edit tests |
+| Structural ops | `crates/core/tests/structural_ops.rs` | promote/demote/move/split/delete/merge + undo |
+| Fixture catalog | `crates/core/tests/fixture_catalog.rs` | all fixtures load, outline is correct, round-trip edit preserves source |
+| UI unit | `crates/ui/src/tests/` | i18n parity, session behavior, search, commands |
+| Desktop pure-logic | `crates/app/src/input/keyboard.rs`, `crates/app/src/storage/settings.rs` | keyboard shortcut mapping, recent-files dedup/cap |
+| Benchmarks | `crates/core/benches/indexing.rs` | performance regression detection (run manually) |
 
 ## On Dioxus testing styles
 
 The Dioxus guide describes component testing (dioxus-ssr snapshots), hook
 testing (a hand-driven `VirtualDom`), and end-to-end testing (Playwright).
 This project uses none of them, by design. All business logic lives in the
-Dioxus-free `omriss` and `omriss-ui` crates and is covered by plain
+Dioxus-free `omriss-core` and `omriss-ui` crates and is covered by plain
 Rust tests, so the shell needs no component-level harness. There are no
 custom hooks to test, HTML snapshots would be brittle against ordinary
 markup edits, and Playwright targets web builds rather than this desktop
@@ -61,7 +61,7 @@ testing should be reconsidered then.
 
 ## Fixture Catalog
 
-Fixtures live in `crates/omriss/tests/fixtures/`. Each fixture must have
+Fixtures live in `crates/core/tests/fixtures/`. Each fixture must have
 a brief comment explaining its purpose. New fixtures are added when:
 
 - a reported bug involves a Markdown structure not covered by existing fixtures;
@@ -113,20 +113,23 @@ When a bug is reported or discovered:
 ## Running Tests
 
 ```sh
-# All crates (excludes omriss-app which requires GUI libraries)
-cargo test --workspace
+# Default members (excludes the omriss app package, which requires GUI libraries)
+cargo test
 
 # Core only (fast, no GUI)
-cargo test -p omriss
+cargo test -p omriss-core
 
 # UI only
 cargo test -p omriss-ui
 
+# App package check (requires platform WebView libraries)
+cargo check -p omriss
+
 # Benchmarks (optional, slow)
-cargo bench -p omriss
+cargo bench -p omriss-core
 ```
 
-The `omriss-app` crate is excluded from `--workspace` default members
+The `omriss` app package is excluded from workspace default members
 because it requires platform WebView libraries. It is tested manually via
 the platform smoke test workflow in `RELEASE_CHECKLIST.md`.
 
@@ -136,7 +139,7 @@ the platform smoke test workflow in `RELEASE_CHECKLIST.md`.
 
 A minimum CI configuration must:
 
-1. Run `cargo test -p omriss -p omriss-ui` on every pull request.
+1. Run `cargo test -p omriss-core -p omriss-ui` on every pull request.
 2. Run `cargo clippy --workspace -- -D warnings` to enforce lint hygiene.
 3. Run `cargo fmt --check` to enforce formatting.
 4. Fail if any test fails or any warning is present.

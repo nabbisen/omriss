@@ -1,4 +1,4 @@
-use omriss::NodeId;
+use omriss_core::NodeId;
 
 use crate::editor::view_state::{ViewMode, ViewState};
 
