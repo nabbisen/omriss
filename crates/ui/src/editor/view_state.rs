@@ -126,10 +126,10 @@ impl ViewState {
         };
         self.back.retain(|mode| alive(mode, &mut is_alive));
         self.forward.retain(|mode| alive(mode, &mut is_alive));
-        if let Some(pre) = &self.pre_raw {
-            if !alive(pre, &mut is_alive) {
-                self.pre_raw = Some(ViewMode::Outline);
-            }
+        if let Some(pre) = &self.pre_raw
+            && !alive(pre, &mut is_alive)
+        {
+            self.pre_raw = Some(ViewMode::Outline);
         }
         if !alive(&self.mode, &mut is_alive) {
             self.mode = ViewMode::Outline;

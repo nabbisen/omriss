@@ -9,7 +9,7 @@ use crate::doc::edit::{EditResult, ReplaceSectionBody};
 use crate::doc::history::{EditHistory, EditRecord};
 use crate::doc::revision::DocumentRevision;
 use crate::error::{DocumentError, EditError};
-use crate::index::index::build_outline;
+use crate::index::builder::build_outline;
 use crate::index::outline::{HeadingLevel, NodeId, Outline};
 use crate::range::{ByteRange, RangeError};
 

@@ -80,11 +80,11 @@ pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
         ctx.session.read().file_name().map(|s| s.to_string())
     };
     // External modification check (RFC-015).
-    if let (Some(path), Some(mtime)) = (existing.as_deref(), *ctx.saved_mtime.read()) {
-        if file_dialog::was_modified_externally(path, mtime) {
-            ctx.modal.set(Modal::ExternalModified);
-            return;
-        }
+    if let (Some(path), Some(mtime)) = (existing.as_deref(), *ctx.saved_mtime.read())
+        && file_dialog::was_modified_externally(path, mtime)
+    {
+        ctx.modal.set(Modal::ExternalModified);
+        return;
     }
     let profile = ctx.session.read().profile().clone();
     let outcome =

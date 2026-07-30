@@ -8,6 +8,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Internal module split and clippy gate** — `crates/core/src/doc/structural.rs`
+  and `crates/app/src/components/document_map_pane.rs` were split into smaller
+  submodules to satisfy the project's file-size rule, and `index/index.rs` was
+  renamed to `index/builder.rs` to fix a `clippy::module_inception` warning.
+  Three `collapsible_if` warnings were also fixed using let-chains. The
+  workspace now passes `cargo clippy --workspace --all-targets -- -D warnings`
+  cleanly. This is a pure code-motion and lint-fix refactor with no
+  user-facing change: all public APIs, `rsx!` markup, and behavior are
+  unchanged, and the full test suite (239 tests) passes unmodified.
 - **RFC-062 crate package name exchange** — the reusable document engine package
   is now `omriss-core`, while the desktop app package is now `omriss`. This
   makes `cargo run -p omriss` run the app. Library users should migrate Rust
