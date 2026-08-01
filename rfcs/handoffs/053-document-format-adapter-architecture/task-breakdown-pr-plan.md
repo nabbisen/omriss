@@ -70,6 +70,12 @@ Move `sibling_info` capability computation logic here from
 **Not in this slice:** deleting anything from `omriss-ui`. S2 is purely
 additive; the duplication is temporary and resolved in S3.
 
+> **Execution note (added after the S3 review).** This section scopes itself to
+> RFC-053 §6, so it did not create `DraftState` (§9.3), even though §14's
+> reconciliation table assigns that type to `omriss-core` too. `DraftState`
+> was therefore created in **S3**, ported verbatim. The gap was in this
+> document, not in either slice.
+
 **Tests:** capability computation for root, first child, last child, only child,
 and a deep node — the cases the existing `document_map_tests` cover, now
 asserted at core level.
@@ -85,7 +91,8 @@ Remove from `crates/ui/src/interface/document_map.rs`:
 - `MapCapability` → use `omriss_core::Capability`
 - `MapNodeCapabilities` → use `omriss_core::NodeCapabilities`
 - `CapabilityReason` → use `omriss_core::CapabilityReason`
-- `DraftState` → use `omriss_core::DraftState`
+- `DraftState` → use `omriss_core::DraftState` (created in this slice; see the
+  S2 execution note above)
 
 Keep in `omriss-ui`:
 
