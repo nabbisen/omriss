@@ -2,7 +2,31 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M11 — Format Adapter Foundation
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — delivered as slices S1–S6
+(`0f9d747`, `3a2fa5c`, `e84dcbe`, `854c40f`, `b060a47`, `46cd110`, `b744efc`).
+Nine of the eleven §19 criteria are closed. Three items are **deferred to
+RFC-054, not resolved here**:
+
+1. **Criterion 7, end-to-end half.** The adapter-boundary mechanism is proven —
+   `build_structure` failure cannot mutate source, and `PlainTextAdapter`
+   supplies the fallback structure. The session actually choosing that fallback,
+   and the UI offering "Show plain file text", require session wiring that no
+   slice performed.
+2. **Criterion 10.** `StructureErrorKind` production is complete for Markdown
+   and PlainText, but the kind → friendly-message table was never built. Its
+   home is fixed as `omriss-ui` (§11), matching the `CapabilityReason` split.
+3. **The `&mut Document` coupling.** §7's `apply_validated_edit` and
+   `structure_command` take `Document`, which is Markdown-specific: it owns a
+   heading `Outline` and its public edit operations are section-shaped. This is
+   correct for `MarkdownAdapter` and is why S4b's wrapping is clean, but a JSON
+   or TOML adapter needs a format-neutral byte-range splice with history
+   recording, which `Document` does not expose. RFC-054 must resolve this before
+   it can implement a second format.
+
+Nothing here wires the adapter into `EditorSession`; the shipped session still
+calls `Document` operations directly. Markdown behavior is byte-for-byte
+unchanged throughout: all 239 baseline tests passed unmodified across every
+slice, and nine byte-identical comparison tests prove the command wrapping.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-052

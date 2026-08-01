@@ -1,6 +1,6 @@
 # RFC-053 Implementation Handoff
 
-**Governing RFC:** [RFC-053](../../proposed/053-document-format-adapter-architecture.md)
+**Governing RFC:** [RFC-053](../../done/053-document-format-adapter-architecture.md)
 **Milestone:** M11 — Format Adapter Foundation
 **Supersedes:** the RFC-053 stub, whose own checklist ended with
 "Replace this stub before RFC-053 implementation begins."

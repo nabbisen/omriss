@@ -2,7 +2,7 @@
 
 Companion execution package for:
 
-- RFC: `rfcs/proposed/053-document-format-adapter-architecture.md`
+- RFC: `rfcs/done/053-document-format-adapter-architecture.md`
 - Milestone: M11 — Format Adapter Foundation
 
 This package replaces the M10-era stub, whose own checklist ended with
