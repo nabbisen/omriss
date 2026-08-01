@@ -3,6 +3,7 @@
 
 mod api_tests;
 mod detection_tests;
+mod draft_tests;
 mod edit_tests;
 mod history_tests;
 mod index_tests;

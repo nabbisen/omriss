@@ -1,7 +1,8 @@
 //! Tests for DocumentMapNode generation and capability computation (RFC-049).
 
-use crate::EditorSession;
-use crate::interface::document_map::{CapabilityReason, DraftState, MapCapability};
+use omriss_core::{Capability, CapabilityReason, DraftState};
+
+use crate::{CapabilityReasonCatalogKey, EditorSession};
 
 // ── DraftState ────────────────────────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ fn first_section_cannot_move_up() {
     let root = session.document_map_nodes();
     let first = &root.children[0];
     assert!(
-        matches!(first.capabilities.can_move_up, MapCapability::Disabled(_)),
+        matches!(first.capabilities.can_move_up, Capability::Disabled { .. }),
         "first section should not be movable up"
     );
 }
@@ -91,7 +92,7 @@ fn last_section_cannot_move_down() {
     let root = session.document_map_nodes();
     let last = &root.children[1];
     assert!(
-        matches!(last.capabilities.can_move_down, MapCapability::Disabled(_)),
+        matches!(last.capabilities.can_move_down, Capability::Disabled { .. }),
         "last section should not be movable down"
     );
 }
@@ -113,7 +114,9 @@ fn top_level_section_cannot_move_out_one_level() {
     assert!(
         matches!(
             section.capabilities.can_move_out_one_level,
-            MapCapability::Disabled(CapabilityReason::NoParent)
+            Capability::Disabled {
+                reason: CapabilityReason::NoParent
+            }
         ),
         "top-level section should report NoParent for move_out_one_level"
     );
@@ -142,7 +145,7 @@ fn first_child_cannot_join_with_previous() {
     assert!(
         matches!(
             first.capabilities.can_join_with_previous,
-            MapCapability::Disabled(_)
+            Capability::Disabled { .. }
         ),
         "first section should not be able to join with previous"
     );
@@ -183,7 +186,9 @@ fn section_cannot_join_when_previous_sibling_has_children() {
     let second = &root.children[1];
     assert_eq!(
         second.capabilities.can_join_with_previous,
-        MapCapability::Disabled(CapabilityReason::UnsafePreservation)
+        Capability::Disabled {
+            reason: CapabilityReason::UnsafePreservation
+        }
     );
 }
 

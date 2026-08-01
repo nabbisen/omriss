@@ -55,6 +55,7 @@ pub use doc::revision::DocumentRevision;
 pub use doc::structural::{MoveTarget, StructuralEditError};
 pub use error::{DocumentError, EditError, IndexError};
 pub use formats::DocumentFormat;
+pub use formats::draft::DraftState;
 pub use formats::structure::{
     Capability, CapabilityReason, DocumentStructure, NodeCapabilities, StructureNode,
     StructureNodeKind,

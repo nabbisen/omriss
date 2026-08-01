@@ -4,7 +4,7 @@
 use dioxus_swdir_tree::item_tree::node::ItemNode;
 use dioxus_swdir_tree::item_tree::node::NodeId as SwNodeId;
 use omriss_ui::i18n::{Locale, t};
-use omriss_ui::{DocumentMapNode, MapCapability};
+use omriss_ui::{Capability, CapabilityReasonCatalogKey, DocumentMapNode};
 
 pub(super) fn to_item_node(n: &DocumentMapNode) -> ItemNode<String> {
     let id = SwNodeId(n.id);
@@ -16,9 +16,9 @@ pub(super) fn to_item_node(n: &DocumentMapNode) -> ItemNode<String> {
     }
 }
 
-pub(super) fn disabled_title(lang: Locale, cap: &MapCapability) -> String {
-    if let MapCapability::Disabled(r) = cap {
-        t(lang, r.catalog_key()).to_string()
+pub(super) fn disabled_title(lang: Locale, cap: &Capability) -> String {
+    if let Capability::Disabled { reason } = cap {
+        t(lang, reason.catalog_key()).to_string()
     } else {
         String::new()
     }
@@ -26,11 +26,11 @@ pub(super) fn disabled_title(lang: Locale, cap: &MapCapability) -> String {
 
 pub(super) fn capability_title(
     lang: Locale,
-    cap: &MapCapability,
+    cap: &Capability,
     enabled_key: &'static str,
 ) -> String {
-    if let MapCapability::Disabled(r) = cap {
-        t(lang, r.catalog_key()).to_string()
+    if let Capability::Disabled { reason } = cap {
+        t(lang, reason.catalog_key()).to_string()
     } else {
         t(lang, enabled_key).to_string()
     }

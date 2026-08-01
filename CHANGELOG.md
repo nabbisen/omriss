@@ -8,6 +8,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S3 `omriss-ui` reconciliation** — `omriss-ui` now consumes the
+  `omriss_core` capability vocabulary (`Capability`, `NodeCapabilities`,
+  `CapabilityReason`, `DraftState`) instead of defining its own
+  `MapCapability`/`MapNodeCapabilities` copies, and the Document Map row
+  menu's capability computation now calls into `omriss-core` instead of a
+  duplicate `omriss-ui` implementation. No user-facing behavior changed:
+  all eight capability catalog keys are unchanged, and every existing
+  Document Map test passes with unchanged meaning.
 - **RFC-053 S2 structure vocabulary** — adds `omriss_core::{DocumentStructure,
   StructureNode, StructureNodeKind, NodeCapabilities, Capability,
   CapabilityReason}` and a Markdown capability-computation function, ported
