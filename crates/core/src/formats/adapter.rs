@@ -17,15 +17,25 @@ use crate::formats::markdown::MarkdownAdapter;
 use crate::formats::plain_text::PlainTextAdapter;
 use crate::formats::structure::DocumentStructure;
 use crate::formats::unsupported::{JsonAdapter, TomlAdapter, YamlExperimentalAdapter};
-use crate::{Document, DocumentFormat, NodeId};
+use crate::{Document, DocumentFormat, DocumentRevision, NodeId};
 
 /// The contract every document format implements (RFC-053 §7).
 pub trait DocumentFormatAdapter {
     /// The format this adapter serves.
     fn format(&self) -> DocumentFormat;
 
-    /// Derives a [`DocumentStructure`] from `source`.
-    fn build_structure(&self, source: &str) -> Result<DocumentStructure, StructureError>;
+    /// Derives a [`DocumentStructure`] from `source`, stamped with
+    /// `revision` — the revision `source` was read at (RFC-053 §7.0).
+    /// Adapters own no state and cannot know this on their own; the caller
+    /// (typically `document.revision()` alongside `document.source()`)
+    /// supplies it. `structure_command` uses this value as the base
+    /// revision for staleness detection (§9.1), so it must be the true
+    /// revision `source` reflects, not a value the adapter invents.
+    fn build_structure(
+        &self,
+        source: &str,
+        revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError>;
 
     /// The right-hand editor's view of `node_id`.
     fn focused_content(

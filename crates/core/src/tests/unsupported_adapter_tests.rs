@@ -2,15 +2,18 @@
 //! `UnsupportedFeature` for every method and implement no parsing logic.
 
 use crate::{
-    ActiveAdapter, Document, DocumentFormat, DocumentFormatAdapter, JsonAdapter, MarkdownAdapter,
-    PlainTextAdapter, StructureCommand, StructureErrorKind, TomlAdapter, YamlExperimentalAdapter,
+    ActiveAdapter, Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, JsonAdapter,
+    MarkdownAdapter, PlainTextAdapter, StructureCommand, StructureErrorKind, TomlAdapter,
+    YamlExperimentalAdapter,
 };
 
 #[test]
 fn json_adapter_reports_its_format_and_refuses_to_build_structure() {
     let adapter = JsonAdapter;
     assert_eq!(adapter.format(), DocumentFormat::Json);
-    let err = adapter.build_structure("{}").expect_err("not implemented");
+    let err = adapter
+        .build_structure("{}", DocumentRevision::INITIAL)
+        .expect_err("not implemented");
     assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }
 
@@ -19,7 +22,7 @@ fn toml_adapter_reports_its_format_and_refuses_to_build_structure() {
     let adapter = TomlAdapter;
     assert_eq!(adapter.format(), DocumentFormat::Toml);
     let err = adapter
-        .build_structure("key = 1")
+        .build_structure("key = 1", DocumentRevision::INITIAL)
         .expect_err("not implemented");
     assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }
@@ -29,7 +32,7 @@ fn yaml_adapter_reports_its_format_and_refuses_to_build_structure() {
     let adapter = YamlExperimentalAdapter;
     assert_eq!(adapter.format(), DocumentFormat::YamlExperimental);
     let err = adapter
-        .build_structure("key: 1")
+        .build_structure("key: 1", DocumentRevision::INITIAL)
         .expect_err("not implemented");
     assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }

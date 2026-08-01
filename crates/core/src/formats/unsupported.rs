@@ -12,7 +12,7 @@ use crate::formats::error::{
 };
 use crate::formats::focused_content::FocusedContent;
 use crate::formats::structure::DocumentStructure;
-use crate::{Document, DocumentFormat, DocumentFormatAdapter, NodeId};
+use crate::{Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, NodeId};
 
 /// JSON support is not implemented; see RFC-054.
 #[derive(Debug, Default, Clone, Copy)]
@@ -31,7 +31,11 @@ impl DocumentFormatAdapter for JsonAdapter {
         DocumentFormat::Json
     }
 
-    fn build_structure(&self, _source: &str) -> Result<DocumentStructure, StructureError> {
+    fn build_structure(
+        &self,
+        _source: &str,
+        _revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError> {
         Err(unsupported())
     }
 
@@ -77,7 +81,11 @@ impl DocumentFormatAdapter for TomlAdapter {
         DocumentFormat::Toml
     }
 
-    fn build_structure(&self, _source: &str) -> Result<DocumentStructure, StructureError> {
+    fn build_structure(
+        &self,
+        _source: &str,
+        _revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError> {
         Err(unsupported())
     }
 
@@ -123,7 +131,11 @@ impl DocumentFormatAdapter for YamlExperimentalAdapter {
         DocumentFormat::YamlExperimental
     }
 
-    fn build_structure(&self, _source: &str) -> Result<DocumentStructure, StructureError> {
+    fn build_structure(
+        &self,
+        _source: &str,
+        _revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError> {
         Err(unsupported())
     }
 

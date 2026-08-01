@@ -44,7 +44,8 @@ use crate::formats::error::{
 use crate::formats::focused_content::FocusedContent;
 use crate::formats::structure::DocumentStructure;
 use crate::{
-    Document, DocumentFormat, DocumentFormatAdapter, MoveDirection, NodeId, ReplaceSectionBody,
+    Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, MoveDirection, NodeId,
+    ReplaceSectionBody,
 };
 
 /// The Markdown format adapter (RFC-053 §17.1).
@@ -66,7 +67,15 @@ impl DocumentFormatAdapter for MarkdownAdapter {
     /// detected permissively by `pulldown-cmark` — so the only realistic
     /// failure here is an internal outline invariant violation, never
     /// "invalid" user Markdown.
-    fn build_structure(&self, source: &str) -> Result<DocumentStructure, StructureError> {
+    ///
+    /// `revision` is stamped onto the result as-is (RFC-053 §7.0); the
+    /// internal `Document::parse` is only how the outline is obtained and
+    /// its own (always-`INITIAL`) revision is never read.
+    fn build_structure(
+        &self,
+        source: &str,
+        revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError> {
         let document = Document::parse(source.to_string())
             .map_err(|_| StructureErrorKind::InternalInvariantFailed)?;
         let outline = document.outline();
@@ -80,7 +89,7 @@ impl DocumentFormatAdapter for MarkdownAdapter {
             format: DocumentFormat::Markdown,
             root_id: outline.root_id(),
             nodes,
-            revision: document.revision(),
+            revision,
         })
     }
 

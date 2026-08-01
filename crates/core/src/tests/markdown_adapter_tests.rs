@@ -1,9 +1,14 @@
 //! RFC-053 §13.3 / S4a: `MarkdownAdapter::build_structure` identity
 //! requirements — rebuild determinism and focus survival across an
 //! unrelated edit.
+//!
+//! RFC-053 S6: `build_structure` takes an explicit `revision` rather than
+//! deriving one from a throwaway parse (S5-IMPL-001) — the two tests at the
+//! bottom of this file are that slice's entire point.
 
 use crate::{
-    Document, DocumentFormatAdapter, MarkdownAdapter, ReplaceSectionBody, StructureNodeKind,
+    Document, DocumentFormatAdapter, DocumentRevision, MarkdownAdapter, ReplaceSectionBody,
+    StructureCommand, StructureCommandError, StructureErrorKind, StructureNodeKind,
 };
 
 fn adapter() -> MarkdownAdapter {
@@ -13,7 +18,7 @@ fn adapter() -> MarkdownAdapter {
 #[test]
 fn build_structure_projects_root_and_sections() {
     let structure = adapter()
-        .build_structure("# A\n\n## A1\nbody\n\n# B\n")
+        .build_structure("# A\n\n## A1\nbody\n\n# B\n", DocumentRevision::INITIAL)
         .expect("build");
 
     assert_eq!(structure.nodes.len(), 4); // root, A, A1, B
@@ -40,8 +45,12 @@ fn build_structure_projects_root_and_sections() {
 #[test]
 fn rebuild_determinism_same_source_produces_same_ids() {
     let source = "# A\n\n## A1\nbody\n\n# B\nbody\n";
-    let first = adapter().build_structure(source).expect("build");
-    let second = adapter().build_structure(source).expect("build");
+    let first = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
+    let second = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
 
     let first_ids: Vec<_> = first.nodes.iter().map(|n| n.id).collect();
     let second_ids: Vec<_> = second.nodes.iter().map(|n| n.id).collect();
@@ -52,7 +61,9 @@ fn rebuild_determinism_same_source_produces_same_ids() {
 #[test]
 fn focus_survives_an_edit_to_an_unrelated_node() {
     let source = "# A\nbody\n\n# B\nbody\n";
-    let before = adapter().build_structure(source).expect("build");
+    let before = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = before
         .nodes
         .iter()
@@ -72,7 +83,7 @@ fn focus_survives_an_edit_to_an_unrelated_node() {
         .expect("edit applies");
 
     let after = adapter()
-        .build_structure(document.source())
+        .build_structure(document.source(), document.revision())
         .expect("rebuild");
     let b_after = after
         .nodes
@@ -85,7 +96,9 @@ fn focus_survives_an_edit_to_an_unrelated_node() {
 #[test]
 fn deep_nesting_preserves_ancestor_depth() {
     let source = "# A\n\n## A1\n\n### A1a\nbody\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let deepest = structure.nodes.iter().find(|n| n.title == "A1a").unwrap();
     assert_eq!(deepest.depth, 3);
 }
@@ -98,7 +111,9 @@ fn depth_is_tree_depth_not_heading_level_across_a_skipped_level() {
     // -> Jumped(2), since Jumped attaches directly under "Top" with no
     // synthetic H2/H3 in between.
     let source = "# Top\n\n#### Jumped\nbody\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let top = structure.nodes.iter().find(|n| n.title == "Top").unwrap();
     let jumped = structure
         .nodes
@@ -113,5 +128,95 @@ fn depth_is_tree_depth_not_heading_level_across_a_skipped_level() {
     assert_eq!(
         jumped.depth, 2,
         "depth must count ancestors (2), not heading level (which would suggest 3 or 4)"
+    );
+}
+
+/// RFC-053 S6, required test 1 ("the fix works"): before the fix,
+/// `build_structure` always stamped `DocumentRevision::INITIAL` — reading it
+/// off a throwaway `Document::parse` rather than the caller's live
+/// document — so `structure.revision` never matched a document edited even
+/// once, and this command failed with `RevisionMismatch` (mapped to
+/// `StructureErrorKind::UnsafeRange`). Passing `document.revision()`
+/// explicitly, as the fixed signature requires, is what makes it succeed.
+#[test]
+fn structure_command_succeeds_against_a_document_edited_since_it_was_parsed() {
+    let source = "# A\n\n# B\n";
+    let mut document = Document::parse(source.to_string()).expect("parse");
+
+    // Advance the document's revision past INITIAL with an unrelated edit.
+    let a_id = document.outline().root().children[0];
+    document
+        .rename_section(a_id, "A Renamed", document.revision())
+        .expect("first edit advances the revision");
+
+    // Rebuild the structure from the edited document, passing its live
+    // revision (S6's fix) rather than letting build_structure derive one
+    // from a fresh internal parse.
+    let structure = adapter()
+        .build_structure(document.source(), document.revision())
+        .expect("rebuild");
+    let b_id = structure
+        .nodes
+        .iter()
+        .find(|n| n.title == "B")
+        .expect("B exists")
+        .id;
+
+    let result = adapter().structure_command(
+        &mut document,
+        &structure,
+        StructureCommand::Rename {
+            target: b_id,
+            new_name: "B Renamed".to_string(),
+        },
+    );
+    assert!(
+        result.is_ok(),
+        "a command against a document edited since the structure was \
+         rebuilt must succeed once build_structure is given the live \
+         revision: {result:?}"
+    );
+}
+
+/// RFC-053 S6, required test 2 ("staleness detection survives"): fixing
+/// test 1 must not come at the cost of removing the check it exercises. A
+/// structure built at revision N, used against a document since advanced to
+/// N+1, must still be rejected — that rejection is the reason
+/// `DocumentStructure.revision` exists at all.
+#[test]
+fn structure_command_is_still_rejected_against_a_stale_structure() {
+    let source = "# A\n\n# B\n";
+    let mut document = Document::parse(source.to_string()).expect("parse");
+    let structure = adapter()
+        .build_structure(document.source(), document.revision())
+        .expect("build at revision N");
+    let b_id = structure
+        .nodes
+        .iter()
+        .find(|n| n.title == "B")
+        .expect("B exists")
+        .id;
+
+    // Advance the document to N+1; `structure` still claims N.
+    let a_id = document.outline().root().children[0];
+    document
+        .rename_section(a_id, "A Renamed", document.revision())
+        .expect("advance the document past the structure's revision");
+
+    let result = adapter().structure_command(
+        &mut document,
+        &structure,
+        StructureCommand::Rename {
+            target: b_id,
+            new_name: "B Renamed".to_string(),
+        },
+    );
+    assert_eq!(
+        result,
+        Err(StructureCommandError {
+            kind: StructureErrorKind::UnsafeRange
+        }),
+        "a structure built at an earlier revision must still be rejected \
+         once the document has moved on"
     );
 }

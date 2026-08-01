@@ -3,8 +3,8 @@
 //! to calling the shipped RFC-023/024/025 operation directly, plus undo.
 
 use crate::{
-    Document, DocumentFormatAdapter, MarkdownAdapter, MoveDirection, MoveTarget, StructureCommand,
-    StructureCommandError, StructureErrorKind,
+    Document, DocumentFormatAdapter, DocumentRevision, MarkdownAdapter, MoveDirection, MoveTarget,
+    StructureCommand, StructureCommandError, StructureErrorKind,
 };
 
 fn adapter() -> MarkdownAdapter {
@@ -27,7 +27,9 @@ fn find_id(structure: &crate::DocumentStructure, title: &str) -> crate::NodeId {
 #[test]
 fn move_inside_previous_wraps_demote_section() {
     let source = "# A\n\n# B\nbody\n\n# C\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = find_id(&structure, "B");
 
     let mut via_command = doc(source);
@@ -52,7 +54,9 @@ fn move_inside_previous_wraps_demote_section() {
 #[test]
 fn move_out_one_level_wraps_promote_section() {
     let source = "# A\n\n## A1\nbody\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let a1_id = find_id(&structure, "A1");
 
     let mut via_command = doc(source);
@@ -77,7 +81,9 @@ fn move_out_one_level_wraps_promote_section() {
 #[test]
 fn move_up_wraps_move_section_before_previous_sibling() {
     let source = "# A\n\n# B\n\n# C\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = find_id(&structure, "B");
     let a_id = find_id(&structure, "A");
 
@@ -106,7 +112,9 @@ fn move_up_wraps_move_section_before_previous_sibling() {
 #[test]
 fn move_down_wraps_move_section_after_next_sibling() {
     let source = "# A\n\n# B\n\n# C\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = find_id(&structure, "B");
     let c_id = find_id(&structure, "C");
 
@@ -137,7 +145,9 @@ fn move_down_wraps_move_section_after_next_sibling() {
 #[test]
 fn move_up_with_no_previous_sibling_is_an_error() {
     let source = "# A\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let a_id = find_id(&structure, "A");
 
     let mut document = doc(source);
@@ -164,7 +174,9 @@ fn move_up_with_no_previous_sibling_is_an_error() {
 #[test]
 fn join_with_previous_wraps_merge_with_prev_sibling() {
     let source = "# A\n\n# B\nbody\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = find_id(&structure, "B");
 
     let mut via_command = doc(source);
@@ -188,7 +200,9 @@ fn join_with_previous_wraps_merge_with_prev_sibling() {
 #[test]
 fn rename_wraps_rename_section() {
     let source = "# A\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let a_id = find_id(&structure, "A");
 
     let mut via_command = doc(source);
@@ -216,7 +230,9 @@ fn rename_wraps_rename_section() {
 #[test]
 fn delete_wraps_delete_section() {
     let source = "# A\n\n# B\nbody\n\n# C\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = find_id(&structure, "B");
 
     let mut via_command = doc(source);
@@ -239,7 +255,9 @@ fn delete_wraps_delete_section() {
 #[test]
 fn undo_after_a_structure_command_restores_the_original_source() {
     let source = "# A\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let b_id = find_id(&structure, "B");
 
     let mut document = doc(source);

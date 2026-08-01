@@ -8,6 +8,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S6 `build_structure` takes the revision explicitly** — fixes
+  `DocumentStructure.revision` always reporting `DocumentRevision::INITIAL`
+  (S5-IMPL-001), which made `structure_command` fail against any document
+  edited even once. `DocumentFormatAdapter::build_structure` now takes an
+  explicit `revision: DocumentRevision` parameter; the caller (the session,
+  from RFC-054+) supplies `document.revision()` alongside
+  `document.source()`. Internal only: closes RFC-053's last open defect;
+  no `omriss-ui`/`omriss-app` diff.
 - **RFC-053 S5 `PlainTextAdapter`** — adds `omriss_core::PlainTextAdapter`,
   the RFC-052 §5.2 fallback format: exactly one node, no synthetic
   structure, every editing capability hidden except viewing.

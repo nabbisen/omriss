@@ -43,7 +43,14 @@ impl DocumentFormatAdapter for PlainTextAdapter {
     /// Always succeeds: the whole source becomes one `RawRegion` node with
     /// every editing capability hidden. There is no synthetic structure to
     /// build, so there is nothing that can fail here.
-    fn build_structure(&self, source: &str) -> Result<DocumentStructure, StructureError> {
+    ///
+    /// `revision` is stamped onto the result as-is (RFC-053 §7.0) — the
+    /// caller's responsibility to supply the revision `source` was read at.
+    fn build_structure(
+        &self,
+        source: &str,
+        revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError> {
         let id = root_node_id();
         Ok(DocumentStructure {
             format: DocumentFormat::PlainText,
@@ -62,7 +69,7 @@ impl DocumentFormatAdapter for PlainTextAdapter {
                 children: Vec::new(),
                 capabilities: NodeCapabilities::hidden(),
             }],
-            revision: DocumentRevision::INITIAL,
+            revision,
         })
     }
 

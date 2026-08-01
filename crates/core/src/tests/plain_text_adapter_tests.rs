@@ -2,14 +2,17 @@
 //! (RFC-052 §5.2, RFC-053 §18).
 
 use crate::{
-    Document, DocumentFormat, DocumentFormatAdapter, FocusedContent, JsonAdapter, MarkdownAdapter,
-    PlainTextAdapter, StructureErrorKind, StructureNodeKind,
+    Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, FocusedContent, JsonAdapter,
+    MarkdownAdapter, PlainTextAdapter, StructureErrorKind, StructureNodeKind,
 };
 
 #[test]
 fn build_structure_always_succeeds_with_exactly_one_hidden_node() {
     let structure = PlainTextAdapter
-        .build_structure("anything at all, { not [ valid ] json (either")
+        .build_structure(
+            "anything at all, { not [ valid ] json (either",
+            DocumentRevision::INITIAL,
+        )
         .expect("PlainTextAdapter never fails");
 
     assert_eq!(structure.format, DocumentFormat::PlainText);
@@ -36,13 +39,17 @@ fn build_structure_always_succeeds_with_exactly_one_hidden_node() {
 
 #[test]
 fn build_structure_on_empty_source_still_succeeds() {
-    let structure = PlainTextAdapter.build_structure("").expect("empty is fine");
+    let structure = PlainTextAdapter
+        .build_structure("", DocumentRevision::INITIAL)
+        .expect("empty is fine");
     assert_eq!(structure.nodes.len(), 1);
 }
 
 #[test]
 fn focused_content_reports_unsupported_with_raw_text_available() {
-    let structure = PlainTextAdapter.build_structure("hello").unwrap();
+    let structure = PlainTextAdapter
+        .build_structure("hello", DocumentRevision::INITIAL)
+        .unwrap();
     let content = PlainTextAdapter
         .focused_content("hello", &structure, structure.root_id)
         .expect("viewing is allowed, editing is not");
@@ -60,7 +67,9 @@ fn focused_content_reports_unsupported_with_raw_text_available() {
 
 #[test]
 fn editing_methods_all_refuse_rather_than_guess() {
-    let structure = PlainTextAdapter.build_structure("hello").unwrap();
+    let structure = PlainTextAdapter
+        .build_structure("hello", DocumentRevision::INITIAL)
+        .unwrap();
 
     let validate_err = PlainTextAdapter
         .validate_focused_edit("hello", &structure, structure.root_id, "changed")
@@ -91,12 +100,12 @@ fn when_a_format_adapter_fails_plain_text_still_succeeds_on_the_same_source() {
     let source = r#"{"key": "value"}"#;
 
     let json_err = JsonAdapter
-        .build_structure(source)
+        .build_structure(source, DocumentRevision::INITIAL)
         .expect_err("JSON is not implemented yet (RFC-054)");
     assert_eq!(json_err.kind, StructureErrorKind::UnsupportedFeature);
 
     let plain_text_structure = PlainTextAdapter
-        .build_structure(source)
+        .build_structure(source, DocumentRevision::INITIAL)
         .expect("the fallback always succeeds");
     assert_eq!(plain_text_structure.nodes.len(), 1);
 
@@ -133,13 +142,13 @@ fn deeply_nested_block_quotes_do_not_overflow_the_stack() {
     // Must not panic/abort (stack overflow aborts the process rather than
     // unwinding, so the meaningful assertion is that this line is reached
     // at all).
-    let markdown_result = MarkdownAdapter.build_structure(&source);
+    let markdown_result = MarkdownAdapter.build_structure(&source, DocumentRevision::INITIAL);
     assert!(
         markdown_result.is_ok(),
         "must not error, and must not crash"
     );
 
-    let plain_text_result = PlainTextAdapter.build_structure(&source);
+    let plain_text_result = PlainTextAdapter.build_structure(&source, DocumentRevision::INITIAL);
     assert!(plain_text_result.is_ok());
     assert_eq!(
         plain_text_result.unwrap().nodes[0]

@@ -3,8 +3,8 @@
 //! plus offset/level arithmetic), and the focused-content edit round trip.
 
 use crate::{
-    Document, DocumentFormatAdapter, HeadingLevel, MarkdownAdapter, NewNodeSpec, StructureCommand,
-    StructureCommandError, StructureErrorKind,
+    Document, DocumentFormatAdapter, DocumentRevision, HeadingLevel, MarkdownAdapter, NewNodeSpec,
+    StructureCommand, StructureCommandError, StructureErrorKind,
 };
 
 fn adapter() -> MarkdownAdapter {
@@ -27,7 +27,9 @@ fn find_id(structure: &crate::DocumentStructure, title: &str) -> crate::NodeId {
 #[test]
 fn add_inside_wraps_split_section_one_level_deeper() {
     let source = "# A\nbody\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let a_id = find_id(&structure, "A");
 
     let mut via_command = doc(source);
@@ -60,7 +62,9 @@ fn add_inside_wraps_split_section_one_level_deeper() {
 #[test]
 fn add_inside_root_creates_a_top_level_h1_section() {
     let source = "# A\nbody\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let root_id = structure.root_id;
 
     let mut document = doc(source);
@@ -78,7 +82,7 @@ fn add_inside_root_creates_a_top_level_h1_section() {
         .expect("command");
 
     let rebuilt = adapter()
-        .build_structure(document.source())
+        .build_structure(document.source(), document.revision())
         .expect("rebuild");
     assert!(rebuilt.nodes.iter().any(|n| n.title == "New Top"));
     // New top-level section is H1, appended after existing top-level content.
@@ -88,7 +92,9 @@ fn add_inside_root_creates_a_top_level_h1_section() {
 #[test]
 fn add_after_wraps_split_section_at_the_targets_own_level() {
     let source = "# A\n\n## A1\nbody\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let a1_id = find_id(&structure, "A1");
 
     let mut via_command = doc(source);
@@ -119,7 +125,9 @@ fn add_after_wraps_split_section_at_the_targets_own_level() {
 #[test]
 fn add_after_root_is_rejected() {
     let source = "# A\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let root_id = structure.root_id;
 
     let mut document = doc(source);
@@ -146,7 +154,9 @@ fn add_after_root_is_rejected() {
 #[test]
 fn focused_content_then_validate_then_apply_round_trips_a_body_edit() {
     let source = "# A\nold body\n\n# B\n";
-    let structure = adapter().build_structure(source).expect("build");
+    let structure = adapter()
+        .build_structure(source, DocumentRevision::INITIAL)
+        .expect("build");
     let a_id = find_id(&structure, "A");
 
     let content = adapter()
