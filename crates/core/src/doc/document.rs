@@ -194,6 +194,40 @@ impl Document {
         Ok(result)
     }
 
+    /// Replaces an arbitrary byte range with `text` (RFC-054 §0.1).
+    /// Format-neutral, unlike [`Document::replace_section_body`]: it is not
+    /// scoped to a section body, so a non-Markdown adapter (JSON's scalar
+    /// and container value edits) can splice any byte range without a
+    /// heading-shaped command. Routes through the same transactional path
+    /// ([`Document::apply_replacement`]) every other mutation uses, so undo
+    /// history and revision update as one unit (RFC-053 §7.1) — identically
+    /// to `replace_section_body`, just without resolving the range from a
+    /// `NodeId` first.
+    pub fn replace_range(
+        &mut self,
+        range: ByteRange,
+        text: String,
+        base_revision: DocumentRevision,
+    ) -> Result<EditResult, EditError> {
+        if base_revision != self.revision {
+            return Err(EditError::RevisionMismatch {
+                expected: self.revision,
+                actual: base_revision,
+            });
+        }
+        let old_text = self.text.slice(range)?.to_string();
+        let result = self.apply_replacement(range, &text)?;
+        self.history.record(EditRecord {
+            replaced_range: result.replaced_range,
+            old_text,
+            new_range: result.new_range,
+            new_text: text,
+            revision_before: result.old_revision,
+            revision_after: result.new_revision,
+        });
+        Ok(result)
+    }
+
     /// Reverses the most recent committed edit (RFC-044). Byte-exact: the
     /// pre-edit source is restored exactly. Produces a fresh revision.
     pub fn undo(&mut self) -> Result<EditResult, EditError> {

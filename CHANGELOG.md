@@ -8,6 +8,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J1 `Document::replace_range`** — adds a format-neutral byte-range
+  replacement primitive, routed through the same transactional path
+  (`apply_replacement`) every other mutation uses, so undo history and
+  revision update as one unit. Prerequisite for JSON (and any future
+  non-Markdown format) editing: unlike `replace_section_body`, it is not
+  scoped to a section body. Internal only: nothing calls it yet; no
+  `omriss-ui`/`omriss-app` diff, no shipped Markdown behavior changed.
 - **RFC-053 S6 `build_structure` takes the revision explicitly** — fixes
   `DocumentStructure.revision` always reporting `DocumentRevision::INITIAL`
   (S5-IMPL-001), which made `structure_command` fail against any document
