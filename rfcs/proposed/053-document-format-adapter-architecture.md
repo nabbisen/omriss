@@ -63,11 +63,10 @@ AppShell
         │
         ▼
 DocumentSession
-  ├─ SourceText
-  ├─ ActiveFormatAdapter
+  ├─ Document          canonical text + revision + undo history (shipped)
+  ├─ ActiveAdapter     closed enum, see §7.2
   ├─ DocumentStructure
   ├─ FocusState
-  ├─ UndoRedoHistory
   └─ SaveController
         │
         ▼
@@ -75,8 +74,13 @@ Format adapters
   ├─ MarkdownAdapter
   ├─ JsonAdapter
   ├─ TomlAdapter
-  └─ YamlExperimentalAdapter
+  ├─ YamlExperimentalAdapter
+  └─ PlainTextAdapter
 ```
+
+`Document` already owns undo/redo, so the session does not hold a separate
+history. Adapters appear below the session because they never own state; they
+read `&str` and propose edits (§5.1).
 
 ## 5. Core data types
 
@@ -96,25 +100,40 @@ pub enum DocumentFormat {
 // (`omriss_core::NodeId(pub u64)`). It is reused as-is, never redefined, and never
 // shown in normal UI. There is no separate `FocusedNodeId`; focus is a state
 // role over `NodeId`.
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ByteRange {
-    pub start: usize,
-    pub end: usize,
-}
-
-pub struct SourceText {
-    text: String,
-    line_ending: LineEnding,
-    revision: u64,
-}
-
-pub enum LineEnding {
-    Lf,
-    Crlf,
-    Mixed,
-}
+//
+// ByteRange is likewise the EXISTING shipped type (`omriss_core::ByteRange`).
+// It is reused as-is. It must NOT be redefined as a bare `{ start, end }`
+// struct: the shipped type carries `new()` (validating), `validate_in()`,
+// `contains_range()`, `len()`, `is_empty()`, and `as_range()`. Redefining it
+// would silently discard UTF-8 boundary validation.
+//
+// DocumentRevision is likewise the EXISTING shipped type
+// (`omriss_core::DocumentRevision(pub u64)` with `next()`). Every revision
+// field in this RFC means `DocumentRevision`, never a bare `u64`.
 ```
+
+### 5.1 Types this RFC does NOT introduce
+
+An earlier draft of this section declared `SourceText`, `LineEnding`, and its
+own `ByteRange`. All three are withdrawn, because the codebase already owns
+those responsibilities and duplicating them would create two sources of truth
+for canonical text.
+
+| Withdrawn | Use instead | Why |
+|---|---|---|
+| `ByteRange { start, end }` | `omriss_core::ByteRange` | shipped type validates UTF-8 boundaries; the flat struct does not |
+| `revision: u64` | `omriss_core::DocumentRevision` | shipped newtype with `next()`; a bare `u64` invites mixing revisions with counts |
+| `SourceText { text, line_ending, revision }` | `omriss_core::Document` (owner) + `&str` passed to adapters | §3.1 already assigns canonical-text ownership to the document session. A second owning struct would contradict it. |
+| `LineEnding { Lf, Crlf, Mixed }` | `omriss_ui::NewlinePolicy` / `FileTextProfile` | already shipped and covered by tests |
+
+**Adapters therefore receive `&str`, not an owning source type.** They read
+source text and propose edits; they never own it.
+
+**Line-ending handling.** `FileTextProfile` currently lives in `omriss-ui`. No
+adapter in this RFC needs it: focused range replacement preserves bytes outside
+the replaced range regardless of line-ending style. If RFC-054 or RFC-055 finds
+that inserting *new* lines requires the profile, that RFC must request moving
+`FileTextProfile` into `omriss-core` explicitly. It must not duplicate the type.
 
 ## 6. Document structure model
 
@@ -123,7 +142,7 @@ pub struct DocumentStructure {
     pub format: DocumentFormat,
     pub root_id: NodeId,
     pub nodes: Vec<StructureNode>,
-    pub revision: u64,
+    pub revision: DocumentRevision,
 }
 
 pub struct StructureNode {
@@ -187,13 +206,13 @@ pub enum CapabilityReason {
     UnsupportedForFormat,
     ExternalChangeConflict, // session-overlay only — see note below
 }
+```
 
 `ExternalChangeConflict` is **not emitted by format adapters**. It is applied as
 a session-level overlay after adapter capabilities are built, when external
 file-modification state disables otherwise-valid operations. (A dedicated
 `SessionCapabilityReason` may split this out later; for now the rule is that
 adapters never produce it.)
-```
 
 ## 7. Adapter trait
 
@@ -201,22 +220,18 @@ adapters never produce it.)
 pub trait DocumentFormatAdapter {
     fn format(&self) -> DocumentFormat;
 
-    fn detect(path: &std::path::Path, text: &str) -> DetectionConfidence
-    where
-        Self: Sized;
-
-    fn build_structure(&self, source: &SourceText) -> Result<DocumentStructure, StructureError>;
+    fn build_structure(&self, source: &str) -> Result<DocumentStructure, StructureError>;
 
     fn focused_content(
         &self,
-        source: &SourceText,
+        source: &str,
         structure: &DocumentStructure,
         node_id: NodeId,
     ) -> Result<FocusedContent, FocusError>;
 
     fn validate_focused_edit(
         &self,
-        source: &SourceText,
+        source: &str,
         structure: &DocumentStructure,
         node_id: NodeId,
         draft: &str,
@@ -224,26 +239,72 @@ pub trait DocumentFormatAdapter {
 
     fn apply_validated_edit(
         &self,
-        source: &mut SourceText,
+        document: &mut Document,
         edit: ValidatedEdit,
     ) -> Result<AppliedEdit, ApplyEditError>;
 
     fn structure_command(
         &self,
-        source: &mut SourceText,
+        document: &mut Document,
         structure: &DocumentStructure,
         command: StructureCommand,
     ) -> Result<AppliedEdit, StructureCommandError>;
 }
 ```
 
-This trait is intentionally broad. The implementation may split it into smaller traits if that is cleaner:
+### 7.1 Trait shape — decided, not delegated
 
-- `FormatDetector`;
-- `StructureBuilder`;
-- `FocusedContentProvider`;
-- `FocusedEditValidator`;
-- `StructureCommandHandler`.
+An earlier draft called this trait "intentionally broad" and permitted the
+implementer to split it into `FormatDetector`, `StructureBuilder`,
+`FocusedContentProvider`, `FocusedEditValidator`, and `StructureCommandHandler`.
+That is an architecture decision and does not belong to the implementer.
+
+**Decision: one trait, as written above.** Five micro-traits would have to be
+implemented together by every adapter anyway — no adapter is a useful
+"structure builder" that cannot produce focused content — so splitting buys
+indirection without buying substitutability. Revisit only if a real adapter
+needs to implement a strict subset.
+
+**`detect` is removed from the trait.** Detection is a whole-workspace concern
+that must answer "which adapter?" *before* an adapter exists, so it cannot be an
+instance method, and as a `Self: Sized` static it would block object safety for
+no benefit. It moves to a free function in the detection module (§10).
+
+**Mutation takes `&mut Document`, not a source buffer.** Per §3.1 the document
+session owns canonical text, revision, undo history, and dirty state. An adapter
+handed a raw mutable buffer could mutate text without recording an undo entry or
+incrementing the revision — precisely the failure this architecture exists to
+prevent. Adapters mutate only through `Document`'s existing replacement path,
+which records history and revision as a unit.
+
+### 7.2 Dispatch — static enum, not trait objects
+
+**Decision: static dispatch over a closed enum.** Resolves §18 Q1.
+
+```rust
+pub enum ActiveAdapter {
+    Markdown(MarkdownAdapter),
+    Json(JsonAdapter),
+    Toml(TomlAdapter),
+    Yaml(YamlExperimentalAdapter),
+    PlainText(PlainTextAdapter),
+}
+```
+
+Rationale:
+
+- the format set is closed and small, and RFC-052 fixes its membership;
+- there is no plugin system and none is planned (§18 Q4), so runtime
+  substitutability buys nothing;
+- exhaustive `match` makes "did every adapter handle this?" a compile error
+  rather than a review question;
+- it sidesteps object safety entirely, so the trait stays free to use generics
+  or associated types later without a breaking redesign.
+
+`PlainText` gets a real adapter rather than a special case in the session: it
+builds a single-node structure with all editing capabilities `Hidden`, per
+RFC-052 §5.2's rule that omriss must not invent structure for formats it does
+not understand.
 
 ## 8. Focused content model
 
@@ -293,7 +354,7 @@ Most content edits should become focused replacement edits:
 ```rust
 pub struct ValidatedEdit {
     pub node_id: NodeId,
-    pub base_revision: u64,
+    pub base_revision: DocumentRevision,
     pub replacement_range: ByteRange,
     pub replacement_text: String,
     pub description: EditDescription,
@@ -368,6 +429,13 @@ Format detection order:
 3. user choice if needed;
 4. unsupported file message.
 
+**The extension mapping is owned by RFC-052 §5.1 and is binding here.** It
+includes the shipped `.mdown` and `.txt` → Markdown behavior; detection must not
+regress those files to `PlainText`.
+
+Detection lives in `omriss_core::formats::detection` as free functions, not as a
+trait method (§7.1). Resolves §18 Q5.
+
 ```rust
 pub enum DetectionConfidence {
     No,
@@ -375,7 +443,14 @@ pub enum DetectionConfidence {
     Likely,
     Certain,
 }
+
+pub fn detect_format(path: Option<&std::path::Path>, text: &str) -> DocumentFormat;
+pub fn confidence_for(format: DocumentFormat, path: Option<&std::path::Path>, text: &str)
+    -> DetectionConfidence;
 ```
+
+`path` is optional because an unsaved buffer has no path; extension evidence is
+then simply absent and content inspection decides.
 
 If a file extension and content disagree, omriss should avoid destructive behavior.
 
@@ -426,18 +501,104 @@ For M0 structured support, full rebuild is acceptable. Incremental indexing is o
 
 ## 13. Node identity policy
 
-Node identity must be stable enough for UI focus after focused content edits.
+`NodeId` is an opaque `u64` handle (RFC-006), never exposed in normal UI.
 
-Recommended strategy:
+### 13.1 The binding requirement
 
-- Markdown: ordinal path + heading position strategy already used or equivalent.
-- JSON: JSON pointer-like path based on object keys and array indexes.
-- TOML: table/key path based on TOML key path and occurrence ordinal for repeated tables.
-- YAML: feasibility spike must evaluate stable identity separately.
+Identity is a **testable behavioral requirement**, not a recommended strategy:
 
-Node IDs must never be exposed in normal UI.
+> After an edit that does not remove node N, the node the user was focused on
+> must still be focused, and the Document Map highlight must still match the
+> Writing Area.
 
-## 14. Preservation tests
+Each adapter chooses how to derive `NodeId` values, subject to two rules:
+
+1. **Deterministic.** Building the structure twice from identical source text
+   must produce identical ids.
+2. **Stable under unrelated edits.** Editing node A must not change the id of
+   unrelated node B.
+
+### 13.2 Per-format derivation
+
+- **Markdown: keep the shipped scheme.** The outline builder's existing
+  assignment stays as-is. Do not "improve" it during S4 — RFC-023/024/025 focus
+  restoration tests depend on current behavior, and changing it converts a
+  no-behavior-change slice into a regression risk.
+- **JSON:** derive from a JSON-pointer-like path over object keys and array
+  indexes.
+- **TOML:** derive from the table/key path, plus an occurrence ordinal for
+  repeated tables.
+- **YAML:** RFC-056 must evaluate stable identity separately; array-index and
+  anchor/alias identity are open problems there.
+
+### 13.3 Required tests
+
+Every adapter must ship both:
+
+- rebuild determinism: same source → same ids;
+- focus survival: edit an unrelated node, rebuild, and assert the previously
+  focused id still resolves to the same logical item.
+
+The second test is required because M10's manual QA could not reliably provoke
+the stale-focus case by hand — it is recorded as "Not confirmed: conditional,
+not triggered in normal QA" in the keyboard-only pass. Automation covers what
+manual QA could not.
+
+## 14. Reconciling the types M10 shipped early
+
+M10 shipped part of this RFC's vocabulary into the **wrong crate**. RFC-048
+listed "RFC-053 type core" as a dependency and the implementation went ahead
+before RFC-053 existed, so `omriss-ui` currently owns types this RFC assigns to
+`omriss-core`. Reconciling them is in scope for RFC-053 and is **not** new
+feature work.
+
+Current state, in `crates/ui/src/interface/document_map.rs`:
+
+| Shipped in `omriss-ui` | Disposition under this RFC |
+|---|---|
+| `MapCapability` | becomes `Capability`, produced in `omriss-core` |
+| `MapNodeCapabilities` | becomes `NodeCapabilities`, produced in `omriss-core` |
+| `CapabilityReason` | moves to `omriss-core` unchanged in meaning |
+| `DraftState` | moves to `omriss-core` (§9.3) |
+| `DocumentMapNode` | **stays in `omriss-ui`** |
+
+`DocumentMapNode` stays because it is a *view projection*, not a structure: it
+nests children by value and carries `is_selected`, which is session state rather
+than document structure. Under this RFC it is derived from `DocumentStructure`
+instead of being built directly from the Markdown outline. It gains a `kind`
+field sourced from `StructureNodeKind` — an additive change, which is what
+RFC-049 §17 anticipated when it required the boundary to accept future node
+kinds without redesign.
+
+The English and Japanese catalogs already carry all eight `CapabilityReason`
+variants, including `read_only_format`, `experimental_format`, and
+`unsafe_preservation` — strings written for formats that do not exist yet. **The
+catalog keys must not change during reconciliation.** `omriss-ui` keeps its sole
+responsibility of mapping a typed, core-owned reason to localized text (RFC-043).
+
+Binding constraint: this reconciliation must produce **zero user-visible
+change**. The existing `omriss-ui` tests (`document_map_tests`, `i18n_tests`)
+must pass with assertions unchanged in meaning; a changed assertion is evidence
+of an accidental behavior change, not of progress.
+
+## 15. Implementation slices
+
+The trait in §7 must not be implemented in one pass. Required order, each slice
+independently reviewable and shippable:
+
+| Slice | Content | Proves |
+|---|---|---|
+| S1 | `DocumentFormat`, detection module, extension mapping per RFC-052 §5.1 | files are classified without changing any behavior |
+| S2 | `DocumentStructure`, `StructureNode`, `StructureNodeKind`, `NodeCapabilities`, `Capability`, `CapabilityReason` in `omriss-core` | the vocabulary exists and is testable without Dioxus |
+| S3 | Reconcile `omriss-ui` onto the S2 types (§14) | no user-visible change; existing tests pass |
+| S4 | `MarkdownAdapter` wrapping shipped `Document` operations behind the trait | Markdown behavior and every golden test unchanged |
+| S5 | `PlainTextAdapter` + parse-failure recovery to plain file text | safe failure works end to end |
+
+S4 is the risk concentration point: it must reuse the shipped promote/demote
+(RFC-023), move (RFC-024), and split/merge/delete (RFC-025) implementations
+rather than reimplementing them. RFC-054 does not begin until S5 is accepted.
+
+## 16. Preservation tests
 
 Every adapter that supports editing must provide tests proving:
 
@@ -457,25 +618,25 @@ assert_eq!(&before[range.end..], &after[range.end + delta..]);
 
 Actual tests should use clearer helper functions rather than relying only on this sketch.
 
-## 15. Adapter-specific notes
+## 17. Adapter-specific notes
 
-### 15.1 Markdown
+### 17.1 Markdown
 
 Markdown adapter remains the primary implementation. Existing section replacement and structural operations should be adapted into this architecture when low-risk. Concretely, the Markdown adapter wraps the shipped core — `Document` / `replace_section_body` (RFC-004/005), the heading tree (RFC-007), promote/demote (RFC-023), section move via `MoveTarget` (RFC-024), and split/merge/delete (RFC-025) — behind the adapter trait rather than rewriting it, so Markdown behavior and byte-preservation golden tests cannot regress.
 
-### 15.2 JSON
+### 17.2 JSON
 
 JSON adapter should be implemented first. It should build a structural index with byte ranges for values and containers.
 
-### 15.3 TOML
+### 17.3 TOML
 
 TOML adapter should preserve comments, key order, table layout, and inline forms. Use a lossless editing strategy rather than full normalization.
 
-### 15.4 YAML
+### 17.4 YAML
 
 YAML adapter must start as a candidate/read-only feasibility adapter. Editable YAML is not approved by this RFC.
 
-## 16. Security and safety considerations
+## 18. Security and safety considerations
 
 - Do not execute file contents.
 - Do not fetch schemas or network resources automatically.
@@ -484,26 +645,63 @@ YAML adapter must start as a candidate/read-only feasibility adapter. Editable Y
 - Avoid excessive memory use on very large files.
 - Preserve user files by using existing atomic save and external modification checks.
 
-## 17. Acceptance criteria
+## 19. Acceptance criteria
 
-- A format-neutral adapter boundary is defined in core design.
-- Markdown can be represented through the adapter model or bridged without changing user behavior.
-- JSON RFC-054 can implement against this boundary.
-- TOML RFC-055 can implement against this boundary.
-- YAML RFC-056 can implement read-only feasibility against this boundary.
-- The UI does not call format-specific source rewrite logic directly.
-- Adapter errors are mapped to friendly messages.
-- Preservation tests are required for every editable adapter.
-- Existing RFC-023/RFC-024/RFC-025 Markdown structural-edit tests pass unchanged after the adapter boundary is introduced.
+Each criterion names the evidence that closes it. "Can implement against this
+boundary" is not evidence; it is an opinion held before the fact.
 
-## 18. Open questions
+| # | Criterion | Evidence |
+|---|---|---|
+| 1 | `DocumentFormat` and detection exist in `omriss-core` and classify `.md` / `.markdown` / `.mdown` / `.txt` / `.json` / `.toml` / unknown per RFC-052 §5.1 | S1 unit tests, one case per extension |
+| 2 | Structure vocabulary exists in `omriss-core` with no Dioxus dependency | S2 tests run under `cargo test -p omriss-core` |
+| 3 | Capability production moved from `omriss-ui` to `omriss-core` | S3 diff; `omriss-ui` no longer defines `MapCapability` / `MapNodeCapabilities` |
+| 4 | Reconciliation is user-visibly inert | S3: `document_map_tests` and `i18n_tests` pass with assertions unchanged in meaning; catalog keys unchanged |
+| 5 | Markdown is served through the adapter without behavior change | S4: all 239 existing tests pass unchanged, including RFC-023/024/025 structural and golden byte-preservation suites |
+| 6 | Node identity is deterministic and survives unrelated edits | §13.3 tests, per adapter |
+| 7 | Parse failure preserves source text and offers plain file text | S5 test: malformed input → source intact, recovery path offered |
+| 8 | `PlainText` produces no synthetic structure | S5 test: single node, editing capabilities `Hidden` |
+| 9 | The app crate calls no format-specific rewrite logic | `crates/app` contains no parser or source-mutation call; grep-verifiable |
+| 10 | Adapter errors map to the §11 friendly messages | error-mapping tests, one per `StructureErrorKind` |
+| 11 | Gates green | `cargo fmt --check`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `scripts/check-rfcs.sh` |
 
-1. Should adapters be static enum dispatch or trait objects?
-2. **Resolved.** Format adapters are modules inside the `omriss-core` crate (`omriss_core::formats::{markdown, json, toml, yaml}`). Separate `omriss-json` / `omriss-toml` crates are deferred until a measured need (dependency weight, feature-flag maintenance, or independent release/test).
-3. Should adapters support format-specific settings?
-4. Should a future plugin system be allowed to register adapters?
-5. Should `DetectionConfidence` live in core or a dedicated detection-registry module? (Not blocking.)
+Criterion 5 is the blocking one. If any shipped Markdown test requires
+modification to pass, the slice is wrong and must be reworked — the test is not
+the thing to change.
 
-## 19. Final decision summary
+## 20. Resolved questions
+
+No question in this section is left for the implementer. All five are decided.
+
+1. **Static enum dispatch, not trait objects.** See §7.2 for the decision and
+   rationale.
+2. **Adapters are modules inside `omriss-core`**
+   (`omriss_core::formats::{markdown, json, toml, yaml}`). Separate
+   `omriss-json` / `omriss-toml` crates are deferred until a measured need
+   (dependency weight, feature-flag maintenance, or independent release/test).
+3. **No format-specific settings.** Adapters are pure functions of source text:
+   same input, same structure. Introducing per-format settings would make
+   structure depend on hidden state, which breaks the §3.2 "derived structure is
+   disposable" property and makes golden tests configuration-dependent. If a
+   real need appears, it arrives as its own RFC with a migration story.
+4. **No plugin-registered adapters.** Out of scope, and not merely on effort
+   grounds: a plugin boundary would require committing to API stability this RFC
+   explicitly declines (§5 permits private representation change), and loading
+   third-party code to parse user documents contradicts §16, which forbids
+   executing file content. The closed enum in §7.2 encodes this decision.
+5. **`DetectionConfidence` lives in `omriss_core::formats::detection`**, beside
+   the free detection functions (§10).
+
+### 20.1 Genuinely open — deferred to the implementing RFCs
+
+These are not blockers for RFC-053 and are recorded so they are not lost:
+
+- whether `SessionCapabilityReason` should split `ExternalChangeConflict` out of
+  `CapabilityReason` (§6) — revisit if a second session-level reason appears;
+- whether `FocusedContent::StructuredGroup` needs a paging or truncation policy
+  for very large groups — RFC-054 decides against real fixtures;
+- whether `FileTextProfile` must move to `omriss-core` — RFC-054/055 decides if
+  line-aware insertion needs it (§5.1).
+
+## 21. Final decision summary
 
 omriss will support future formats through document format adapters. The source text remains canonical, structures are derived, and all edits must be source-preserving. Full-file serialization is prohibited as the normal save path.
