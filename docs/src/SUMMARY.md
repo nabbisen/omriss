@@ -7,6 +7,7 @@
 - [Editing and History](editing-and-history.md)
 - [Structural Editing](structural-editing.md)
 - [Languages](languages.md)
+- [File Formats](file-formats.md)
 - [How omriss Treats Your Text](source-preservation.md)
 - [Keyboard Reference](keyboard-reference.md)
 - [Known Limitations](known-limitations.md)

@@ -14,6 +14,11 @@ zoom into one section, refine just that thought, and zoom back out — without
 the rest of the document getting in the way, and without the editor ever
 rewriting a byte you didn't touch.
 
+Markdown is where omriss starts: it is growing into a local-first **structured
+plain-text editor**, extending the same layer-by-layer model to other
+plain-text formats such as JSON and TOML. See
+[File Formats](docs/src/file-formats.md) for what is supported today.
+
 ![screenshot-01](docs/assets/screenshot-01.png)
 
 ## Design principles

@@ -8,6 +8,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-052 product-scope documentation** — README and the mdBook
+  introduction now describe omriss as a structured plain-text editor that
+  starts with Markdown and is growing to support other plain-text formats,
+  alongside a new `docs/src/file-formats.md` page recording the current,
+  honest per-format status (Markdown fully supported; JSON and TOML planned;
+  YAML under investigation) and the existing `.md`/`.markdown`/`.mdown`/`.txt`
+  file-opening behavior. This is a documentation and policy change only: no
+  format support is added, no file-dialog filter changed, and no code under
+  `crates/` was touched.
 - **Internal module split and clippy gate** — `crates/core/src/doc/structural.rs`
   and `crates/app/src/components/document_map_pane.rs` were split into smaller
   submodules to satisfy the project's file-size rule, and `index/index.rs` was
