@@ -264,6 +264,39 @@ Use JSON-pointer-like paths:
 /items/0/title            scalar under array item
 ```
 
+### 6.1 The duplicate-key tension, and what identity actually derives from
+
+**Settled after the J2 review.** As originally written, §6 and §15.2 contradict
+each other: a literal key-based path gives both members of
+`{"a": 1, "b": 2, "a": 3}` the identity `/a`, which either collides or forces
+the merge §15.2 forbids.
+
+**The settled answer, matching RFC-053 §13.2's resolution of the identical
+problem for TOML:**
+
+- **array items** — identified by index. An array is ordered; index *is*
+  identity, and inserting before an item genuinely changes which item it is.
+- **object members** — identified by **key plus an occurrence ordinal** among
+  same-named siblings (`a[0]`, `a[1]`). A member's identity is its key, not its
+  position: adding an unrelated sibling does not change what `"version"` is.
+
+Implementations must keep derivation deterministic across rebuilds
+(RFC-053 §13.1). If a key is hashed to reach a `NodeId`, the hash must be
+fixed-seed rather than a randomly seeded default.
+
+**J2 shipped pure positional identity instead** — object members keyed by
+position, not name. That is accepted as an interim, and is *correct within this
+RFC's scope*: value edits never change sibling positions, so identity is stable
+exactly where RFC-054 operates, and node ids are derived fresh on every
+`build_structure` and never persisted, so nothing durable depends on the scheme.
+
+**It must change before any structural mutation of objects exists** — §13's
+Phase 4 (add, delete, rename, move), or any later RFC that inserts or removes
+object members. Under positional identity, adding a member before a focused one
+silently moves focus to a different node: the confusing kind of bug, not the
+obvious kind. That trigger, not a date, is the deadline. Rework is deliberately
+**not** required now, because nothing in J1–J6 exercises the difference.
+
 The user must never see raw JSON pointer syntax in the normal UI. Breadcrumbs should use plain labels:
 
 ```text

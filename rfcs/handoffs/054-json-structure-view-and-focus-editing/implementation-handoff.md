@@ -125,8 +125,37 @@ Per slice, plus RFC-054 §12's own requirements:
 - **J6** — container replacement validates before applying; invalid input is
   rejected without mutation.
 
-Baseline: **299 passed, 12 suites.** Counts may only grow. **No shipped test may
-be modified** — RFC-053 §19 criterion 5's discipline continues here.
+Baseline: **299 passed, 12 suites.** Counts may only grow.
+
+### Which tests may never change, and which expire by design
+
+**Refined after the J2 review**, where two tests legitimately had to change.
+"No shipped test may be modified" was one rule doing two jobs; it is two:
+
+| Category | Rule |
+|---|---|
+| **Protected** — the 239 Markdown baseline and the `structural_ops*` golden suites | **Never modified.** A change here means the slice is wrong and the test is not the thing to fix. RFC-053 §19 criterion 5's discipline, unchanged. |
+| **Scaffolding** — tests asserting "X is not implemented yet" | **Expire by design** when X lands. Changing them is expected. |
+
+A scaffolding test may only be changed when all three hold:
+
+1. the property it proves is preserved, or the test is genuinely obsolete
+   because its subject no longer exists;
+2. the change is narrowly scoped to the expired premise — nothing else in the
+   file moves;
+3. it is **flagged in the review request**, with the reasoning, not slipped in.
+
+The distinction is about protecting the *oracle*. A test changed to accommodate
+a defect is always wrong. A test whose premise this very slice was mandated to
+invalidate is a different thing, and pretending otherwise would mean either
+lying in the test or leaving the suite red.
+
+J2's two changes are the worked example: one test asserting `JsonAdapter`
+refuses everything (removed — its premise was J2's mandate), and one whose
+fixture was *accidentally* invalid JSON rather than *genuinely* invalid
+(fixture corrected; name, structure, and proved property unchanged — and the
+test is now stronger, exercising real validation instead of a stub's blanket
+refusal).
 
 ## 8. Acceptance criteria
 

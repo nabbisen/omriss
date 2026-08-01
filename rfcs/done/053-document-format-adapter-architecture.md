@@ -225,6 +225,18 @@ pub struct NodeCapabilities {
 // item (e.g. allow `can_move_down` but not `can_move_up`) instead of gating all
 // movement together. Capabilities are populated by `build_structure` (which has
 // full source + tree context), so there is no separate stateless lookup.
+//
+// `Disabled` vs `Hidden` for a not-yet-implemented capability — settled during
+// the RFC-054 J2 review, and binding on RFC-055/056:
+//
+//   Disabled { reason }  the action is gated by a COMMITTED, SCHEDULED slice
+//                        that will turn it Allowed. The user sees it, greyed,
+//                        with a plain reason — an honest "not yet".
+//   Hidden               no plan inside the governing RFC turns it on. Showing
+//                        a permanently dead control is worse than showing none.
+//
+// The test is whether something concrete is scheduled to enable it, not how
+// far away that work is.
 pub enum Capability {
     Allowed,
     Disabled { reason: CapabilityReason },
