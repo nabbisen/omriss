@@ -38,7 +38,9 @@ mod range;
 //
 // doc/     : document model, edit operations, undo, preview, structural edits
 // index/   : Markdown heading parser and derived outline tree
+// formats/ : document format identification and (later) adapters (RFC-053)
 mod doc;
+pub mod formats;
 mod index;
 
 #[cfg(test)]
@@ -52,5 +54,6 @@ pub use doc::preview::{document_html, section_html};
 pub use doc::revision::DocumentRevision;
 pub use doc::structural::{MoveTarget, StructuralEditError};
 pub use error::{DocumentError, EditError, IndexError};
+pub use formats::DocumentFormat;
 pub use index::outline::{HeadingLevel, NodeId, Outline, SectionNode};
 pub use range::{ByteRange, RangeError};

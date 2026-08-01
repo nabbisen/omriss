@@ -8,6 +8,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S1 document format detection** — adds `omriss_core::DocumentFormat`
+  and `omriss_core::formats::detection` (extension-based classification per
+  RFC-052 §5.1). Internal only: nothing calls it yet, and no user-facing or
+  API behavior changes.
 - **RFC-052 product-scope documentation** — README and the mdBook
   introduction now describe omriss as a structured plain-text editor that
   starts with Markdown and is growing to support other plain-text formats,

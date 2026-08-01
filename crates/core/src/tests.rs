@@ -2,6 +2,7 @@
 //! (RFC-002..009, RFC-044) rather than incidental implementation details.
 
 mod api_tests;
+mod detection_tests;
 mod edit_tests;
 mod history_tests;
 mod index_tests;
