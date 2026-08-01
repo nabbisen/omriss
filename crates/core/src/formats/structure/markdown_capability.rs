@@ -126,7 +126,12 @@ pub fn markdown_node_capabilities(outline: &Outline, id: NodeId) -> NodeCapabili
 /// `compute_capabilities` re-derives its own parent check directly from
 /// `node.parent_id`), so only the two fields capability computation actually
 /// uses are ported here.
-fn sibling_neighbors(outline: &Outline, id: NodeId) -> (Option<NodeId>, Option<NodeId>) {
+///
+/// `pub(crate)` because `MarkdownAdapter::structure_command` (RFC-053 S4b)
+/// also needs sibling lookup for `MoveDirection::Up`/`Down`, mirroring the
+/// shipped `move_focused_up`/`move_focused_down` in
+/// `omriss_ui::session::structural`.
+pub(crate) fn sibling_neighbors(outline: &Outline, id: NodeId) -> (Option<NodeId>, Option<NodeId>) {
     let Some(node) = outline.node(id) else {
         return (None, None);
     };

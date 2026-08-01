@@ -2,7 +2,9 @@
 //! requirements — rebuild determinism and focus survival across an
 //! unrelated edit.
 
-use crate::{Document, MarkdownAdapter, ReplaceSectionBody, StructureNodeKind};
+use crate::{
+    Document, DocumentFormatAdapter, MarkdownAdapter, ReplaceSectionBody, StructureNodeKind,
+};
 
 fn adapter() -> MarkdownAdapter {
     MarkdownAdapter

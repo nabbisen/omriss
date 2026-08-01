@@ -24,4 +24,5 @@ mod model;
 
 pub use capability::{Capability, CapabilityReason, NodeCapabilities};
 pub use markdown_capability::markdown_node_capabilities;
+pub(crate) use markdown_capability::sibling_neighbors;
 pub use model::{DocumentStructure, StructureNode, StructureNodeKind};

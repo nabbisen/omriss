@@ -7,11 +7,15 @@
 //! (JSON, TOML, YAML). Nothing in this module is wired into the document
 //! session or the file dialog yet.
 
+pub mod adapter;
 pub mod detection;
 pub mod draft;
+pub mod edit;
 pub mod error;
+pub mod focused_content;
 pub mod markdown;
 pub mod structure;
+pub mod unsupported;
 
 /// The document format a file's content should be interpreted and edited as
 /// (RFC-053 §5).

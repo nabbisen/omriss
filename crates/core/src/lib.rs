@@ -55,12 +55,21 @@ pub use doc::revision::DocumentRevision;
 pub use doc::structural::{MoveTarget, StructuralEditError};
 pub use error::{DocumentError, EditError, IndexError};
 pub use formats::DocumentFormat;
+pub use formats::adapter::{ActiveAdapter, DocumentFormatAdapter};
 pub use formats::draft::DraftState;
-pub use formats::error::{StructureError, StructureErrorKind};
+pub use formats::edit::{
+    AppliedEdit, EditDescription, MoveDirection, NewNodeSpec, StructureCommand, ValidatedEdit,
+};
+pub use formats::error::{
+    ApplyEditError, EditValidationError, FocusError, StructureCommandError, StructureError,
+    StructureErrorKind,
+};
+pub use formats::focused_content::{FocusedContent, ValueKind};
 pub use formats::markdown::MarkdownAdapter;
 pub use formats::structure::{
     Capability, CapabilityReason, DocumentStructure, NodeCapabilities, StructureNode,
     StructureNodeKind,
 };
+pub use formats::unsupported::{JsonAdapter, TomlAdapter, YamlExperimentalAdapter};
 pub use index::outline::{HeadingLevel, NodeId, Outline, SectionNode};
 pub use range::{ByteRange, RangeError};

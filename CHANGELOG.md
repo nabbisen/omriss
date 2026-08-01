@@ -8,6 +8,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S4b `MarkdownAdapter` structure commands** — completes
+  `omriss_core::MarkdownAdapter`'s `DocumentFormatAdapter` implementation:
+  every structural command (move, promote/demote, rename, add, delete,
+  join) now wraps the shipped RFC-023/024/025 operations, and focused-edit
+  validation/apply wraps `replace_section_body`. Adds `ActiveAdapter` and
+  stub `JsonAdapter`/`TomlAdapter`/`YamlExperimentalAdapter` (no parsing
+  logic). Internal only: `omriss-ui` and `omriss-app` are untouched and
+  nothing calls the adapter outside its own tests yet; all 239 baseline
+  tests pass unmodified.
 - **RFC-053 S4a `MarkdownAdapter` structure projection** — adds
   `omriss_core::MarkdownAdapter::build_structure`, projecting the shipped
   outline into the RFC-053 structure model while reusing every existing
