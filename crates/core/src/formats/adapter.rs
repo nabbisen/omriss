@@ -14,6 +14,7 @@ use crate::formats::error::{
 };
 use crate::formats::focused_content::FocusedContent;
 use crate::formats::markdown::MarkdownAdapter;
+use crate::formats::plain_text::PlainTextAdapter;
 use crate::formats::structure::DocumentStructure;
 use crate::formats::unsupported::{JsonAdapter, TomlAdapter, YamlExperimentalAdapter};
 use crate::{Document, DocumentFormat, NodeId};
@@ -61,17 +62,14 @@ pub trait DocumentFormatAdapter {
 
 /// The active format adapter for the current document (RFC-053 §7.2).
 ///
-/// `PlainText` is deliberately not yet a variant: RFC-053 S5 is the
-/// separately reviewed slice that builds `PlainTextAdapter` (its own new
-/// file, its own tests). Adding a working `PlainTextAdapter` here would mean
-/// doing S5's named work inside S4b. `Json`/`Toml`/`Yaml` are included as
-/// stub variants per the non-change-scope: "the enum variants may exist;
-/// the adapters must return unsupported until RFC-054+" — unlike
-/// `PlainText`, none of them has a near-term slice already claiming their
-/// implementation, so stubbing them now does not preempt named work.
+/// `Json`/`Toml`/`Yaml` are stub variants per the non-change-scope: "the
+/// enum variants may exist; the adapters must return unsupported until
+/// RFC-054+." `PlainText` (RFC-053 S5) is now fully populated — the last
+/// deferral from S4b resolved.
 pub enum ActiveAdapter {
     Markdown(MarkdownAdapter),
     Json(JsonAdapter),
     Toml(TomlAdapter),
     Yaml(YamlExperimentalAdapter),
+    PlainText(PlainTextAdapter),
 }

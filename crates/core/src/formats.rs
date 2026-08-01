@@ -14,6 +14,7 @@ pub mod edit;
 pub mod error;
 pub mod focused_content;
 pub mod markdown;
+pub mod plain_text;
 pub mod structure;
 pub mod unsupported;
 

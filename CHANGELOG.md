@@ -8,6 +8,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S5 `PlainTextAdapter`** — adds `omriss_core::PlainTextAdapter`,
+  the RFC-052 §5.2 fallback format: exactly one node, no synthetic
+  structure, every editing capability hidden except viewing.
+  `ActiveAdapter` gains its `PlainText` variant. Internal only: this slice
+  proves the parse-failure-recovery mechanism at the adapter boundary in
+  `omriss-core`; `omriss-ui` and `omriss-app` are untouched, and nothing
+  routes through it yet — that begins with RFC-054.
 - **RFC-053 S4b `MarkdownAdapter` structure commands** — completes
   `omriss_core::MarkdownAdapter`'s `DocumentFormatAdapter` implementation:
   every structural command (move, promote/demote, rename, add, delete,

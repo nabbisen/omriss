@@ -3,7 +3,7 @@
 
 use crate::{
     ActiveAdapter, Document, DocumentFormat, DocumentFormatAdapter, JsonAdapter, MarkdownAdapter,
-    StructureCommand, StructureErrorKind, TomlAdapter, YamlExperimentalAdapter,
+    PlainTextAdapter, StructureCommand, StructureErrorKind, TomlAdapter, YamlExperimentalAdapter,
 };
 
 #[test]
@@ -66,16 +66,19 @@ fn active_adapter_dispatches_to_the_right_format_for_every_current_variant() {
     let json = ActiveAdapter::Json(JsonAdapter);
     let toml = ActiveAdapter::Toml(TomlAdapter);
     let yaml = ActiveAdapter::Yaml(YamlExperimentalAdapter);
+    let plain_text = ActiveAdapter::PlainText(PlainTextAdapter);
 
     let format = |adapter: &ActiveAdapter| match adapter {
         ActiveAdapter::Markdown(a) => a.format(),
         ActiveAdapter::Json(a) => a.format(),
         ActiveAdapter::Toml(a) => a.format(),
         ActiveAdapter::Yaml(a) => a.format(),
+        ActiveAdapter::PlainText(a) => a.format(),
     };
 
     assert_eq!(format(&markdown), DocumentFormat::Markdown);
     assert_eq!(format(&json), DocumentFormat::Json);
     assert_eq!(format(&toml), DocumentFormat::Toml);
     assert_eq!(format(&yaml), DocumentFormat::YamlExperimental);
+    assert_eq!(format(&plain_text), DocumentFormat::PlainText);
 }
