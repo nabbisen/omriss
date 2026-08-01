@@ -157,6 +157,23 @@ variants populated; the others may exist and return "unsupported".
 **Done when:** all 239 pre-existing tests pass **unmodified**, and the new
 identity tests pass.
 
+> **Optional split (added after the S3 review).** S4 may be delivered as one
+> slice or as two, at the implementer's discretion. If splitting, this is the
+> seam worth cutting on — it isolates risk rather than merely halving the diff:
+>
+> - **S4a — projection.** `build_structure` mapping the shipped `Outline` into
+>   `DocumentStructure`, preserving existing `NodeId` values, plus the RFC-053
+>   §13.3 identity tests. This half mutates nothing, so criterion 5 is trivially
+>   satisfiable and the identity contract is proven on its own.
+> - **S4b — mutation.** The `StructureCommand` wrapping of the shipped
+>   RFC-023/024/025 operations, plus `ActiveAdapter`. All of the regression risk
+>   lives here, and reviewing it against an already-proven projection makes
+>   "did this wrap or reimplement?" a sharper question.
+>
+> Either shape is acceptable. No new task file is required for S4 or for a
+> split of it: Developer Task 004 covers all five slices, and the
+> one-review-per-slice rule applies to whatever units are actually submitted.
+
 ---
 
 ## S5 — `PlainTextAdapter` and parse-failure recovery
