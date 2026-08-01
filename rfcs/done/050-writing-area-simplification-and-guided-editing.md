@@ -2,7 +2,11 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 — UI Role Separation
-**Status.** Proposed
+**Status.** Implemented (v0.16.0) — deferred: §17 "component boundary supports
+future structured value editors" is unproven until RFC-053 introduces the
+canonical `FocusedContent` / editor-kind types; only the Markdown body editor
+exists today. Pending-draft undo/redo clarity is deferred to RFC-059
+(`RFC048-QA-020`, `RFC048-QA-021`); screen-reader validation to RFC-060.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048

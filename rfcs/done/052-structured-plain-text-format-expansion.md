@@ -2,11 +2,16 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M11 — Format Adapter Foundation
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — documentation artifacts landed in
+commit `693fcb5`. Seven of the eight §13 acceptance criteria are closed;
+criterion 8 ("RFC-053 is accepted as the required architecture") is a dependency
+on RFC-053's own acceptance and is tracked there, not here. The §14.4 per-format
+visibility decision is binding on RFC-054, RFC-055, and RFC-056.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
-**Depends on:** RFC-048, RFC-049, RFC-050, RFC-051
+**Depends on:** RFC-048, RFC-049, RFC-050, RFC-051 — all Implemented in v0.16.0
 **Related RFCs:** RFC-053, RFC-054, RFC-055, RFC-056
+**Scope of change:** Documentation and policy only. This RFC authorizes no code.
 
 ---
 
@@ -118,6 +123,43 @@ Do not implement every format at once. Each format must pass preservation and us
 | TOML | `.toml` | New support | Second | Important for Rust/config files; comments and order must be preserved. |
 | YAML | `.yaml`, `.yml` | Feasibility only | Not promised | Complex syntax; editing requires careful proof. |
 
+### 5.1 Extension policy and shipped-behavior compatibility
+
+The table above is incomplete against shipped behavior and must not be
+implemented literally. As of v0.16.0 the file dialog accepts
+`["md", "markdown", "mdown", "txt"]` and parses **all four** as Markdown
+(`crates/app/src/file/file_dialog.rs`). `.txt` files are therefore fully
+editable Markdown documents today.
+
+Binding compatibility rule:
+
+```text
+.md, .markdown, .mdown, .txt  -> Markdown        (unchanged; no regression)
+.json                         -> Json
+.toml                         -> Toml
+.yaml, .yml                   -> YamlExperimental (feature-gated)
+anything else                  -> PlainText or Unsupported (see below)
+```
+
+Routing `.txt` to `PlainText` would remove editing from files users can edit
+today. That is a user-visible regression and is **prohibited** by this RFC. If
+`.txt` should ever stop meaning Markdown, that requires its own RFC and a
+migration note.
+
+### 5.2 Reconciliation with RFC-053 format variants
+
+RFC-053 §5 defines two variants this RFC must give policy for:
+
+| Variant | Policy |
+|---|---|
+| `PlainText` | The file opens, shows plain file text, and is **read-only with no synthetic structure**. omriss must not invent a hierarchy for a format it does not understand. |
+| `Unsupported` | The file does not open into the workspace; a plain "This file type is not supported yet" message is shown. Reserved for content omriss should not attempt, such as non-UTF-8 or oversized input. |
+
+Neither variant may be used as a fallback that silently downgrades a format
+omriss claims to support. If a `.json` file fails to parse, the user sees a JSON
+error with a plain-file-text escape hatch — not a silent reclassification to
+`PlainText`.
+
 ## 6. UX model by format
 
 ### 6.1 Markdown
@@ -177,16 +219,17 @@ YAML must not be advertised as fully editable until anchors, aliases, tags, inde
 
 omriss must detect the document format from extension and, where useful, content inspection.
 
-Supported initial mapping:
+The binding mapping is §5.1, which includes the shipped `.mdown` and `.txt`
+Markdown extensions. Detection order is extension first, then lightweight
+content validation where the extension is ambiguous, then a user-facing message
+— never a silent guess (RFC-053 §10).
 
-```text
-.md, .markdown → Markdown
-.json          → JSON
-.toml          → TOML
-.yaml, .yml    → YAML candidate / feasibility mode
-```
+Where extension and content disagree, omriss must not take destructive action.
+The required behavior is to keep the source text, explain the mismatch in plain
+language, and offer plain file text.
 
-Unknown extensions should open as plain text only if that behavior is explicitly designed later. This RFC does not require generic plain-text editing.
+Unknown extensions open as `PlainText` per §5.2: viewable, not editable, no
+synthetic structure. This RFC does not introduce generic plain-text editing.
 
 ### FR-052-002: Format-specific Document Map
 
@@ -298,32 +341,129 @@ It can also help you view and, where supported, safely edit structured plain-tex
 
 Do not claim equal maturity across all formats.
 
-Suggested status labels:
+Status labels are **time-dependent**, and documentation must state the status
+that is true on the day it ships — never the status a format will earn later.
 
-| Format | Documentation status |
-|--------|----------------------|
-| Markdown | Fully supported |
-| JSON | Supported after RFC-054 acceptance |
-| TOML | Experimental until preservation gates pass |
-| YAML | Under investigation |
+| Format | Status to document now (RFC-052) | Status after its implementing RFC is accepted |
+|---|---|---|
+| Markdown | Fully supported | unchanged |
+| JSON | Planned — not available yet | Supported (after RFC-054) |
+| TOML | Planned — not available yet | Experimental until preservation gates pass (after RFC-055) |
+| YAML | Under investigation | determined by the RFC-056 go/no-go result |
+
+The left column is binding for any documentation written under RFC-052. The
+right column is what the implementing RFC's own handoff will change it to. A
+documentation change that promotes a format before its RFC is accepted is a
+defect, not an optimization.
 
 ## 13. Acceptance criteria
 
-This RFC is accepted when:
+This RFC is documentation-only. It is complete when the following artifacts
+exist and can be inspected — not merely when the policy is agreed in principle:
 
-- product scope statement is updated from “Markdown editor” to “structured plain-text editor” without weakening Markdown priority;
-- RFC-048–051 remain the UI foundation;
-- format support order is agreed: JSON first, TOML second, YAML feasibility later;
-- full-file reserialization is prohibited as normal save behavior;
-- RFC-053 is approved as the required architecture for future formats;
-- documentation clearly distinguishes stable, experimental, and feasibility states.
+| # | Criterion | Evidence |
+|---|---|---|
+| 1 | Product scope wording moves from "Markdown editor" to "structured plain-text editor" without weakening Markdown priority | `README.md`, `docs/src/introduction.md` |
+| 2 | Format support order recorded as JSON → TOML → YAML feasibility | This RFC §5, `ROADMAP.md` |
+| 3 | Extension mapping records the shipped `.mdown` / `.txt` Markdown behavior as a compatibility constraint | This RFC §5.1 |
+| 4 | `PlainText` and `Unsupported` have stated policy, not just type definitions | This RFC §5.2 |
+| 5 | Full-file reserialization prohibited as normal save behavior | This RFC §4.1, §7 FR-052-007 |
+| 6 | Documentation distinguishes stable, experimental, and feasibility states | new `docs/src/file-formats.md` (note: `languages.md` covers GUI i18n, not file formats) |
+| 7 | No open question is left for the implementer to decide | This RFC §14 |
+| 8 | RFC-053 is accepted as the required architecture for future formats | RFC-053 status |
 
-## 14. Open questions
+Criterion 8 is a dependency on RFC-053's own acceptance and is the only item
+that cannot be closed by RFC-052 work alone.
 
-1. Should JSON/TOML support be enabled by default or hidden behind “experimental formats” at first?
-2. Should omriss support JSONC or only strict JSON?
-3. Should unknown text files open in raw read-only mode?
-4. Should format-specific commands appear in Quick Actions only when the active format supports them?
+**Not in scope for acceptance:** any code, any parser, any adapter. The first
+implementation work under M11 belongs to RFC-053.
+
+## 14. Resolved questions and remaining decisions
+
+An RFC must not hand unresolved design decisions to the implementer. The four
+questions raised in review are resolved below, except one that is reserved for
+the product owner.
+
+### 14.1 Resolved — strict JSON only, no JSONC
+
+RFC-054 implements **strict JSON (RFC 8259)**. Comments and trailing commas are
+not accepted.
+
+Rationale: JSON is chosen as the first adapter because its grammar is small
+enough to prove the adapter boundary cheaply. JSONC reintroduces
+comment-preservation — the same class of problem that makes TOML the *second*
+target, not the first — and would defeat the purpose of the staging order.
+
+Accepted consequence, stated plainly rather than hidden: real-world files such
+as `tsconfig.json` and editor settings often contain comments and will be
+reported as *"This file does not look like valid JSON."* with a plain-file-text
+escape hatch. This is the safe failure mode — omriss shows the file and refuses
+to guess, rather than parsing and silently discarding the comments. JSONC may be
+revisited in a later RFC if demand is demonstrated.
+
+### 14.2 Resolved — unknown text files open read-only
+
+See §5.2. Unknown extensions map to `PlainText`: viewable, read-only, no
+synthetic structure. `.txt` remains Markdown per §5.1.
+
+### 14.3 Resolved — Quick Actions is format-aware
+
+Format-specific commands appear in Quick Actions only when the active format and
+selected node support them, driven by the **same** `NodeCapabilities` model that
+drives the Document Map row menu.
+
+Rationale: one availability source prevents the palette and the row menu from
+disagreeing about the same action. Presentation differs by surface — the palette
+**hides** unavailable commands, because a list of dead entries is noise in a
+search-driven surface, while the row menu keeps **disabled-with-reason**,
+because the user is looking at one specific item and deserves to know why.
+
+### 14.4 Resolved by owner decision — visibility of new formats on first release
+
+> **Decided by the project owner on 2026-07-30: Option C, per-format
+> visibility.** This is a final decision, not a recommendation.
+
+**Binding policy.** Each format's visibility is governed by its own risk
+profile, not by a single global switch:
+
+| Format | Visibility on first release | Condition |
+|---|---|---|
+| Markdown | Visible | unchanged |
+| JSON | Visible by default | after RFC-054 acceptance; read-only stage first |
+| TOML | Visible, labeled experimental | until RFC-055 preservation tests pass; write support stays disabled until then |
+| YAML | Hidden; explicit opt-in only | until RFC-056 returns a go result |
+
+**Consequences for downstream RFCs.** RFC-054, RFC-055, and RFC-056 must each
+honor this table rather than re-opening the question. Specifically:
+
+- no global "experimental formats" toggle is to be introduced;
+- TOML must carry a visible experimental label in the UI, not only in
+  documentation;
+- YAML must not appear in the file dialog, format detection results, or Quick
+  Actions without an explicit opt-in;
+- a format may not be promoted out of its stage by a handoff. Promotion
+  requires its governing RFC to be accepted.
+
+---
+
+**Original question and analysis, retained as the decision record.**
+
+**Question.** When RFC-054 lands, does JSON support appear for all users by
+default, or behind an "experimental formats" setting?
+
+**Options.**
+
+| Option | Benefit | Drawback |
+|---|---|---|
+| A. Default-on, gated only by each format's own acceptance criteria | No extra settings surface; no discovery problem; the RFC gates already prevent unsafe editing | A defect reaches every user immediately |
+| B. Experimental toggle, opt-in per release | Blast radius limited to opted-in users | Adds a settings surface and a discovery problem; risks the feature being invisible and therefore untested by real users |
+| C. Per-format: JSON default-on, TOML experimental until preservation proven, YAML opt-in only | Matches actual risk per format | Three different visibility rules to explain in documentation |
+
+**Recommendation was C**, on the grounds that the risk profile genuinely
+differs per format: JSON arrives read-only first with a strict grammar; TOML
+carries real preservation risk until its golden tests pass; YAML must never
+appear without explicit opt-in. A single global toggle would treat these as
+equivalent when they are not. The owner accepted this on 2026-07-30.
 
 ## 15. Final decision summary
 

@@ -2,7 +2,7 @@
 
 Companion execution documents for:
 
-- RFC: `rfcs/proposed/048-split-document-organization-and-focused-content-editing.md`
+- RFC: `rfcs/done/048-split-document-organization-and-focused-content-editing.md`
 - Milestone: M10 - UI Role Separation
 - Local review artifacts:
   - `.git-exclude/reviewed/rfc-048-design-review.md`

@@ -2,7 +2,7 @@
 
 Companion execution documents for:
 
-- RFC: `rfcs/proposed/050-writing-area-simplification-and-guided-editing.md`
+- RFC: `rfcs/done/050-writing-area-simplification-and-guided-editing.md`
 - Milestone: M10 - UI Role Separation
 
 Files:

@@ -2,7 +2,11 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 — UI Role Separation
-**Status.** Proposed
+**Status.** Implemented (v0.16.0) — deferred: keyboard/focus follow-ups to
+RFC-059; placement-complete creation controls to RFC-058; full
+accessibility/screen-reader validation to RFC-060; non-technical-user
+walkthrough validation to RFC-061. §14 open questions 2 and 3 remain open and
+are inherited by RFC-053/RFC-054.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** Source-preserving Markdown core, outline tree, focus editing, undo/redo (RFC-001–046); RFC-053 type core

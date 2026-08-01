@@ -60,16 +60,21 @@ policy in [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 045 | [Markdown Preview Pane](./done/045-markdown-preview-pane.md) | v0.12.0 |
 | 046 | [Document Statistics](./done/046-document-statistics.md) | v0.12.0 |
 | 047 | [App renamed to omriss](./done/047-app-renamed-to-omriss.md) | v0.14.0 |
+| 048 | [Split Document Organization and Focused Content Editing](./done/048-split-document-organization-and-focused-content-editing.md) | v0.16.0 |
+| 049 | [Document Map Structural Editing Model](./done/049-document-map-structural-editing-model.md) | v0.16.0 |
+| 050 | [Writing Area Simplification and Guided Editing](./done/050-writing-area-simplification-and-guided-editing.md) | v0.16.0 |
+| 051 | [Migration Plan and Acceptance Criteria](./done/051-migration-plan-and-acceptance-criteria.md) | v0.16.0 |
+| 052 | [Structured Plain-Text Format Expansion](./done/052-structured-plain-text-format-expansion.md) | main (unreleased) |
+| 062 | [Crate Package Name Exchange](./done/062-crate-package-name-exchange.md) | main (unreleased) |
+
+RFCs 048–051 shipped with explicitly deferred residual scope; each carries the
+deferral list in its Status field. The deferrals are tracked by RFC-058,
+RFC-059, RFC-060, and RFC-061, which remain Proposed.
 
 ## Proposed
 
 | ID | Title | Milestone |
 |----|-------|-----------|
-| 048 | [Split Document Organization and Focused Content Editing](./proposed/048-split-document-organization-and-focused-content-editing.md) | M10 |
-| 049 | [Document Map Structural Editing Model](./proposed/049-document-map-structural-editing-model.md) | M10 |
-| 050 | [Writing Area Simplification and Guided Editing](./proposed/050-writing-area-simplification-and-guided-editing.md) | M10 |
-| 051 | [Migration Plan and Acceptance Criteria](./proposed/051-migration-plan-and-acceptance-criteria.md) | M10 |
-| 052 | [Structured Plain-Text Format Expansion](./proposed/052-structured-plain-text-format-expansion.md) | M11 |
 | 053 | [Document Format Adapter Architecture](./proposed/053-document-format-adapter-architecture.md) | M11 |
 | 054 | [JSON Structure View and Focus Editing](./proposed/054-json-structure-view-and-focus-editing.md) | M12 |
 | 055 | [TOML Structure View and Preservation Rules](./proposed/055-toml-structure-view-and-preservation-rules.md) | M12 |
@@ -79,7 +84,6 @@ policy in [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 059 | [Keyboard Focus Follow-Up Controls](./proposed/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
 | 060 | [Accessibility and Screen-Reader Validation Plan](./proposed/060-accessibility-screen-reader-validation-plan.md) | M15 |
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
-| 062 | [Crate Package Name Exchange](./proposed/062-crate-package-name-exchange.md) | Post-0.16 cleanup |
 
 ## Archive
 

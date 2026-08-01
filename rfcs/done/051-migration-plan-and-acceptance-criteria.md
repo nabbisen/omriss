@@ -2,7 +2,12 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 — UI Role Separation
-**Status.** Proposed
+**Status.** Implemented (v0.16.0) — the M10 migration was executed and the QA
+gate was run. §12 acceptance checklist is satisfied except the two items the
+checklist itself defines as deferred: full accessibility/screen-reader
+validation (RFC-060) and full non-technical-user walkthrough validation
+(RFC-061), both recorded as *not run, not passed*. Owner accepted the residual
+findings `RFC048-QA-010/013/020/021/022` as post-M10 follow-up on 2026-07-15.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-049, RFC-050, RFC-053 type core

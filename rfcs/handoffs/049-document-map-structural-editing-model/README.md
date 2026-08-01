@@ -2,7 +2,7 @@
 
 Companion execution documents for:
 
-- RFC: `rfcs/proposed/049-document-map-structural-editing-model.md`
+- RFC: `rfcs/done/049-document-map-structural-editing-model.md`
 - Milestone: M10 - UI Role Separation
 
 Files:

@@ -2,7 +2,10 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 — UI Role Separation
-**Status.** Proposed
+**Status.** Implemented (v0.16.0) — deferred: §17 "component boundary accepts
+future `MapNodeKind` values" is unproven until RFC-053 introduces the canonical
+node-kind type (`DocumentMapNode` currently carries no `kind` field; adding one
+is additive). Full screen-reader label validation is deferred to RFC-060.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048

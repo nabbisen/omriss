@@ -2,7 +2,8 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** Post-0.16 release cleanup (proposed)
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — landed on `main` after the 0.16.0
+tag; the "Shipped in" version is assigned at the next release.
 **Document type:** Design seed
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-001, RFC-037, RFC-042, RFC-047
@@ -45,7 +46,7 @@ cargo run -p omriss
 The current command is:
 
 ```sh
-cargo run -p omriss
+cargo run -p omriss-app
 ```
 
 This is understandable from an internal boundary perspective, but it is less

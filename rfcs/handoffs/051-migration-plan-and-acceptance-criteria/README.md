@@ -2,7 +2,7 @@
 
 Companion execution documents for:
 
-- RFC: `rfcs/proposed/051-migration-plan-and-acceptance-criteria.md`
+- RFC: `rfcs/done/051-migration-plan-and-acceptance-criteria.md`
 - Milestone: M10 - UI Role Separation
 
 Files:
