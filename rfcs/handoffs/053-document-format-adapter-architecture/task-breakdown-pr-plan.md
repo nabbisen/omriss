@@ -214,6 +214,49 @@ boundary to build against.
 
 ---
 
+## S6 — `build_structure` takes the revision
+
+**Added after the S5 review.** RFC-053 §7.0 corrects a contradiction in this
+RFC: `DocumentStructure.revision` must be the live document's revision, but
+`build_structure(&str)` could not know it, so every structure reported
+`INITIAL` and any command against an edited document failed with
+`RevisionMismatch`. See §7.0 for the full account.
+
+**Change:**
+
+```rust
+fn build_structure(&self, source: &str, revision: DocumentRevision)
+    -> Result<DocumentStructure, StructureError>;
+```
+
+- `MarkdownAdapter` stops taking `document.revision()` from its throwaway
+  `Document::parse` and uses the passed value. The throwaway parse remains —
+  it is how the outline is obtained — but its revision is no longer read.
+- `PlainTextAdapter` stops returning `DocumentRevision::INITIAL` and uses the
+  passed value.
+- The three stub adapters' signatures update to match.
+- Existing call sites in tests pass `DocumentRevision::INITIAL` explicitly where
+  they operate on freshly-parsed documents — which is what they already
+  assumed implicitly, so their assertions do not change.
+
+**Required test — this is the point of the slice:**
+
+Edit a document so its revision advances, rebuild the structure from it passing
+the live revision, then issue a `structure_command` and assert it **succeeds**.
+This test fails before the change and passes after. Without it the slice proves
+nothing.
+
+Also assert the converse: a structure built at revision N, against a document
+since advanced to N+1, is still **rejected**. Staleness detection is the reason
+the field exists and must not be lost while fixing it.
+
+**Not in this slice:** wiring the session. RFC-054 still owns that.
+
+**Done when:** both tests pass, all shipped tests remain unmodified, and RFC-053
+is free of the §7/§9.1 contradiction.
+
+---
+
 ## Sequencing summary
 
 ```text
@@ -223,5 +266,7 @@ task 002 (refactor + clippy gate)
             └─ S3 ui reconciliation      ← zero user-visible change
                  └─ S4 MarkdownAdapter   ← highest regression risk
                       └─ S5 PlainText + recovery
-                           └─ RFC-054 may begin
+                           └─ S6 revision parameter  ← fixes RFC-053 §7/§9.1
+                                └─ RFC-053 disposition
+                                     └─ RFC-054 may begin
 ```
