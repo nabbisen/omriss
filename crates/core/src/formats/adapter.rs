@@ -13,10 +13,11 @@ use crate::formats::error::{
     ApplyEditError, EditValidationError, FocusError, StructureCommandError, StructureError,
 };
 use crate::formats::focused_content::FocusedContent;
+use crate::formats::json::JsonAdapter;
 use crate::formats::markdown::MarkdownAdapter;
 use crate::formats::plain_text::PlainTextAdapter;
 use crate::formats::structure::DocumentStructure;
-use crate::formats::unsupported::{JsonAdapter, TomlAdapter, YamlExperimentalAdapter};
+use crate::formats::unsupported::{TomlAdapter, YamlExperimentalAdapter};
 use crate::{Document, DocumentFormat, DocumentRevision, NodeId};
 
 /// The contract every document format implements (RFC-053 §7).
@@ -72,10 +73,10 @@ pub trait DocumentFormatAdapter {
 
 /// The active format adapter for the current document (RFC-053 §7.2).
 ///
-/// `Json`/`Toml`/`Yaml` are stub variants per the non-change-scope: "the
-/// enum variants may exist; the adapters must return unsupported until
-/// RFC-054+." `PlainText` (RFC-053 S5) is now fully populated — the last
-/// deferral from S4b resolved.
+/// `Toml`/`Yaml` are still stub variants per the RFC-053 non-change-scope:
+/// "the enum variants may exist; the adapters must return unsupported
+/// until RFC-055+/RFC-056+." `PlainText` (RFC-053 S5) and `Json`
+/// (RFC-054 J2, `build_structure` only so far) are real.
 pub enum ActiveAdapter {
     Markdown(MarkdownAdapter),
     Json(JsonAdapter),

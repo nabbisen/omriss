@@ -90,19 +90,24 @@ fn editing_methods_all_refuse_rather_than_guess() {
 }
 
 /// The RFC-052 §5.2 mechanism this slice exists to prove: when a real
-/// format adapter refuses (today, `JsonAdapter` refuses everything —
-/// RFC-054 has not landed), `PlainTextAdapter` succeeds on the exact same
+/// format adapter refuses, `PlainTextAdapter` succeeds on the exact same
 /// source, and the source itself was never touched — trivially true, since
 /// `build_structure` takes `&str`, an immutable borrow, so no adapter can
 /// mutate the caller's text regardless of whether it succeeds or fails.
+///
+/// The fixture is deliberately *invalid* JSON (a trailing comma) rather
+/// than merely any JSON string: RFC-054 J2 gave `JsonAdapter::build_structure`
+/// real strict-RFC-8259 parsing, so a source that happens to be valid JSON
+/// no longer demonstrates a real adapter's refusal — it would now succeed
+/// on `JsonAdapter` too, which is not the case this test exists to prove.
 #[test]
 fn when_a_format_adapter_fails_plain_text_still_succeeds_on_the_same_source() {
-    let source = r#"{"key": "value"}"#;
+    let source = r#"{"key": "value",}"#;
 
     let json_err = JsonAdapter
         .build_structure(source, DocumentRevision::INITIAL)
-        .expect_err("JSON is not implemented yet (RFC-054)");
-    assert_eq!(json_err.kind, StructureErrorKind::UnsupportedFeature);
+        .expect_err("trailing comma is not valid strict JSON (RFC-054 J2)");
+    assert_eq!(json_err.kind, StructureErrorKind::InvalidSyntax);
 
     let plain_text_structure = PlainTextAdapter
         .build_structure(source, DocumentRevision::INITIAL)
@@ -111,7 +116,7 @@ fn when_a_format_adapter_fails_plain_text_still_succeeds_on_the_same_source() {
 
     // The source binding itself is untouched — build_structure never had a
     // mutable path to it in the first place.
-    assert_eq!(source, r#"{"key": "value"}"#);
+    assert_eq!(source, r#"{"key": "value",}"#);
 }
 
 #[test]

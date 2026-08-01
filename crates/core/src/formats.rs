@@ -13,6 +13,7 @@ pub mod draft;
 pub mod edit;
 pub mod error;
 pub mod focused_content;
+pub mod json;
 pub mod markdown;
 pub mod plain_text;
 pub mod structure;

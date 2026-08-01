@@ -8,6 +8,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J2 `JsonAdapter::build_structure`** — replaces the stub with a
+  hand-written strict RFC 8259 parser and RFC-054 §5/§6 structure
+  projection: objects, arrays, and every scalar type build a real
+  `DocumentStructure`, with duplicate object keys preserved separately
+  (never merged) and byte ranges retained for every value. No JSONC
+  tolerance of any kind. Internal only: nothing under `crates/ui`/`crates/app`
+  calls `JsonAdapter` yet — that begins with J3.
 - **RFC-054 J1 `Document::replace_range`** — adds a format-neutral byte-range
   replacement primitive, routed through the same transactional path
   (`apply_replacement`) every other mutation uses, so undo history and
