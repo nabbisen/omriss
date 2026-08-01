@@ -433,6 +433,14 @@ Format detection order:
 includes the shipped `.mdown` and `.txt` → Markdown behavior; detection must not
 regress those files to `PlainText`.
 
+**Extension matching is case-insensitive.** RFC-052 §5.1 writes the mapping in
+lowercase and is silent on case; `README.MD` is a Markdown file on every
+supported platform, so extensions are compared after ASCII-lowercasing. This
+was settled during the S1 review and is binding on later slices and on
+RFC-054/055/056 — it must not be silently reversed. It creates no discrepancy
+with the shipped `MD_EXTENSIONS` file-dialog filter, which configures a native
+dialog rather than a comparison omriss performs.
+
 Detection lives in `omriss_core::formats::detection` as free functions, not as a
 trait method (§7.1). Resolves §18 Q5.
 
