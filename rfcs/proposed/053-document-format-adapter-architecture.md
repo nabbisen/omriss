@@ -204,9 +204,23 @@ pub enum CapabilityReason {
     ExperimentalFormat,
     UnsafePreservation,
     UnsupportedForFormat,
+    DepthLimit,             // not yet adopted — see note below
     ExternalChangeConflict, // session-overlay only — see note below
 }
 ```
+
+`DepthLimit` was added during the S2 review. The shipped Markdown capability
+logic disables demote at H6 and promote at H1 using `NoSibling` and `NoParent`
+respectively, because no accurate variant existed. `NoSibling` renders as
+"Nothing to swap with here." even when a sibling plainly exists, which
+undermines the reason typed reasons exist at all.
+
+**Adopting `DepthLimit` is a user-visible change** — it alters the text on a
+disabled menu item and needs a new catalog key in both `en` and `ja`. It must
+therefore be its own task, and must **not** be folded into RFC-053 S3 or S4,
+both of which are contract-bound to change no observable behavior. Until that
+task runs, adapters continue to emit the shipped reasons, and this variant is
+unconstructed.
 
 `ExternalChangeConflict` is **not emitted by format adapters**. It is applied as
 a session-level overlay after adapter capabilities are built, when external
