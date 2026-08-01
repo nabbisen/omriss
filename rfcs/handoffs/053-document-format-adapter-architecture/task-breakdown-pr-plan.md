@@ -183,9 +183,25 @@ identity tests pass.
 Per RFC-052 §5.2: a single node, **no synthetic structure**, all editing
 capabilities `Hidden`, `can_show_plain_text: Allowed`.
 
-Wire the parse-failure path: when `build_structure` fails, the session keeps the
-source text and surfaces the plain-file-text recovery route. Messages come from
-the existing catalog — no new keys.
+Demonstrate the parse-failure path **at the adapter boundary**: when a format
+adapter's `build_structure` fails, falling back to `PlainTextAdapter` yields a
+viewable single-node structure with `can_show_plain_text: Allowed`. Source text
+is preserved structurally — `build_structure` takes `&str` and mutates nothing,
+so a failure cannot damage the document.
+
+> **Scope clarification (added before S5 was dispatched).** An earlier draft of
+> this section said "the session keeps the source text and surfaces the
+> plain-file-text recovery route." That overstates S5's scope: nothing wires
+> `ActiveAdapter` into the session until RFC-054, and S5 must not become the
+> slice that does it — that would make the last core slice user-visible and
+> pull RFC-054's work forward.
+>
+> S5 therefore proves the **mechanism** in `omriss-core`: failure returns a
+> typed error without mutation, and `PlainTextAdapter` provides the fallback
+> structure a recovery path would render. Criterion 7's end-to-end behavior —
+> the session actually choosing that fallback and the UI offering
+> "Show plain file text" — lands with RFC-054's wiring. No catalog keys, no
+> `crates/ui` or `crates/app` changes.
 
 **Tests:**
 
