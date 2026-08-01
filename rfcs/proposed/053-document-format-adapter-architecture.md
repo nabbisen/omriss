@@ -167,6 +167,14 @@ pub enum StructureNodeKind {
     Unsupported,
 }
 
+// `depth` is the ancestor count from the root: the root itself is 0, its
+// children are 1, and so on. It is NOT the format's own nesting notation —
+// for Markdown it is tree depth, not heading level. The two diverge whenever
+// RFC-007 reattaches a skipped heading level (`# A` followed directly by
+// `### B` makes B depth 1, not 3). Every adapter must use this definition, so
+// that Document Map indentation is consistent across formats. Settled during
+// the S4a review.
+
 pub struct NodeCapabilities {
     pub can_select: Capability,
     pub can_edit_content: Capability,
@@ -497,6 +505,14 @@ pub enum StructureErrorKind {
     InternalInvariantFailed,
 }
 ```
+
+**The mapping table lives in `omriss-ui`, not `omriss-core`.** Adapters return a
+typed `StructureErrorKind`; `omriss-ui` maps it to a localized catalog string at
+render time. This is the same split already established for `CapabilityReason`
+(§6): `omriss-core` must never name an i18n catalog key, or the RFC-001
+dependency direction inverts. `StructureError` itself stays minimal — it carries
+the kind, and gains fields only when a real consumer needs them. Settled during
+the S4a review.
 
 Normal UI must not expose parser internals.
 
