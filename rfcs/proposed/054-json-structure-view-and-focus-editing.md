@@ -5,10 +5,100 @@
 **Status.** Proposed
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
-**Depends on:** RFC-053
+**Depends on:** RFC-053 (Implemented — see §0 for what it did and did not leave ready)
 **Related RFCs:** RFC-055, RFC-056
 
 ---
+
+## 0. Inherited state — read before anything else
+
+**Added after RFC-053's disposition.** This RFC was written before the adapter
+boundary existed. RFC-053 is now implemented, and it hands RFC-054 three items
+plus one decision. None of them are optional preliminaries — the first is a
+prerequisite for writing any JSON mutation at all.
+
+### 0.1 The mutation signature is Markdown-specific — resolve this first
+
+RFC-053 §7 specifies `apply_validated_edit(&mut Document, …)` and
+`structure_command(&mut Document, …)`. `Document` is the canonical **Markdown**
+model (RFC-002/006/007): it owns a heading `Outline`, and its public edit
+operations are section-shaped (`replace_section_body(node_id, …)`).
+
+That is correct for `MarkdownAdapter` — wrapping those operations is why S4b
+preserved every byte-preservation guarantee. A JSON adapter cannot use it: it
+needs to replace an arbitrary byte range and have the change recorded in undo
+history with the revision incremented as one unit. `Document` does this
+internally; it does not expose it.
+
+**Decision: add a public, format-neutral replacement operation to `Document`.**
+
+```rust
+pub fn replace_range(
+    &mut self,
+    range: ByteRange,
+    text: String,
+    base_revision: DocumentRevision,
+) -> Result<EditResult, EditError>;
+```
+
+It must route through the same internal path the section operations already use,
+so history and revision update together (RFC-053 §7.1). JSON rides on `Document`
+and simply ignores the heading outline that `Document::parse` builds over JSON
+source — wasted work, conceptually untidy, functionally inert.
+
+**Rejected alternative: extract a format-neutral `TextDocument` core** and make
+Markdown's `Document` a wrapper over it. That is the better long-term
+architecture and should be revisited once TOML (RFC-055) gives a second
+non-Markdown case. It is rejected *now* because it restructures RFC-002/004/008/044 —
+the code every byte-preservation guarantee depends on — speculatively, before a
+single non-Markdown format exists to show what the abstraction needs. M11
+succeeded by not touching that machinery; generalizing it on one hypothetical
+case would spend that safety for nothing.
+
+Revisit trigger: when RFC-055 lands, two real non-Markdown formats will exist.
+If both are still ignoring a Markdown outline to get at a byte-range splice,
+extract the core then, with evidence.
+
+### 0.2 Carried from RFC-053 — criterion 7's end-to-end half
+
+RFC-053 proved the parse-failure mechanism at the adapter boundary: a failed
+`build_structure` cannot mutate source, and `PlainTextAdapter` supplies a
+fallback structure. **Nothing wires it.** The session choosing that fallback, and
+the UI offering "Show plain file text" when a JSON file will not parse, is
+RFC-054's work — and it is the first time any adapter code becomes reachable
+from the running app.
+
+### 0.3 Carried from RFC-053 — criterion 10, the message table
+
+`StructureErrorKind` production is complete; the kind → friendly-message mapping
+was never built. Its home is fixed as `omriss-ui` (RFC-053 §11), matching the
+`CapabilityReason` precedent: `omriss-core` must never name a catalog key. JSON
+is the first format that will actually show these messages to a user, so
+RFC-054 builds the table. New catalog keys are expected here, in both `en` and
+`ja`.
+
+### 0.4 The revision discipline (RFC-053 §7.0, S6)
+
+`build_structure` takes the live revision explicitly:
+
+```rust
+adapter.build_structure(document.source(), document.revision())
+```
+
+The session must pass `document.revision()` **at the moment of building**, never
+a cached value. Getting this wrong produces a rejected command rather than a
+corrupted document — a safe failure, but a confusing one. This is the single
+most likely wiring mistake in §0.2's work.
+
+### 0.5 Binding decisions from RFC-052
+
+- **Strict JSON only (RFC 8259)** — §14.1. No JSONC, no comments, no trailing
+  commas. A `.json` file containing comments is reported as invalid with a
+  plain-file-text escape hatch, not silently reparsed. This supersedes §15
+  question 1 below.
+- **JSON is visible by default** once this RFC is accepted — §14.4, owner
+  decision of 2026-07-30. No global "experimental formats" toggle exists or is
+  to be introduced.
 
 ## 1. Summary
 
@@ -402,12 +492,46 @@ Phase 4 may require additional RFC detail.
 - Undo restores exact prior source text.
 - User-facing messages avoid technical parser details.
 
-## 15. Open questions
+## 15. Resolved questions
 
-1. Should JSONC be a separate future adapter?
-2. How should duplicate object keys be displayed and edited?
-3. Should null values support type-changing in the first editable version?
-4. Should object/list raw editing be available before add/delete operations?
+Closed during RFC-054's pre-implementation review, so none reaches the
+implementer.
+
+**1. JSONC — no, and not as a future adapter either without new evidence.**
+RFC-052 §14.1 already decided strict JSON (RFC 8259). JSONC reintroduces
+comment preservation, which is the reason TOML is sequenced *after* JSON rather
+than alongside it. Files such as `tsconfig.json` will report as invalid with a
+plain-file-text escape hatch — the accepted consequence, recorded in RFC-052
+§14.1. Revisit only on demonstrated demand, as its own RFC.
+
+**2. Duplicate object keys — display all, edit each independently, never
+merge.** RFC 8259 permits duplicates and does not define which wins. omriss must
+not pick: the source is canonical, so both entries appear in the Document Map in
+source order, each with its own node identity and its own byte range. Editing
+one must not touch the other. This falls out of §6's ordinal-in-path identity
+rule and needs a test, not a mechanism.
+
+Deleting one of a duplicate pair is a structure operation and therefore Phase 4
+at the earliest.
+
+**3. Type-changing a null — no, not in the first editable version.** Editing an
+"empty" value into a text, number, or on/off value changes the node's kind,
+which changes its capabilities and its editor. That is a structure change
+wearing a value edit's clothes. The first editable version keeps the rule
+simple: a value edit may change a value, never its kind. A user who needs the
+type changed uses "Show plain file text". Revisit in Phase 4 alongside the other
+structure operations.
+
+**4. Container raw editing before add/delete — yes, and deliberately.** §13's
+phases already order it this way (Phase 3 before Phase 4), and that order is
+correct: raw editing of an object or list is a *single validated replacement of
+one byte range*, which is the same mechanism scalar editing already uses. Add
+and delete require synthesizing punctuation — commas, separators, indentation —
+which is where the real preservation risk lives. Ship the mechanism that reuses
+proven machinery first.
+
+Phase 4 remains explicitly optional for this RFC. If it is not reached, JSON is
+still useful: view, navigate, and edit values.
 
 ## 16. Final decision summary
 
