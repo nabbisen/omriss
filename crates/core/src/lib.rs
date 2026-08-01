@@ -56,6 +56,8 @@ pub use doc::structural::{MoveTarget, StructuralEditError};
 pub use error::{DocumentError, EditError, IndexError};
 pub use formats::DocumentFormat;
 pub use formats::draft::DraftState;
+pub use formats::error::{StructureError, StructureErrorKind};
+pub use formats::markdown::MarkdownAdapter;
 pub use formats::structure::{
     Capability, CapabilityReason, DocumentStructure, NodeCapabilities, StructureNode,
     StructureNodeKind,

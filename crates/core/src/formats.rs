@@ -9,6 +9,8 @@
 
 pub mod detection;
 pub mod draft;
+pub mod error;
+pub mod markdown;
 pub mod structure;
 
 /// The document format a file's content should be interpreted and edited as

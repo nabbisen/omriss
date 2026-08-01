@@ -7,5 +7,6 @@ mod draft_tests;
 mod edit_tests;
 mod history_tests;
 mod index_tests;
+mod markdown_adapter_tests;
 mod range_tests;
 mod structure_tests;

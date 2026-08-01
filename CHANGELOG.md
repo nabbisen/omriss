@@ -8,6 +8,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S4a `MarkdownAdapter` structure projection** — adds
+  `omriss_core::MarkdownAdapter::build_structure`, projecting the shipped
+  outline into the RFC-053 structure model while reusing every existing
+  node id unchanged. Internal only: no adapter mutation exists yet, and
+  nothing calls this method outside its own tests.
 - **RFC-053 S3 `omriss-ui` reconciliation** — `omriss-ui` now consumes the
   `omriss_core` capability vocabulary (`Capability`, `NodeCapabilities`,
   `CapabilityReason`, `DraftState`) instead of defining its own
