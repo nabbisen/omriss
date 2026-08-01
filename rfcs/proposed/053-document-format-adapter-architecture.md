@@ -167,6 +167,13 @@ pub enum StructureNodeKind {
     Unsupported,
 }
 
+// `root_id` is the authoritative pointer to the root node. `kind` describes
+// what a node *contains*, not its position, and must never be used to locate
+// the root: `MarkdownAdapter`'s root is `DocumentRoot`, but `PlainTextAdapter`'s
+// single node is `RawRegion` — correctly, since RFC-052 §5.2 forbids dressing
+// opaque text as a document root. A consumer matching on `kind == DocumentRoot`
+// silently finds nothing for PlainText. Settled during the S5 review.
+
 // `depth` is the ancestor count from the root: the root itself is 0, its
 // children are 1, and so on. It is NOT the format's own nesting notation —
 // for Markdown it is tree depth, not heading level. The two diverge whenever
@@ -242,7 +249,11 @@ adapters never produce it.)
 pub trait DocumentFormatAdapter {
     fn format(&self) -> DocumentFormat;
 
-    fn build_structure(&self, source: &str) -> Result<DocumentStructure, StructureError>;
+    fn build_structure(
+        &self,
+        source: &str,
+        revision: DocumentRevision,
+    ) -> Result<DocumentStructure, StructureError>;
 
     fn focused_content(
         &self,
@@ -273,6 +284,34 @@ pub trait DocumentFormatAdapter {
     ) -> Result<AppliedEdit, StructureCommandError>;
 }
 ```
+
+### 7.0 `build_structure` takes the revision explicitly
+
+**Added after the S5 review; this corrects a contradiction in the RFC.**
+
+`DocumentStructure.revision` is the revision the structure was derived from, and
+`structure_command` uses it as the `base_revision` for the shipped operation's
+optimistic-concurrency check (§9.1). An adapter given only `&str` cannot know
+that value: `MarkdownAdapter` parsed a throwaway `Document`, whose revision is
+always `INITIAL`, so every structure claimed revision 0 regardless of the live
+document's state. The consequence was that a command against any document edited
+even once failed with `RevisionMismatch`, and rebuilding did not help — the
+rebuild also reported 0. The boundary was effectively single-use per document.
+
+The cause was this RFC, not its implementation: §7 originally took
+`&SourceText`, which carried a revision. §5.1 withdrew `SourceText` — correctly,
+to remove a second owner of canonical text — but that also removed the only
+truthful source for this field, leaving §9.1 requiring a value §7 made
+unobtainable.
+
+The caller therefore passes it: the session already holds the live `Document`
+and calls `build_structure(document.source(), document.revision())`. Adapters
+still receive `&str` and own nothing (§5.1 is unchanged); the revision is data
+the caller supplies, not state the adapter derives.
+
+Staleness detection is preserved and is the point: a session holding a structure
+built at revision N while the document has advanced to N+1 gets its command
+rejected, exactly as RFC-002/RFC-008 intend.
 
 ### 7.1 Trait shape — decided, not delegated
 
@@ -382,6 +421,11 @@ pub struct ValidatedEdit {
     pub description: EditDescription,
 }
 ```
+
+`base_revision` is copied from `DocumentStructure.revision`, which the caller
+supplied to `build_structure` (§7.0). It must be the live document's revision at
+the moment the structure was built — never a constant, and never re-derived
+inside the adapter.
 
 Before applying:
 
