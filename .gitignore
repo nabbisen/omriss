@@ -13,6 +13,9 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
+# mdBook render output (`mdbook build docs`)
+docs/book/
+
 # custom
 /.git-exclude/
 *.local.json
