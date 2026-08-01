@@ -8,6 +8,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-053 S2 structure vocabulary** — adds `omriss_core::{DocumentStructure,
+  StructureNode, StructureNodeKind, NodeCapabilities, Capability,
+  CapabilityReason}` and a Markdown capability-computation function, ported
+  from (not replacing) the shipped `omriss-ui` implementation. Internal
+  only: `omriss-ui` and `omriss-app` are untouched, and no user-facing or
+  API behavior changes.
 - **RFC-053 S1 document format detection** — adds `omriss_core::DocumentFormat`
   and `omriss_core::formats::detection` (extension-based classification per
   RFC-052 §5.1). Internal only: nothing calls it yet, and no user-facing or

@@ -55,5 +55,9 @@ pub use doc::revision::DocumentRevision;
 pub use doc::structural::{MoveTarget, StructuralEditError};
 pub use error::{DocumentError, EditError, IndexError};
 pub use formats::DocumentFormat;
+pub use formats::structure::{
+    Capability, CapabilityReason, DocumentStructure, NodeCapabilities, StructureNode,
+    StructureNodeKind,
+};
 pub use index::outline::{HeadingLevel, NodeId, Outline, SectionNode};
 pub use range::{ByteRange, RangeError};

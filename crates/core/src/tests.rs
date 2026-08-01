@@ -7,3 +7,4 @@ mod edit_tests;
 mod history_tests;
 mod index_tests;
 mod range_tests;
+mod structure_tests;

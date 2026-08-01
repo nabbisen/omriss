@@ -8,6 +8,7 @@
 //! session or the file dialog yet.
 
 pub mod detection;
+pub mod structure;
 
 /// The document format a file's content should be interpreted and edited as
 /// (RFC-053 §5).
