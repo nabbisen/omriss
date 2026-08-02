@@ -55,8 +55,17 @@ JSON at all; J2–J6 build the format on top of it.
 | **J2** | JSON parse + structure projection, read-only; `JsonAdapter::build_structure` replaces the stub | No |
 | **J3** | Session wiring: open a `.json` file, render its Document Map, fall back to plain file text on parse failure | **Yes — first visible change** |
 | **J4** | `StructureErrorKind` → message table in `omriss-ui`, with `en`/`ja` keys | Yes |
-| **J5** | Scalar value editing with validation (RFC-054 §8) | Yes |
-| **J6** | Container raw focused editing (RFC-054 §7.4) | Yes |
+| **J5** | Scalar value editing with validation (RFC-054 §8) — `omriss-core` only | No |
+| **J6** | Container raw focused editing (RFC-054 §7.4) — `omriss-core` only | No |
+| **J7** | App wiring: `EditorSession` focus, right-panel editors, `DraftState`, save/undo | **Yes — JSON becomes editable** |
+
+The J5/J6 rows previously read "Yes" while their detail sections listed
+core-only tests. Settled after the J5 scope question: **J5 and J6 are
+`omriss-core` only; J7 is the slice a user can see.** Separating the
+byte-preservation-critical adapter logic from a new Dioxus component keeps each
+reviewable on its own terms, and keeps the preservation proof from depending on
+GUI verification — which has failed once and succeeded once in this
+environment.
 
 RFC-054 §13 Phase 4 (add/delete/rename/move) is **out of scope for this
 handoff**. §15's resolution of question 4 explains why: those operations
@@ -179,13 +188,15 @@ bash scripts/check-rfcs.sh
 
 ## 9. Documentation updates
 
-- `docs/src/file-formats.md` — **only once JSON actually works.** RFC-052 §12's
-  two-column table exists for exactly this: move JSON from "Planned — not
-  available yet" to "Supported" when J5 lands, not before. Promoting it early is
-  the precise defect RFC-052 exists to prevent.
+- `docs/src/file-formats.md` — **only once JSON actually works**, which is
+  **J7**, not J5. RFC-052 §12's two-column table exists for exactly this: move
+  JSON from "Planned — not available yet" to "Supported" when a user can open
+  *and edit* a JSON file. J5 and J6 add adapter logic no user can reach;
+  promoting on those would be the precise overclaim RFC-052 exists to prevent.
+  (This line named J5 before the scope question settled J5/J6 as core-only.)
 - `docs/src/architecture.md` — describe the adapter boundary and JSON's place in
   it, after J3.
-- `CHANGELOG.md` — per slice. J3 onward **are** user-facing; say so plainly
+- `CHANGELOG.md` — per slice. J3 and J7 **are** user-facing; say so plainly
   rather than reusing the "no user-facing change" phrasing from RFC-053's
   slices.
 

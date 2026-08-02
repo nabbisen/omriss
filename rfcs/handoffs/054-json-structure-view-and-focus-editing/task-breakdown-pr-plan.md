@@ -73,27 +73,61 @@ Closes RFC-053 criterion 10.
 
 ---
 
-## J5 — Scalar value editing
+## J5 — Scalar value editing — **`omriss-core` only**
 
-Text, number, on/off, and empty values per RFC-054 §8's validation rules.
-Invalid drafts block save and show plain guidance (RFC-053 §9.3).
+Scope settled after the J5 scope question; earlier text here was ambiguous about
+whether app wiring was included. **It is not** — J5 implements `JsonAdapter`'s
+`focused_content`, `validate_focused_edit`, and `apply_validated_edit` for
+scalars, and stops there.
+
+Text, number, on/off, and empty values per RFC-054 §8's validation rules. An
+invalid draft must be *rejected by the adapter*; making a UI block on it is J7.
+
+Also in J5: J3F-IMPL-002 — `DocumentMapNode` gains `kind` so JSON rows stop
+rendering Markdown's `#` glyph. A Document Map concern, independent of editing.
 
 **Tests:** validation per value kind, and **byte preservation** — editing one
 value changes only that value's bytes; indentation, key order, and line endings
-are untouched.
+are untouched. A byte-level before/after belongs in the review request.
 
-**When this lands,** move JSON from "Planned" to "Supported" in
-`docs/src/file-formats.md` — and not before.
+**Not in this slice:** `EditorSession`, any Dioxus component, `DraftState`
+wiring, save/undo integration, or the `docs/src/file-formats.md` promotion. All
+J7.
 
 ---
 
-## J6 — Container raw focused editing
+## J6 — Container raw focused editing — **`omriss-core` only**
 
 Show a selected object or list as text, validate the replacement, apply it as
-one range replacement, rebuild.
+one range replacement, rebuild. Same core-only boundary as J5.
 
 **Tests:** invalid input is rejected without mutation; a valid replacement
 preserves surrounding bytes.
+
+---
+
+## J7 — App wiring
+
+The slice that makes JSON editable by a user. Dispatched when J6 lands.
+
+Carries:
+
+- a JSON-aware focus path in `EditorSession` — `focus()` currently fails for
+  JSON node ids by design, and `focusing_a_json_derived_node_id_fails_safely_without_corrupting_session_state`
+  pins that. That test will need revisiting, deliberately and with reasoning;
+- a right-panel component implementing RFC-054 §4.4–§4.7 (text, number, on/off,
+  empty) plus §7.4 (container raw text) — built once, for every value kind;
+- `DraftState` wiring with invalid-draft blocking per RFC-053 §9.3;
+- save/undo integration per RFC-054 §13 Phase 2;
+- RFC-054 §10's **context-specific** messages at their call sites — not J4's
+  generic kind-based table (see RFC-054 §10's note);
+- **the `docs/src/file-formats.md` promotion**: JSON moves from "Planned" to
+  "Supported" here, and not in any earlier slice. Promoting it while nothing can
+  edit JSON is the overclaim RFC-052 exists to prevent.
+
+This is large and **may split at the read/write seam** — render focused content
+first, commit edits second, as S4 split into S4a/S4b. Propose the split rather
+than growing the slice.
 
 ---
 

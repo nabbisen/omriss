@@ -90,23 +90,49 @@ exercise `omriss-ui`, which is exactly the layer that cannot fail this check.
 [ ] omriss-core names no catalog key
 ```
 
-## J5 — scalar editing
+## J5 — scalar editing (`omriss-core` only)
 
 ```text
 [ ] text, number, on/off, empty validation per RFC-054 §8
-[ ] invalid drafts block save with plain guidance
+[ ] an invalid draft is REJECTED BY THE ADAPTER — making a UI block on it is J7
 [ ] BYTE PRESERVATION: only the edited value's bytes change
 [ ] indentation, key order, and line endings untouched
 [ ] a byte-level before/after appears in the review request
-[ ] docs/src/file-formats.md moves JSON to "Supported" — in THIS slice, not earlier
+[ ] JSON rows stop rendering Markdown's `#` glyph (J3F-IMPL-002)
+[ ] zero diff under crates/app/; crates/ui/ only for the DocumentMapNode kind
+[ ] docs/src/file-formats.md is NOT touched — the "Supported" promotion is J7,
+    once a user can actually edit JSON (settled by the J5 scope question)
 ```
 
-## J6 — container raw editing
+## J6 — container raw editing (`omriss-core` only)
 
 ```text
 [ ] invalid container text is rejected without mutation
 [ ] a valid replacement preserves surrounding bytes
+[ ] zero diff under crates/ui/ and crates/app/
 ```
+
+## J7 — app wiring (the slice a user can see)
+
+```text
+[ ] a JSON value can be selected and its editor rendered
+[ ] each value kind gets its editor per RFC-054 §4.4–§4.7; containers per §7.4
+[ ] an invalid draft blocks navigation, preview, and save, with plain guidance
+[ ] RFC-054 §10's context-specific messages are used at their call sites —
+    NOT J4's generic kind-based table (see RFC-054 §10's note)
+[ ] save writes the edited JSON; undo restores it byte-exactly
+[ ] .md behavior is unchanged — open, edit, organize, save, undo
+[ ] the focus-fails-safely test from J4 is revisited deliberately, with
+    reasoning — it pins behavior this slice intentionally changes
+[ ] docs/src/file-formats.md moves JSON to "Supported" — in THIS slice
+```
+
+**Rendering check — required, same rules as J3's.** A user-visible slice needs
+evidence a user could see. Priority order is unchanged: click-through, else a
+screenshot of the app launched with a file open, else recorded as NOT PERFORMED.
+Never passed on unit tests alone.
+
+**This is the slice the release gate waits on**, not J5.
 
 ## Scope discipline
 
