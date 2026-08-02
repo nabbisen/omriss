@@ -8,6 +8,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J4 friendly-message table** — adds
+  `omriss_ui::StructureErrorKindCatalogKey`, mapping every
+  `omriss_core::StructureErrorKind` to a localized message (RFC-053 §11)
+  in both `en` and `ja`. Exhaustive: a future error kind without a
+  message fails the build rather than falling back silently. Closes
+  RFC-053 acceptance criterion 10, the last of its originally-open
+  criteria. Internal only: nothing calls the mapping yet — no
+  `StructureErrorKind` is shown to a user until scalar/container editing
+  (J5/J6) can produce one through the running app.
 - **RFC-054 J3 follow-up: structural creation controls now appear only
   for Markdown.** The Document Map's "+ Top" button was previously
   rendered for every open document regardless of format; on a `.json`

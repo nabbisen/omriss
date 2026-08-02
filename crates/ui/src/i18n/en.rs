@@ -226,6 +226,26 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("status.ready", "Ready"),
     ("status.saved", "Saved"),
     ("status.unsaved", "Unsaved changes"),
+    (
+        "structure_error.internal_invariant_failed",
+        "Something went wrong. Your file was not changed.",
+    ),
+    (
+        "structure_error.invalid_syntax",
+        "This file does not look valid.",
+    ),
+    (
+        "structure_error.too_large",
+        "This file is too large to show this way.",
+    ),
+    (
+        "structure_error.unsafe_range",
+        "This change could not be made safely.",
+    ),
+    (
+        "structure_error.unsupported_feature",
+        "This part can be viewed, but safe editing is not ready yet.",
+    ),
     ("toolbar.redo", "Redo"),
     ("toolbar.undo", "Undo"),
     ("view.stats", "Show Statistics"),

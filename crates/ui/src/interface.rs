@@ -2,3 +2,4 @@
 
 pub mod commands;
 pub mod document_map;
+pub mod errors;

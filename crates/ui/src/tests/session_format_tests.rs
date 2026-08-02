@@ -8,7 +8,7 @@
 
 use omriss_core::DocumentFormat;
 
-use crate::EditorSession;
+use crate::{EditorSession, node_id_from_raw};
 
 #[test]
 fn open_and_open_detected_markdown_produce_the_same_session() {
@@ -134,4 +134,45 @@ fn nothing_is_selected_by_default_in_a_freshly_opened_json_session() {
     .unwrap();
     let root = session.document_map_nodes();
     assert!(root.children.iter().all(|c| !c.is_selected));
+}
+
+/// RFC-054 J3-IMPL-002 (Minor finding, `.git-exclude/reviewed/008-rfc-054-j3-followup-document-map-expansion-fix.md`):
+/// clicking a Document Map row calls `EditorSession::focus()` with the
+/// row's `NodeId`, unconditionally, regardless of format. For JSON that id
+/// was assigned by `JsonAdapter` (RFC-054 §6, an ordinal-path hash), never
+/// by the accidental Markdown outline `Document::parse` builds over JSON
+/// text (RFC-054 §0.1) -- and for source with no `#`-prefixed lines, that
+/// outline has no non-root nodes at all, so `focus()` on any real JSON
+/// node id is *guaranteed*, not merely likely, to miss. This was traced as
+/// safe in the J3 review and confirmed live once during manual testing;
+/// this is its first automated coverage.
+#[test]
+fn focusing_a_json_derived_node_id_fails_safely_without_corrupting_session_state() {
+    let source = r#"{"a": 1, "b": 2}"#;
+    let mut session = EditorSession::open_detected(
+        source.to_string(),
+        Some("pkg.json".into()),
+        crate::FileTextProfile::detect(source, false),
+        DocumentFormat::Json,
+    )
+    .unwrap();
+
+    let root = session.document_map_nodes();
+    let a_id = node_id_from_raw(root.children[0].id);
+    let view_before = session.view_mode();
+
+    let result = session.focus(a_id);
+
+    assert!(
+        result.is_err(),
+        "a JSON-space NodeId must not resolve against the accidental Markdown outline"
+    );
+    assert_eq!(
+        session.view_mode(),
+        view_before,
+        "a failed focus must leave view state exactly as it was -- no crash, no corruption"
+    );
+    // The Document Map itself is unaffected by the failed focus attempt.
+    let root_after = session.document_map_nodes();
+    assert_eq!(root_after.children.len(), 2);
 }
