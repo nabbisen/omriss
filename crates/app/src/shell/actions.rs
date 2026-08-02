@@ -4,6 +4,7 @@
 //! Extracting them here keeps `app.rs` to signal wiring and the render tree.
 
 use dioxus::prelude::*;
+use omriss_core::DocumentFormat;
 use omriss_ui::EditorSession;
 
 use crate::components::{
@@ -28,20 +29,41 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
             profile,
             mtime,
         } => {
-            match EditorSession::open_with_profile(text, Some(name.clone()), profile) {
+            // RFC-054 J3: the format governs which adapter's structure
+            // document_map_nodes() projects. detect_format is extension-only
+            // (RFC-052 §5.1); a real path is available here (unlike inside
+            // omriss-ui, which only ever sees `file_name: Option<String>`),
+            // so detection happens at this boundary and the result is
+            // supplied to the session, matching how `profile` already flows
+            // in "detected upstream, passed in".
+            let format = omriss_core::formats::detection::detect_format(
+                Some(std::path::Path::new(&name)),
+                &text,
+            );
+            match EditorSession::open_detected(text, Some(name.clone()), profile, format) {
                 Ok(opened) => {
                     ctx.session.set(opened);
                     ctx.selected_card.set(0);
-                    // Auto-focus the first section so the editor is immediately ready.
-                    let first_id = ctx
-                        .session
-                        .read()
-                        .outline_items()
-                        .into_iter()
-                        .next()
-                        .map(|i| i.id);
-                    if let Some(id) = first_id {
-                        let _ = ctx.session.write().focus(id);
+                    // Auto-focus the first section so the editor is
+                    // immediately ready -- Markdown only. `outline_items`/
+                    // `focus` both still read the Markdown heading parse
+                    // `Document::parse` builds over any text (RFC-054
+                    // §0.1); for a non-Markdown format that parse is
+                    // meaningless, so auto-focusing would show garbage
+                    // content instead of the Document Map this slice
+                    // exists to render. Right-panel content for non-Markdown
+                    // formats is out of scope until later RFC-054 slices.
+                    if format == DocumentFormat::Markdown {
+                        let first_id = ctx
+                            .session
+                            .read()
+                            .outline_items()
+                            .into_iter()
+                            .next()
+                            .map(|i| i.id);
+                        if let Some(id) = first_id {
+                            let _ = ctx.session.write().focus(id);
+                        }
                     }
                     sync_draft(ctx);
                     ctx.saved_mtime.set(mtime);

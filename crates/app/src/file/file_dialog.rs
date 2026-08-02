@@ -12,6 +12,7 @@ use std::time::SystemTime;
 use omriss_ui::FileTextProfile;
 
 const MD_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "txt"];
+const JSON_EXTENSIONS: &[&str] = &["json"];
 
 // ── outcome types ─────────────────────────────────────────────────────────────
 
@@ -45,8 +46,19 @@ pub enum SaveOutcome {
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+/// The shared open/save dialog. Both filters are always offered: RFC-054 J3
+/// widens the *open* side to `.json` (RFC-052 §14.4, JSON visible by
+/// default — no separate "experimental formats" toggle), and it costs
+/// nothing to offer the same two filters on the Save-As side too, rather
+/// than splitting into a second dialog-builder function neither call site
+/// actually needs. Save itself has no JSON-specific behavior yet — nothing
+/// can edit a JSON document until RFC-054 J5/J6 — so writing one back out
+/// unmodified through this dialog is the only JSON case it can reach today,
+/// and that already worked before this slice (the bytes are untouched).
 fn markdown_dialog() -> rfd::FileDialog {
-    rfd::FileDialog::new().add_filter("Markdown", MD_EXTENSIONS)
+    rfd::FileDialog::new()
+        .add_filter("Markdown", MD_EXTENSIONS)
+        .add_filter("JSON", JSON_EXTENSIONS)
 }
 
 /// Reads `path`, strips a UTF-8 BOM if present, and returns text + profile +

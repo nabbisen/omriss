@@ -8,6 +8,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J3: `.json` files can now be opened.** The Open dialog offers a
+  "JSON" filter alongside "Markdown". Opening a valid `.json` file shows its
+  keys, nested objects/arrays, and scalar values as rows in the Document
+  Map, the same left-panel tree Markdown headings already populate.
+  Selecting a JSON row does not yet update the right panel — that lands
+  with scalar editing (J5). Opening a `.json` file that is not strict JSON
+  (RFC 8259) still opens successfully, with the source preserved exactly;
+  the Document Map shows nothing for it rather than guessing at a
+  structure, and the existing "Show plain text" button remains available
+  to view the raw content. `.md` files are completely unaffected — every
+  existing open/edit/organize/save/undo path is unchanged code.
 - **RFC-054 J2 `JsonAdapter::build_structure`** — replaces the stub with a
   hand-written strict RFC 8259 parser and RFC-054 §5/§6 structure
   projection: objects, arrays, and every scalar type build a real

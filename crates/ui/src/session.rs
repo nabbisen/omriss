@@ -10,8 +10,8 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use omriss_core::{
-    Document, DocumentError, DocumentRevision, EditError, EditResult, FocusSnapshot, NodeId,
-    OutlineItem, ReplaceSectionBody,
+    Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
+    FocusSnapshot, NodeId, OutlineItem, ReplaceSectionBody,
 };
 
 use crate::editor::view_state::{ViewMode, ViewState};
@@ -60,27 +60,26 @@ pub struct EditorSession {
     /// False only for the initial startup state — used to decide whether
     /// to show the welcome screen.
     document_open: bool,
+    /// Which format's structure this session should project (RFC-054 J3).
+    /// `document` itself is always a parsed Markdown `Document` regardless
+    /// of `format` (RFC-054 §0.1: a non-Markdown document "rides on
+    /// `Document`" and simply ignores the heading outline it builds) — this
+    /// field is what tells `document_map_nodes()` which adapter's structure
+    /// to project instead of that outline.
+    format: DocumentFormat,
 }
 
 mod document_map_bridge;
 mod outline_bridge;
 mod structural;
+mod structure_bridge;
 pub use outline_bridge::OutlineNode;
 
 impl EditorSession {
     /// Opens a session over Markdown text (e.g. file contents just read).
     pub fn open(markdown: String, file_name: Option<String>) -> Result<Self, DocumentError> {
         let profile = FileTextProfile::detect(&markdown, false);
-        let document = Document::parse(markdown)?;
-        let saved = SavedFingerprint::of(document.source(), document.revision());
-        Ok(Self {
-            document,
-            view: ViewState::new(),
-            saved,
-            file_name,
-            profile,
-            document_open: true,
-        })
+        Self::open_detected(markdown, file_name, profile, DocumentFormat::Markdown)
     }
 
     /// Opens a session with a pre-computed file text profile (RFC-018). Use
@@ -91,7 +90,26 @@ impl EditorSession {
         file_name: Option<String>,
         profile: FileTextProfile,
     ) -> Result<Self, DocumentError> {
-        let document = Document::parse(markdown)?;
+        Self::open_detected(markdown, file_name, profile, DocumentFormat::Markdown)
+    }
+
+    /// Opens a session for a file whose format has already been classified
+    /// (RFC-054 J3; `omriss_core::formats::detection::detect_format`). The
+    /// desktop crate is where a real file path is available, so it detects
+    /// the format and passes it in here — the same "detected upstream,
+    /// supplied here" shape `profile` already uses.
+    ///
+    /// `Document::parse` is called regardless of `format`: for Markdown it
+    /// is the real parse; for every other format it still succeeds (RFC-002's
+    /// heading parser accepts arbitrary text) but its outline is simply
+    /// never read again once `format` is not `Markdown` (RFC-054 §0.1).
+    pub fn open_detected(
+        text: String,
+        file_name: Option<String>,
+        profile: FileTextProfile,
+        format: DocumentFormat,
+    ) -> Result<Self, DocumentError> {
+        let document = Document::parse(text)?;
         let saved = SavedFingerprint::of(document.source(), document.revision());
         Ok(Self {
             document,
@@ -100,7 +118,13 @@ impl EditorSession {
             file_name,
             profile,
             document_open: true,
+            format,
         })
+    }
+
+    /// The format this session's structure is projected as (RFC-054 J3).
+    pub fn format(&self) -> DocumentFormat {
+        self.format
     }
 
     /// Starts an empty, unsaved document.

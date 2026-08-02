@@ -5,12 +5,16 @@
 //! Capability production is `omriss_core::formats::structure::markdown_node_capabilities`
 //! (RFC-053 S2); this module only projects the outline into `DocumentMapNode`s
 //! and tracks selection, which is session state rather than document
-//! structure (RFC-053 §14). When JSON/TOML adapters arrive (RFC-053/054/055)
-//! they will provide their own bridge implementations; the Dioxus component
-//! is unchanged.
+//! structure (RFC-053 §14).
+//!
+//! RFC-054 J3: non-Markdown formats are bridged by `super::structure_bridge`
+//! instead, which projects a `DocumentFormatAdapter`'s `DocumentStructure`
+//! (JSON's real one, or `PlainTextAdapter`'s fallback) onto the same
+//! `DocumentMapNode` type — the Dioxus component that renders it is
+//! unchanged either way.
 
 use omriss_core::formats::structure::markdown_node_capabilities;
-use omriss_core::{NodeCapabilities, NodeId, Outline};
+use omriss_core::{DocumentFormat, NodeCapabilities, NodeId, Outline};
 
 use crate::interface::document_map::DocumentMapNode;
 
@@ -21,9 +25,19 @@ impl super::EditorSession {
     /// caller renders `root.children`. `selected_id` is the currently focused
     /// `NodeId`, if any.
     pub fn document_map_nodes(&self) -> DocumentMapNode {
-        let outline = self.document.outline();
         let selected = self.view.focused();
-        build_map_node(outline, outline.root_id(), selected)
+        match self.format {
+            DocumentFormat::Markdown => {
+                let outline = self.document.outline();
+                build_map_node(outline, outline.root_id(), selected)
+            }
+            other => super::structure_bridge::document_map_node(
+                other,
+                self.document.source(),
+                self.document.revision(),
+                selected,
+            ),
+        }
     }
 }
 
