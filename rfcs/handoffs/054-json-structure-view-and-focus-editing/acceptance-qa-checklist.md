@@ -46,9 +46,40 @@ Baseline: **299 passed, 12 suites.**
 [ ] the review request states what a user can now see
 ```
 
-**Manual check — required.** Open a real `.json` file and a real `.md` file in
-the same session. Markdown must behave exactly as before. This is the first
-slice where a Markdown regression could reach a user.
+**Rendering check — required outcome, flexible evidence.** Rewritten after the
+J3 review, where this item was written as "open a real `.json` and a real `.md`
+in the same session" and could not be performed: synthetic input (`xdotool`)
+did not reach the WebView at all, proven by a *visibly focused* button not
+responding to `Return`.
+
+What must be established, in priority order of evidence:
+
+```text
+[ ] A JSON-derived Document Map actually RENDERS — not merely that
+    document_map_nodes() returns the right tree, which unit tests already cover.
+
+    Acceptable evidence, best first:
+      1. a click-through in a working GUI environment;
+      2. a screenshot of the app with a .json file already open, if the app can
+         be launched into that state without synthetic input (see below);
+      3. code inspection plus unit tests, with this item recorded as
+         NOT PERFORMED — never as passed.
+
+[ ] Markdown is unaffected. This half does NOT need the GUI: it is closed by
+    zero diff under crates/core/, the Markdown arm being pre-existing code
+    unmoved, and the baseline suite passing unmodified. Verify it that way.
+```
+
+**Why option 2 does not exist yet.** `crates/app/src/main.rs` takes no
+command-line arguments, so there is no way to launch omriss with a file already
+open. Every path to a rendered document requires a click. That is what makes
+this item unperformable when input synthesis is unavailable — the cause is a
+product gap, not a harness one. Raised with the owner; if a file argument is
+ever added, option 2 becomes the cheap default and this item stops being
+fragile.
+
+**Never record this item as passed on the strength of unit tests.** They
+exercise `omriss-ui`, which is exactly the layer that cannot fail this check.
 
 ## J4 — message table
 
