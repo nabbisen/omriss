@@ -8,6 +8,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J3 follow-up: structural creation controls now appear only
+  for Markdown.** The Document Map's "+ Top" button was previously
+  rendered for every open document regardless of format; on a `.json`
+  file it could splice a Markdown heading into the JSON source,
+  corrupting it (and writing the corruption to disk on Save). Not
+  reachable in any released build.
 - **RFC-054 J3 follow-up: a JSON file's Document Map now actually renders
   its contents.** The Document Map's tree widget starts every node
   collapsed, including the root; previously, nothing ever expanded the

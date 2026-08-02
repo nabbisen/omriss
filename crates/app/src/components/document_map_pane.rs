@@ -21,6 +21,7 @@ mod row_menu;
 use dioxus::prelude::*;
 use dioxus_swdir_tree::item_tree::node::NodeId as SwNodeId;
 use dioxus_swdir_tree::{ItemTree, ItemTreeEvent, SelectionMode};
+use omriss_core::DocumentFormat;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{DocumentMapNode, EditorSession, ViewMode, node_id_from_raw};
 
@@ -45,6 +46,15 @@ pub fn DocumentMapPane(
     let mut menu_open_for: Signal<Option<u64>> = use_signal(|| None);
     let mut menu_node_sig: Signal<Option<DocumentMapNode>> = use_signal(|| None);
     let mut is_raw_sig = use_signal(|| false);
+    // RFC-054 J3F-IMPL-001: the top-level "+ Add section" button below is a
+    // panel-level control, not a row action -- it is not driven by
+    // `NodeCapabilities` at all (the root's own capabilities are always
+    // `hidden()`, for every format, so there is nothing on the root node to
+    // gate it with). Structural add/rename/move/delete has no committed plan
+    // for any format but Markdown (RFC-054 §13 Phase 4 is out of scope for
+    // JSON entirely; TOML/YAML remain unimplemented), so gate on format
+    // directly rather than inventing a new capability semantic for one button.
+    let mut format_sig = use_signal(|| DocumentFormat::Markdown);
 
     // `session` is subscribed here only. Writing local signals inside this
     // effect is safe: Dioxus 0.7 tracks reactive deps by what is *read*
@@ -54,6 +64,7 @@ pub fn DocumentMapPane(
         let root_node = session.read().document_map_nodes();
         let view = session.read().view_mode();
         let is_raw = session.read().is_raw();
+        let format = session.read().format();
 
         item_tree.write().set_tree(to_item_node(&root_node));
 
@@ -100,6 +111,7 @@ pub fn DocumentMapPane(
 
         map_root_sig.set(Some(root_node));
         is_raw_sig.set(is_raw);
+        format_sig.set(format);
     });
 
     let mut on_event = move |ev: ItemTreeEvent| match ev {
@@ -161,23 +173,30 @@ pub fn DocumentMapPane(
             div {
                 class: "document-map-create-actions",
                 "aria-label": t(lang, "document_map.create_actions"),
-                button {
-                    class: "document-map-create-action",
-                    title: t(lang, "document_map.action.add_top_level"),
-                    "aria-label": t(lang, "document_map.action.add_top_level"),
-                    onclick: move |ev| {
-                        ev.stop_propagation();
-                        if !commit_draft_if_dirty(
-                            &mut session.clone(),
-                            &mut draft.clone(),
-                            &mut status.clone(),
-                        ) {
-                            return;
-                        }
-                        status.clone().set("struct.add_top.pending".into());
-                    },
-                    "+ "
-                    {t(lang, "document_map.add_top_level")}
+                // RFC-054 J3F-IMPL-001: structural add has no committed plan
+                // for any format but Markdown (RFC-054 §13 Phase 4 is out of
+                // scope for JSON; TOML/YAML are unimplemented) -- this button
+                // spliced a Markdown H1 heading into whatever text was open,
+                // corrupting a JSON document's source, before this gate.
+                if *format_sig.read() == DocumentFormat::Markdown {
+                    button {
+                        class: "document-map-create-action",
+                        title: t(lang, "document_map.action.add_top_level"),
+                        "aria-label": t(lang, "document_map.action.add_top_level"),
+                        onclick: move |ev| {
+                            ev.stop_propagation();
+                            if !commit_draft_if_dirty(
+                                &mut session.clone(),
+                                &mut draft.clone(),
+                                &mut status.clone(),
+                            ) {
+                                return;
+                            }
+                            status.clone().set("struct.add_top.pending".into());
+                        },
+                        "+ "
+                        {t(lang, "document_map.add_top_level")}
+                    }
                 }
                 if let Some(selected) = selected_node.clone() {
                     SelectedSectionCreateButtons {
