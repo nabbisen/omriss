@@ -57,6 +57,24 @@ pub fn DocumentMapPane(
 
         item_tree.write().set_tree(to_item_node(&root_node));
 
+        // The root itself is never rendered as a row (the caller renders
+        // `root.children`), but `set_tree` starts every node collapsed
+        // (`is_expanded: false`), including the root -- so its children stay
+        // invisible until something expands it. For Markdown this was always
+        // masked by the auto-focus-on-open below expanding the focused node's
+        // ancestors (root among them); a format with nothing to focus (RFC-054
+        // J3: JSON/PlainText opt out of auto-focus entirely, see
+        // `crates/app/src/shell/actions.rs::handle_load`) never took that path
+        // and rendered an empty Document Map despite a correctly computed,
+        // non-empty structure -- found live, not by a unit test, since
+        // `document_map_nodes()` itself was already correct. Expand the root
+        // unconditionally so top-level rows are visible on open regardless of
+        // format or focus state.
+        let root_sw_id = SwNodeId(root_node.id);
+        if item_tree.read().is_expanded(root_sw_id) == Some(false) {
+            item_tree.write().on_toggled(root_sw_id);
+        }
+
         if let ViewMode::Focus(focused_id) = view {
             let focused_sw = SwNodeId(focused_id.0);
 

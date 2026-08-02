@@ -8,6 +8,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J3 follow-up: a JSON file's Document Map now actually renders
+  its contents.** The Document Map's tree widget starts every node
+  collapsed, including the root; previously, nothing ever expanded the
+  root for a freshly opened JSON file (Markdown relied on an auto-focus
+  side effect that JSON correctly does not get), so a valid `.json` file
+  opened to an empty-looking Document Map despite its structure being
+  computed correctly. Root now expands unconditionally on open, for every
+  format.
 - **RFC-054 J3: `.json` files can now be opened.** The Open dialog offers a
   "JSON" filter alongside "Markdown". Opening a valid `.json` file shows its
   keys, nested objects/arrays, and scalar values as rows in the Document
