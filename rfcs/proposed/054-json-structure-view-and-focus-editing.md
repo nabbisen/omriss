@@ -436,6 +436,21 @@ These must be implemented as source-preserving edits and should be added by foll
 | unsafe replacement | “This change could not be made safely.” |
 | unsupported operation | “This JSON change is not supported yet.” |
 
+**This table is not the `StructureErrorKind` mapping, and does not replace it.**
+Recorded after J4, which built that mapping. Two layers exist:
+
+- **Generic, kind-based** (RFC-053 §11, built in J4, lives in `omriss-ui`):
+  one message per `StructureErrorKind`. Used wherever only the kind is known.
+- **Context-specific** (this table, J5/J6): chosen at a call site that knows
+  more than the kind does. "invalid number" and "invalid raw value" are separate
+  rows here but are both `InvalidSyntax` at the kind level, so a kind-based map
+  structurally cannot express them.
+
+J5 and J6 must supply these strings at their own call sites, with their own
+catalog keys. Reusing J4's generic message where this table specifies a
+particular one is a defect, not a shortcut — it is the difference between
+"This file does not look valid." and "This number is not valid yet."
+
 ## 11. Accessibility requirements
 
 - Document Map rows must announce group/list/value kinds in plain language.
