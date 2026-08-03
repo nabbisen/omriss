@@ -1,10 +1,15 @@
 //! RFC-054 J5: `JsonAdapter`'s scalar value editing —
 //! `focused_content`/`validate_focused_edit`/`apply_validated_edit` for
-//! `Value` nodes whose literal is not `null` (RFC-054 §8). The
-//! requirement this slice is judged on (RFC-054 §12.2, the acceptance
-//! checklist's "BYTE PRESERVATION" line): editing one value must change
-//! only that value's own bytes — indentation, key order, and line
-//! endings elsewhere in the file must be byte-identical before and after.
+//! `Value` nodes, non-`null` literals editable per RFC-054 §8, `null`
+//! itself pinned as the one permanent exception (§15 question 3: a value
+//! edit may change a value, never its kind). The requirement this slice
+//! is judged on (RFC-054 §12.2, the acceptance checklist's "BYTE
+//! PRESERVATION" line): editing one value must change only that value's
+//! own bytes — indentation, key order, and line endings elsewhere in the
+//! file must be byte-identical before and after.
+//!
+//! `Group`/`List` node behavior (container raw editing, RFC-054 J6) lives
+//! in `json_container_editing_tests.rs`, not here.
 
 use crate::{
     Document, DocumentFormatAdapter, DocumentRevision, EditDescription, FocusedContent,
@@ -120,6 +125,21 @@ fn focused_content_reports_a_null_value_as_no_value_with_empty_text() {
     assert_eq!(value_kind, ValueKind::NoValue);
     assert_eq!(display_text, "");
     assert_eq!(editable_text, "");
+}
+
+#[test]
+fn validate_focused_edit_refuses_for_null_values() {
+    // Moved from json_adapter_tests.rs at J6 (RFC-054 J5 review finding
+    // J5-IMPL-001): still true, and permanently so -- unlike the
+    // Group/List refusal this file used to also carry, null's refusal
+    // does not expire at any later J-slice within RFC-054's scope.
+    let source = r#"{"a": null}"#;
+    let s = structure(source);
+    let a_id = find_id(&s, "a");
+    let err = adapter()
+        .validate_focused_edit(source, &s, a_id, "anything")
+        .expect_err("type-changing a null is out of scope, RFC-054 §15 question 3");
+    assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }
 
 // ── focused_content: containers ─────────────────────────────────────────────

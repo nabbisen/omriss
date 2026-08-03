@@ -147,19 +147,19 @@ fn extend(path: &[usize], ordinal: usize) -> Vec<usize> {
 /// - `can_select` is `Allowed`: browsing the tree has been available since
 ///   J2.
 /// - `can_edit_content` is `Allowed` on a `Value` node whose literal is not
-///   `null` (RFC-054 J5: scalar editing lands here). A `null` value stays
-///   `Disabled { ReadOnlyFormat }`: RFC-054 §15 question 3 forbids
+///   `null` (RFC-054 J5: scalar editing) and, as of J6, on `Group`/`List`
+///   nodes too (container raw editing, RFC-054 §7.4/§8.5). A `null` value
+///   stays `Disabled { ReadOnlyFormat }`: RFC-054 §15 question 3 forbids
 ///   type-changing in the first editable version ("a value edit may
 ///   change a value, never its kind"), and there is nothing else to edit
-///   about a `null` literal, so it is not yet editable at all. `Group`/
-///   `List` nodes also stay `Disabled { ReadOnlyFormat }`: container raw
-///   editing is J6, not this slice.
-/// - `can_show_plain_text` is `Disabled { ReadOnlyFormat }` on `Group`/`List`
-///   nodes only, matching RFC-054 §4.3/§7.4's "Show this part as text" —
-///   a container-only affordance (J6). `Value` nodes have no raw-text
-///   concept of their own in the RFC's mockups (§4.4-§4.7 show typed
-///   editors, never a raw-text option), so it is `Hidden` there, not
-///   `Disabled`.
+///   about a `null` literal, so it is not yet editable at all -- this one
+///   exception is permanent within RFC-054's scope, not slice-bound.
+/// - `can_show_plain_text` is `Allowed` on `Group`/`List` nodes as of J6,
+///   matching RFC-054 §4.3/§7.4's "Show this part as text" -- previously
+///   `Disabled { ReadOnlyFormat }` in J5, when nothing backed the
+///   affordance yet. `Value` nodes have no raw-text concept of their own
+///   in the RFC's mockups (§4.4-§4.7 show typed editors, never a raw-text
+///   option), so it is `Hidden` there, not `Disabled`.
 /// - Every add/rename/move/delete/join capability is `Hidden`, not
 ///   `Disabled`: those are RFC-054 §13 Phase 4 operations, explicitly out
 ///   of scope for this entire handoff (not merely deferred to a later
@@ -168,17 +168,19 @@ fn extend(path: &[usize], ordinal: usize) -> Vec<usize> {
 ///   for that switch inside RFC-054.
 fn json_node_capabilities(value: &JsonValue, kind: StructureNodeKind) -> NodeCapabilities {
     let can_show_plain_text = match kind {
-        StructureNodeKind::Group | StructureNodeKind::List => Capability::Disabled {
-            reason: CapabilityReason::ReadOnlyFormat,
-        },
+        StructureNodeKind::Group | StructureNodeKind::List => Capability::Allowed,
         _ => Capability::Hidden,
     };
 
-    let can_edit_content = match (kind, value) {
-        (StructureNodeKind::Value, JsonValue::Null { .. }) => Capability::Disabled {
-            reason: CapabilityReason::ReadOnlyFormat,
-        },
-        (StructureNodeKind::Value, _) => Capability::Allowed,
+    let can_edit_content = match kind {
+        StructureNodeKind::Value if matches!(value, JsonValue::Null { .. }) => {
+            Capability::Disabled {
+                reason: CapabilityReason::ReadOnlyFormat,
+            }
+        }
+        StructureNodeKind::Value | StructureNodeKind::Group | StructureNodeKind::List => {
+            Capability::Allowed
+        }
         _ => Capability::Disabled {
             reason: CapabilityReason::ReadOnlyFormat,
         },

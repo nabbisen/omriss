@@ -1,4 +1,4 @@
-//! JSON format adapter (RFC-054 J2/J5).
+//! JSON format adapter (RFC-054 J2/J5/J6).
 //!
 //! `build_structure` (J2): `scanner` parses strict RFC 8259 JSON, retaining
 //! a byte range for every value (including duplicate object keys, which
@@ -6,19 +6,23 @@
 //! into a `DocumentStructure` per RFC-054 §5 (structure model) and §6
 //! (node identity).
 //!
-//! `focused_content`/`validate_focused_edit`/`apply_validated_edit` (J5):
-//! real for `Value` nodes whose literal is not `null` — RFC-054 §8's text/
-//! number/on-off editing. `Group`/`List` nodes and `null` values still
-//! refuse (container raw editing is J6; type-changing a `null` is out of
-//! scope per RFC-054 §15 question 3). `structure_command` refuses
-//! unconditionally regardless of slice: RFC-054 §13 Phase 4 is out of
-//! scope for this entire handoff.
+//! `focused_content`/`validate_focused_edit`/`apply_validated_edit` (J5,
+//! extended J6): real for every `Value` node whose literal is not `null`
+//! (RFC-054 §8's text/number/on-off editing, J5) and, as of J6, for
+//! `Group`/`List` nodes too (RFC-054 §7.4/§8.5's raw container-text
+//! editing — conservative: a replacement must parse as JSON and keep the
+//! same container kind, object stays object, array stays array). `null`
+//! values still refuse: type-changing a `null` is out of scope per
+//! RFC-054 §15 question 3, permanently, not just until some later slice.
+//! `structure_command` refuses unconditionally regardless of slice:
+//! RFC-054 §13 Phase 4 is out of scope for this entire handoff.
 //!
 //! Per the RFC-054 J5 scope decision
-//! (`.git-exclude/reviewed/008-rfc-054-j5-scope-question.md`): this slice
-//! is `omriss-core` only. Nothing in `crates/ui`/`crates/app` calls these
-//! methods yet — a JSON-aware focus/commit path through `EditorSession`
-//! and a right-panel editor component are J7's scope.
+//! (`.git-exclude/reviewed/008-rfc-054-j5-scope-question.md`, which also
+//! governs J6 — "core-only for J5 AND J6"): this slice is `omriss-core`
+//! only. Nothing in `crates/ui`/`crates/app` calls these methods yet — a
+//! JSON-aware focus/commit path through `EditorSession` and a right-panel
+//! editor component are J7's scope.
 
 mod error_mapping;
 mod projection;
@@ -29,6 +33,7 @@ mod string_literal;
 use error_mapping::map_edit_error;
 use projection::find_node;
 use scalar::ScalarKind;
+use scanner::JsonValue;
 
 use crate::formats::edit::{AppliedEdit, EditDescription, StructureCommand, ValidatedEdit};
 use crate::formats::error::{
@@ -65,9 +70,10 @@ impl DocumentFormatAdapter for JsonAdapter {
 
     /// `Value` nodes report their `ValueKind` (RFC-054 §8) and both a
     /// display and an editable rendering of their literal; `Group`/`List`
-    /// nodes report a child count and a raw-source preview (container raw
-    /// editing itself is J6, but summarizing what a container holds is
-    /// read-only and safe now).
+    /// nodes report a child count and a raw-source preview. This method's
+    /// own output is unchanged by J6 (it was already real, read-only, in
+    /// J5) — J6 makes what it reports for `Group`/`List` actually
+    /// editable via `validate_focused_edit`.
     fn focused_content(
         &self,
         source: &str,
@@ -117,9 +123,9 @@ impl DocumentFormatAdapter for JsonAdapter {
         }
     }
 
-    /// Validates a scalar draft per RFC-054 §8. Refuses for `Group`/`List`
-    /// (container raw editing is J6) and for `null` (type-changing is out
-    /// of scope, RFC-054 §15 question 3) — matching each node's own
+    /// Validates a draft per RFC-054 §8 (scalars, J5) and §8.5 (container
+    /// raw text, J6). Refuses only for `null` (type-changing is out of
+    /// scope, RFC-054 §15 question 3) — matching each node's own
     /// `can_edit_content` capability (`projection::json_node_capabilities`).
     fn validate_focused_edit(
         &self,
@@ -129,29 +135,36 @@ impl DocumentFormatAdapter for JsonAdapter {
         draft: &str,
     ) -> Result<ValidatedEdit, EditValidationError> {
         let node = find_node(structure, node_id)?;
-        if node.kind != StructureNodeKind::Value {
-            return Err(StructureErrorKind::UnsupportedFeature.into());
-        }
         let range = node
             .editable_range
             .ok_or(StructureErrorKind::InternalInvariantFailed)?;
-        let replacement_text = match scalar::classify(source, range) {
-            ScalarKind::NoValue => return Err(StructureErrorKind::UnsupportedFeature.into()),
-            ScalarKind::Text => scalar::encode_string(draft),
-            ScalarKind::Number => {
-                if scalar::is_valid_number(draft) {
+        let replacement_text = match node.kind {
+            StructureNodeKind::Value => match scalar::classify(source, range) {
+                ScalarKind::NoValue => return Err(StructureErrorKind::UnsupportedFeature.into()),
+                ScalarKind::Text => scalar::encode_string(draft),
+                ScalarKind::Number => {
+                    if scalar::is_valid_number(draft) {
+                        draft.to_string()
+                    } else {
+                        return Err(StructureErrorKind::InvalidSyntax.into());
+                    }
+                }
+                ScalarKind::OnOff => {
+                    if scalar::is_valid_bool(draft) {
+                        draft.to_string()
+                    } else {
+                        return Err(StructureErrorKind::InvalidSyntax.into());
+                    }
+                }
+            },
+            StructureNodeKind::Group | StructureNodeKind::List => {
+                if is_valid_container_replacement(node.kind, draft) {
                     draft.to_string()
                 } else {
                     return Err(StructureErrorKind::InvalidSyntax.into());
                 }
             }
-            ScalarKind::OnOff => {
-                if scalar::is_valid_bool(draft) {
-                    draft.to_string()
-                } else {
-                    return Err(StructureErrorKind::InvalidSyntax.into());
-                }
-            }
+            _ => return Err(StructureErrorKind::UnsupportedFeature.into()),
         };
         Ok(ValidatedEdit {
             node_id,
@@ -210,4 +223,20 @@ fn raw_preview(raw: &str) -> String {
     } else {
         collapsed
     }
+}
+
+/// RFC-054 §8.5: a container raw-text replacement must parse as valid JSON
+/// and be "appropriate to the selected node." Conservative first
+/// implementation (§8.5's own wording): the container's kind is preserved,
+/// not changeable — an object stays an object, an array stays an array —
+/// mirroring §15 question 3's rule that a scalar `null` cannot be
+/// type-changed either. `scanner::parse` rejects trailing content after
+/// the value (the same grammar `build_structure` enforces), so this also
+/// refuses a draft that is valid JSON followed by garbage.
+fn is_valid_container_replacement(kind: StructureNodeKind, draft: &str) -> bool {
+    matches!(
+        (kind, scanner::parse(draft)),
+        (StructureNodeKind::Group, Ok(JsonValue::Object { .. }))
+            | (StructureNodeKind::List, Ok(JsonValue::Array { .. }))
+    )
 }

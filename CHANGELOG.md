@@ -8,6 +8,20 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J6 container raw focused editing** — `JsonAdapter::validate_focused_edit`
+  now accepts a raw-text replacement for a `Group`/`List` node (a JSON
+  object or array), not just scalar values: the replacement must parse as
+  valid JSON and keep the container's own kind (an object stays an
+  object, an array stays an array — RFC-054 §8.5's conservative rule, no
+  type-changing), and applies through the same `Document::replace_range`
+  (J1) path scalar edits use, so only the edited container's own bytes
+  change. `can_edit_content`/`can_show_plain_text` are now `Allowed` for
+  `Group`/`List` nodes (previously `Disabled`, since J5 had nothing behind
+  the affordance yet). Core-only, per
+  `.git-exclude/reviewed/008-rfc-054-j5-scope-question.md` (governs J6
+  too): no session, right-panel, or save/undo wiring, so none of this is
+  reachable from the running app. JSON stays "Planned" in
+  `docs/src/file-formats.md`; app wiring is J7.
 - **RFC-054 J5 scalar value editing** — `JsonAdapter::focused_content`,
   `validate_focused_edit`, and `apply_validated_edit` are now real: a JSON
   scalar (string/number/boolean/null) can be validated and rewritten

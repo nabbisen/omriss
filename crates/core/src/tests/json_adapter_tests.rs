@@ -1,9 +1,17 @@
-//! RFC-054 J2/J5: `JsonAdapter`. J2 built strict RFC 8259 parsing and
-//! projection into `DocumentStructure` (RFC-054 §5/§6). J5 adds real
-//! `focused_content`/`validate_focused_edit`/`apply_validated_edit` for
-//! scalar values (RFC-054 §8) — `Group`/`List` nodes and `null` values
-//! still refuse edit-shaped calls (container raw editing is J6; RFC-054
-//! §15 question 3 forbids type-changing a `null`). See
+//! RFC-054 J2/J5/J6: `JsonAdapter` build_structure/projection output —
+//! tree shape, node identity, malformed-input rejection, and node
+//! capabilities. J2 built strict RFC 8259 parsing and projection into
+//! `DocumentStructure` (RFC-054 §5/§6); J5 made `Value` nodes (except
+//! `null`) editable; J6 made `Group`/`List` nodes editable too (container
+//! raw editing). `null` alone still refuses, permanently within RFC-054's
+//! scope (§15 question 3 forbids type-changing it).
+//!
+//! Adapter-*method* behavior (`focused_content`/`validate_focused_edit`/
+//! `apply_validated_edit`, byte preservation) lives in its own files, not
+//! here: `json_scalar_editing_tests.rs` for `Value` nodes,
+//! `json_container_editing_tests.rs` for `Group`/`List` nodes (RFC-054 J5
+//! review, finding J5-IMPL-001 — split along this seam once the file
+//! neared the 500-ELOC threshold rather than after crossing it). See
 //! `unsupported_adapter_tests.rs` for `structure_command`'s uniform
 //! refusal, unaffected by any slice (RFC-054 §13 Phase 4 is out of scope
 //! for the whole handoff).
@@ -438,24 +446,16 @@ fn null_value_node_can_edit_content_stays_disabled() {
 }
 
 #[test]
-fn group_and_list_node_capabilities_allow_plain_text_view_once_disabled_lifts() {
+fn group_and_list_node_capabilities_are_editable_as_of_j6() {
     let structure = build(r#"{"g": {"x": 1}, "l": [1]}"#);
     let g = find(&structure, "g");
     assert_eq!(g.kind, StructureNodeKind::Group);
-    assert_eq!(
-        g.capabilities.can_show_plain_text,
-        Capability::Disabled {
-            reason: CapabilityReason::ReadOnlyFormat
-        }
-    );
+    assert!(g.capabilities.can_edit_content.is_allowed());
+    assert!(g.capabilities.can_show_plain_text.is_allowed());
     let l = find(&structure, "l");
     assert_eq!(l.kind, StructureNodeKind::List);
-    assert_eq!(
-        l.capabilities.can_show_plain_text,
-        Capability::Disabled {
-            reason: CapabilityReason::ReadOnlyFormat
-        }
-    );
+    assert!(l.capabilities.can_edit_content.is_allowed());
+    assert!(l.capabilities.can_show_plain_text.is_allowed());
 }
 
 #[test]
@@ -468,27 +468,4 @@ fn root_node_has_hidden_capabilities_like_every_other_format() {
         .unwrap();
     assert!(root.capabilities.can_select.is_hidden());
     assert!(root.capabilities.can_edit_content.is_hidden());
-}
-
-// ── Group/List and null still refuse edit-shaped calls (J6/never territory) ──
-
-#[test]
-fn validate_focused_edit_refuses_for_group_and_list_nodes() {
-    // Container raw editing is J6, not this slice; the root of `{"a": 1}`
-    // is itself a Group.
-    let structure = build(r#"{"a": 1}"#);
-    let err = adapter()
-        .validate_focused_edit("{\"a\": 1}", &structure, structure.root_id, "2")
-        .expect_err("container raw editing is J6, not this slice");
-    assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
-}
-
-#[test]
-fn validate_focused_edit_refuses_for_null_values() {
-    let structure = build(r#"{"a": null}"#);
-    let a_id = find(&structure, "a").id;
-    let err = adapter()
-        .validate_focused_edit(r#"{"a": null}"#, &structure, a_id, "anything")
-        .expect_err("type-changing a null is out of scope, RFC-054 §15 question 3");
-    assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }
