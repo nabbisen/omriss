@@ -237,6 +237,23 @@ pub struct NodeCapabilities {
 //
 // The test is whether something concrete is scheduled to enable it, not how
 // far away that work is.
+//
+// Capabilities vs adapter-method gates — settled during the RFC-054 J6 review:
+//
+//   NodeCapabilities   the UI AFFORDANCE contract: what the Document Map and
+//                      the focused-content panel may OFFER.
+//   Adapter methods    the SAFETY contract: what may actually be APPLIED.
+//                      `validate_focused_edit` and `structure_command` gate
+//                      independently, on the node's own kind and content.
+//
+// They must not contradict for any node the UI can reach. Where they can
+// differ, it must be a node the UI cannot select — JSON's root is the live
+// example: its capabilities are `hidden()`, but `validate_focused_edit` accepts
+// a same-kind replacement for it, which is coherent and simply not offered.
+//
+// A UI must not infer permission from an adapter method succeeding, and an
+// adapter must not assume the UI checked capabilities first. Each enforces its
+// own contract.
 pub enum Capability {
     Allowed,
     Disabled { reason: CapabilityReason },
