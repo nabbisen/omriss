@@ -30,7 +30,11 @@ pub(super) fn document_map_node(
 ) -> DocumentMapNode {
     let structure = build_structure_or_fallback(format, source, revision);
     let index = Index::build(&structure);
-    index.node(structure.root_id, selected)
+    // The root id always resolves: it came from the same `structure` the
+    // index was just built over.
+    index
+        .node(structure.root_id, selected)
+        .expect("root_id from the same DocumentStructure is always present")
 }
 
 /// Tries `format`'s own adapter; falls back to `PlainTextAdapter` on any
@@ -76,20 +80,29 @@ impl<'a> Index<'a> {
         }
     }
 
-    fn node(&self, id: NodeId, selected: Option<NodeId>) -> DocumentMapNode {
-        let node = self.by_id[&id];
+    /// Returns `None` if `id` is absent from the index — a malformed
+    /// `StructureNode.children` entry naming an id not present in
+    /// `DocumentStructure.nodes` (RFC-054 J3-IMPL-001: unreachable for
+    /// `JsonAdapter`/`PlainTextAdapter` today, both well-tested, but the
+    /// single consumption point every future adapter's output flows
+    /// through). A missing child is skipped rather than panicking, so a
+    /// bug in a future adapter degrades the Document Map to a partial
+    /// tree instead of crashing the app.
+    fn node(&self, id: NodeId, selected: Option<NodeId>) -> Option<DocumentMapNode> {
+        let node = self.by_id.get(&id)?;
         let children = node
             .children
             .iter()
-            .map(|&cid| self.node(cid, selected))
+            .filter_map(|&cid| self.node(cid, selected))
             .collect();
 
-        DocumentMapNode {
+        Some(DocumentMapNode {
             id: id.0,
             title: node.title.clone(),
+            kind: node.kind,
             children,
             is_selected: selected == Some(id),
             capabilities: node.capabilities.clone(),
-        }
+        })
     }
 }

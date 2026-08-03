@@ -923,6 +923,25 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   content: "#";
   color: var(--muted);
 }
+/* RFC-054 J3F-IMPL-002: JSON rows are not Markdown sections -- the # glyph
+   above is wrong for them. `document_map_pane.rs` derives one of these
+   modifier classes from `DocumentMapNode.kind`; MarkdownSection (and any
+   row the lookup can't resolve) keeps the base "#" above unchanged. */
+.dx-swdir-icon--group::before {
+  content: "{}";
+}
+.dx-swdir-icon--list::before {
+  content: "[]";
+}
+.dx-swdir-icon--value::before {
+  content: "=";
+}
+.dx-swdir-icon--raw-region::before {
+  content: "¶";
+}
+.dx-swdir-icon--unsupported::before {
+  content: "?";
+}
 .dx-swdir-row:hover .dx-swdir-icon::before,
 .dx-swdir-row--selected .dx-swdir-icon::before {
   color: var(--accent);

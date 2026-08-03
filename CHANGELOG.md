@@ -8,6 +8,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J5 scalar value editing** — `JsonAdapter::focused_content`,
+  `validate_focused_edit`, and `apply_validated_edit` are now real: a JSON
+  scalar (string/number/boolean/null) can be validated and rewritten
+  in-place through `Document::replace_range` (J1), preserving every byte
+  outside the edited value's own range — indentation, key order, and line
+  endings untouched, evidenced by byte-level before/after tests. Text
+  values encode/decode through RFC 8259 string escaping; numbers reject a
+  leading `+`, `NaN`, and `Infinity` (RFC-054 §8.2); booleans must write
+  exactly `true` or `false`; `null` stays read-only in this slice (RFC-054
+  §15 Q3: an edit may change a value, never its kind). Also closes
+  RFC-054 J3F-IMPL-002: the Document Map row icon is no longer a
+  hardcoded Markdown `#` — it now reflects each row's actual
+  `StructureNodeKind` (`{}`/`[]` for JSON objects/arrays, unchanged `#`
+  for Markdown sections). Core-only, per
+  `.git-exclude/reviewed/008-rfc-054-j5-scope-question.md`: no session,
+  right-panel, or save/undo wiring yet, so none of this is reachable from
+  the running app. JSON stays "Planned" in `docs/src/file-formats.md`;
+  app wiring is J7.
 - **RFC-054 J4 friendly-message table** — adds
   `omriss_ui::StructureErrorKindCatalogKey`, mapping every
   `omriss_core::StructureErrorKind` to a localized message (RFC-053 §11)

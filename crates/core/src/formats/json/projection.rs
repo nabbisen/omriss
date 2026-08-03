@@ -1,5 +1,6 @@
 //! `JsonValue` -> `DocumentStructure` projection (RFC-054 §5, §6).
 
+use crate::formats::error::StructureErrorKind;
 use crate::formats::structure::{
     Capability, CapabilityReason, DocumentStructure, NodeCapabilities, StructureNode,
     StructureNodeKind,
@@ -7,6 +8,22 @@ use crate::formats::structure::{
 use crate::{DocumentFormat, DocumentRevision, NodeId};
 
 use super::scanner::JsonValue;
+
+/// Looks up `id` in an already-built `DocumentStructure`. Mirrors
+/// `markdown::projection::find_node` exactly: both adapters resolve a
+/// `NodeId` against the structure the caller already built, rather than
+/// re-deriving it (the caller is responsible for supplying a fresh
+/// structure per RFC-053 §7.0).
+pub(super) fn find_node(
+    structure: &DocumentStructure,
+    id: NodeId,
+) -> Result<&StructureNode, StructureErrorKind> {
+    structure
+        .nodes
+        .iter()
+        .find(|n| n.id == id)
+        .ok_or(StructureErrorKind::UnsafeRange)
+}
 
 /// Projects a parsed `JsonValue` tree into a flat `DocumentStructure`.
 /// `root_id` points directly at the top-level value's own node — there is
@@ -102,7 +119,7 @@ fn push_node(
     let capabilities = if parent_id.is_none() {
         NodeCapabilities::hidden()
     } else {
-        json_node_capabilities(kind)
+        json_node_capabilities(value, kind)
     };
 
     nodes.push(StructureNode {
@@ -127,15 +144,16 @@ fn extend(path: &[usize], ordinal: usize) -> Vec<usize> {
     extended
 }
 
-/// Every action but selection and (for containers) plain-text viewing is
-/// `Disabled { ReadOnlyFormat }` or `Hidden` in this slice — J2 is
-/// read-only, so nothing here can yet be `Allowed`:
-///
-/// - `can_select` is `Allowed`: browsing the tree is exactly what this
-///   slice delivers.
-/// - `can_edit_content` is `Disabled { ReadOnlyFormat }` on every real
-///   node: scalar editing (J5) and container raw editing (J6) both land as
-///   later slices, not a permanent refusal.
+/// - `can_select` is `Allowed`: browsing the tree has been available since
+///   J2.
+/// - `can_edit_content` is `Allowed` on a `Value` node whose literal is not
+///   `null` (RFC-054 J5: scalar editing lands here). A `null` value stays
+///   `Disabled { ReadOnlyFormat }`: RFC-054 §15 question 3 forbids
+///   type-changing in the first editable version ("a value edit may
+///   change a value, never its kind"), and there is nothing else to edit
+///   about a `null` literal, so it is not yet editable at all. `Group`/
+///   `List` nodes also stay `Disabled { ReadOnlyFormat }`: container raw
+///   editing is J6, not this slice.
 /// - `can_show_plain_text` is `Disabled { ReadOnlyFormat }` on `Group`/`List`
 ///   nodes only, matching RFC-054 §4.3/§7.4's "Show this part as text" —
 ///   a container-only affordance (J6). `Value` nodes have no raw-text
@@ -148,7 +166,7 @@ fn extend(path: &[usize], ordinal: usize) -> Vec<usize> {
 ///   J-slice within it), so the UI should not render them as blocked
 ///   affordances that will later switch on -- there is no committed plan
 ///   for that switch inside RFC-054.
-fn json_node_capabilities(kind: StructureNodeKind) -> NodeCapabilities {
+fn json_node_capabilities(value: &JsonValue, kind: StructureNodeKind) -> NodeCapabilities {
     let can_show_plain_text = match kind {
         StructureNodeKind::Group | StructureNodeKind::List => Capability::Disabled {
             reason: CapabilityReason::ReadOnlyFormat,
@@ -156,11 +174,19 @@ fn json_node_capabilities(kind: StructureNodeKind) -> NodeCapabilities {
         _ => Capability::Hidden,
     };
 
-    NodeCapabilities {
-        can_select: Capability::Allowed,
-        can_edit_content: Capability::Disabled {
+    let can_edit_content = match (kind, value) {
+        (StructureNodeKind::Value, JsonValue::Null { .. }) => Capability::Disabled {
             reason: CapabilityReason::ReadOnlyFormat,
         },
+        (StructureNodeKind::Value, _) => Capability::Allowed,
+        _ => Capability::Disabled {
+            reason: CapabilityReason::ReadOnlyFormat,
+        },
+    };
+
+    NodeCapabilities {
+        can_select: Capability::Allowed,
+        can_edit_content,
         can_add_inside: Capability::Hidden,
         can_add_after: Capability::Hidden,
         can_rename: Capability::Hidden,

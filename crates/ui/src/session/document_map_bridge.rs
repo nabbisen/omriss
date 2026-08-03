@@ -14,7 +14,7 @@
 //! unchanged either way.
 
 use omriss_core::formats::structure::markdown_node_capabilities;
-use omriss_core::{DocumentFormat, NodeCapabilities, NodeId, Outline};
+use omriss_core::{DocumentFormat, NodeCapabilities, NodeId, Outline, StructureNodeKind};
 
 use crate::interface::document_map::DocumentMapNode;
 
@@ -52,15 +52,19 @@ fn build_map_node(outline: &Outline, id: NodeId, selected: Option<NodeId>) -> Do
         .map(|&cid| build_map_node(outline, cid, selected))
         .collect();
 
-    let capabilities = if node.is_root() {
-        NodeCapabilities::hidden()
+    let (capabilities, kind) = if node.is_root() {
+        (NodeCapabilities::hidden(), StructureNodeKind::DocumentRoot)
     } else {
-        markdown_node_capabilities(outline, id)
+        (
+            markdown_node_capabilities(outline, id),
+            StructureNodeKind::MarkdownSection,
+        )
     };
 
     DocumentMapNode {
         id: id.0,
         title: node.title.clone(),
+        kind,
         children,
         is_selected: selected == Some(id),
         capabilities,

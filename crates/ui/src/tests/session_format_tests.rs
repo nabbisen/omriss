@@ -6,7 +6,7 @@
 //! must produce byte-identical results to before this slice, since they
 //! delegate to `open_detected(.., DocumentFormat::Markdown)` internally now.
 
-use omriss_core::DocumentFormat;
+use omriss_core::{DocumentFormat, StructureNodeKind};
 
 use crate::{EditorSession, node_id_from_raw};
 
@@ -62,7 +62,12 @@ fn valid_json_produces_a_real_document_map_tree() {
 }
 
 #[test]
-fn json_node_capabilities_match_the_read_only_j2_design() {
+fn json_node_capabilities_reflect_j5_editability() {
+    // Non-null scalar editing landed in RFC-054 J5: can_edit_content is
+    // now Allowed for a Value node, matching JsonAdapter's own capability
+    // computation (crates/core/src/formats/json/projection.rs). Structural
+    // actions remain Hidden regardless -- RFC-054 §13 Phase 4 is out of
+    // scope for the whole handoff.
     let source = r#"{"a": 1}"#;
     let session = EditorSession::open_detected(
         source.to_string(),
@@ -75,9 +80,41 @@ fn json_node_capabilities_match_the_read_only_j2_design() {
     let root = session.document_map_nodes();
     let a = &root.children[0];
     assert!(a.capabilities.can_select.is_allowed());
-    assert!(!a.capabilities.can_edit_content.is_allowed());
+    assert!(a.capabilities.can_edit_content.is_allowed());
     assert!(a.capabilities.can_add_inside.is_hidden());
     assert!(a.capabilities.can_delete.is_hidden());
+}
+
+/// RFC-054 J3F-IMPL-002: the row icon must not assume every format is
+/// Markdown. `DocumentMapNode.kind` is what a row-rendering layer derives
+/// its glyph from instead of a hardcoded `#`.
+#[test]
+fn document_map_node_kind_reflects_json_structure_shape() {
+    let source = r#"{"g": {"x": 1}, "l": [1], "v": 2}"#;
+    let session = EditorSession::open_detected(
+        source.to_string(),
+        Some("pkg.json".into()),
+        crate::FileTextProfile::detect(source, false),
+        DocumentFormat::Json,
+    )
+    .unwrap();
+
+    let root = session.document_map_nodes();
+    let by_title = |title: &str| root.children.iter().find(|c| c.title == title).unwrap();
+    assert_eq!(by_title("g").kind, StructureNodeKind::Group);
+    assert_eq!(by_title("l").kind, StructureNodeKind::List);
+    assert_eq!(by_title("v").kind, StructureNodeKind::Value);
+}
+
+#[test]
+fn document_map_node_kind_reflects_markdown_sections() {
+    let source = "# A\n\n## A1\nbody\n";
+    let session = EditorSession::open(source.to_string(), Some("doc.md".into())).unwrap();
+    let root = session.document_map_nodes();
+    let a = root.children.iter().find(|c| c.title == "A").unwrap();
+    assert_eq!(a.kind, StructureNodeKind::MarkdownSection);
+    let a1 = a.children.iter().find(|c| c.title == "A1").unwrap();
+    assert_eq!(a1.kind, StructureNodeKind::MarkdownSection);
 }
 
 #[test]

@@ -3,6 +3,7 @@
 
 use dioxus_swdir_tree::item_tree::node::ItemNode;
 use dioxus_swdir_tree::item_tree::node::NodeId as SwNodeId;
+use omriss_core::StructureNodeKind;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{Capability, CapabilityReasonCatalogKey, DocumentMapNode};
 
@@ -33,6 +34,24 @@ pub(super) fn capability_title(
         t(lang, reason.catalog_key()).to_string()
     } else {
         t(lang, enabled_key).to_string()
+    }
+}
+
+/// RFC-054 J3F-IMPL-002: the row icon's CSS class, derived from the row's
+/// `DocumentMapNode.kind` rather than assumed to always be a Markdown `#`.
+/// `None` covers a row `find_node` could not resolve against `map_root` --
+/// unreachable in practice (every visible row comes from the same tree the
+/// lookup searches) but not something to `.unwrap()` over a rendering path.
+pub(super) fn icon_class(kind: Option<StructureNodeKind>) -> &'static str {
+    match kind {
+        None | Some(StructureNodeKind::DocumentRoot) | Some(StructureNodeKind::MarkdownSection) => {
+            "dx-swdir-icon"
+        }
+        Some(StructureNodeKind::Group) => "dx-swdir-icon dx-swdir-icon--group",
+        Some(StructureNodeKind::List) => "dx-swdir-icon dx-swdir-icon--list",
+        Some(StructureNodeKind::Value) => "dx-swdir-icon dx-swdir-icon--value",
+        Some(StructureNodeKind::RawRegion) => "dx-swdir-icon dx-swdir-icon--raw-region",
+        Some(StructureNodeKind::Unsupported) => "dx-swdir-icon dx-swdir-icon--unsupported",
     }
 }
 

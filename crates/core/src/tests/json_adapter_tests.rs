@@ -1,8 +1,12 @@
-//! RFC-054 J2: `JsonAdapter::build_structure` — strict RFC 8259 parsing and
-//! projection into `DocumentStructure` (RFC-054 §5/§6), read-only. Every
-//! other `DocumentFormatAdapter` method still refuses; see
+//! RFC-054 J2/J5: `JsonAdapter`. J2 built strict RFC 8259 parsing and
+//! projection into `DocumentStructure` (RFC-054 §5/§6). J5 adds real
+//! `focused_content`/`validate_focused_edit`/`apply_validated_edit` for
+//! scalar values (RFC-054 §8) — `Group`/`List` nodes and `null` values
+//! still refuse edit-shaped calls (container raw editing is J6; RFC-054
+//! §15 question 3 forbids type-changing a `null`). See
 //! `unsupported_adapter_tests.rs` for `structure_command`'s uniform
-//! refusal (unaffected by this slice).
+//! refusal, unaffected by any slice (RFC-054 §13 Phase 4 is out of scope
+//! for the whole handoff).
 
 use crate::{
     Capability, CapabilityReason, DocumentFormat, DocumentFormatAdapter, DocumentRevision,
@@ -404,24 +408,33 @@ fn identity_changes_when_tree_position_changes() {
     assert_ne!(b_before, b_after);
 }
 
-// ── Capabilities (RFC-054 J2 is read-only; nothing here can be `Allowed`
-//    for editing yet) ───────────────────────────────────────────────────────
+// ── Capabilities ─────────────────────────────────────────────────────────────
 
 #[test]
-fn value_node_capabilities_reflect_the_read_only_slice() {
+fn non_null_value_node_capabilities_are_editable_as_of_j5() {
     let structure = build(r#"{"a": 1}"#);
     let a = find(&structure, "a");
     assert!(a.capabilities.can_select.is_allowed());
+    assert!(a.capabilities.can_edit_content.is_allowed());
+    assert!(a.capabilities.can_show_plain_text.is_hidden());
+    assert!(a.capabilities.can_add_inside.is_hidden());
+    assert!(a.capabilities.can_rename.is_hidden());
+    assert!(a.capabilities.can_delete.is_hidden());
+}
+
+#[test]
+fn null_value_node_can_edit_content_stays_disabled() {
+    // RFC-054 §15 question 3: a value edit may change a value, never its
+    // kind -- there is nothing else to edit about a null literal, so it
+    // does not become editable in J5 the way other scalars do.
+    let structure = build(r#"{"a": null}"#);
+    let a = find(&structure, "a");
     assert_eq!(
         a.capabilities.can_edit_content,
         Capability::Disabled {
             reason: CapabilityReason::ReadOnlyFormat
         }
     );
-    assert!(a.capabilities.can_show_plain_text.is_hidden());
-    assert!(a.capabilities.can_add_inside.is_hidden());
-    assert!(a.capabilities.can_rename.is_hidden());
-    assert!(a.capabilities.can_delete.is_hidden());
 }
 
 #[test]
@@ -457,22 +470,25 @@ fn root_node_has_hidden_capabilities_like_every_other_format() {
     assert!(root.capabilities.can_edit_content.is_hidden());
 }
 
-// ── The other DocumentFormatAdapter methods still refuse (J5/J6 territory) ──
+// ── Group/List and null still refuse edit-shaped calls (J6/never territory) ──
 
 #[test]
-fn focused_content_still_refuses_in_this_slice() {
+fn validate_focused_edit_refuses_for_group_and_list_nodes() {
+    // Container raw editing is J6, not this slice; the root of `{"a": 1}`
+    // is itself a Group.
     let structure = build(r#"{"a": 1}"#);
     let err = adapter()
-        .focused_content("{\"a\": 1}", &structure, structure.root_id)
-        .expect_err("focused_content is not this slice's scope");
+        .validate_focused_edit("{\"a\": 1}", &structure, structure.root_id, "2")
+        .expect_err("container raw editing is J6, not this slice");
     assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }
 
 #[test]
-fn validate_focused_edit_still_refuses_in_this_slice() {
-    let structure = build(r#"{"a": 1}"#);
+fn validate_focused_edit_refuses_for_null_values() {
+    let structure = build(r#"{"a": null}"#);
+    let a_id = find(&structure, "a").id;
     let err = adapter()
-        .validate_focused_edit("{\"a\": 1}", &structure, structure.root_id, "2")
-        .expect_err("scalar editing is J5");
+        .validate_focused_edit(r#"{"a": null}"#, &structure, a_id, "anything")
+        .expect_err("type-changing a null is out of scope, RFC-054 §15 question 3");
     assert_eq!(err.kind, StructureErrorKind::UnsupportedFeature);
 }

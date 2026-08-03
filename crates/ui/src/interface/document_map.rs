@@ -12,7 +12,7 @@
 //! document structure) and the catalog-key mapping, since `omriss-core` must
 //! never depend on `omriss-ui` (RFC-001) or name a catalog key.
 
-use omriss_core::{CapabilityReason, NodeCapabilities, NodeId};
+use omriss_core::{CapabilityReason, NodeCapabilities, NodeId, StructureNodeKind};
 
 // ── Capability catalog-key mapping ────────────────────────────────────────────
 
@@ -44,15 +44,19 @@ impl CapabilityReasonCatalogKey for CapabilityReason {
 
 /// One row in the Document Map, ready for the left-panel tree widget.
 ///
-/// Format-neutral: for Markdown this represents a section; for JSON/TOML it
-/// will represent an object, array, or value. Only Markdown is implemented in
-/// RFC-048/049.
+/// Format-neutral: for Markdown this represents a section; for JSON it
+/// represents an object, array, or value (RFC-054 J2/J5).
 #[derive(Debug, Clone, PartialEq)]
 pub struct DocumentMapNode {
     /// Raw `NodeId.0` value — cast to the widget's node type at the call site.
     pub id: u64,
-    /// The display title (heading text for Markdown; key for JSON/TOML).
+    /// The display title (heading text for Markdown; key/ordinal label for
+    /// JSON).
     pub title: String,
+    /// What this row represents, independent of format — RFC-054 J3F-IMPL-002:
+    /// the row icon must not assume every format is Markdown (the `#`
+    /// glyph is meaningless for a JSON key).
+    pub kind: StructureNodeKind,
     /// Ordered child nodes.
     pub children: Vec<DocumentMapNode>,
     /// Whether this node is currently selected in the editor.

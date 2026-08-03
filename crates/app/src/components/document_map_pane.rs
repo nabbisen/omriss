@@ -28,7 +28,7 @@ use omriss_ui::{DocumentMapNode, EditorSession, ViewMode, node_id_from_raw};
 use create_buttons::SelectedSectionCreateButtons;
 use draft::{commit_draft_if_dirty, sync_draft};
 use menu_focus::focus_open_row_menu;
-use node_tree::{collect_ancestors, find_node, to_item_node};
+use node_tree::{collect_ancestors, find_node, icon_class, to_item_node};
 use row_menu::NodeRowMenu;
 
 #[component]
@@ -266,6 +266,8 @@ pub fn DocumentMapPane(
                         } else { " " };
                         let mut row_class = "dx-swdir-row".to_string();
                         if row.is_selected { row_class.push_str(" dx-swdir-row--selected"); }
+                        let row_icon_class =
+                            icon_class(map_root.as_ref().and_then(|root| find_node(root, raw_id)).map(|n| n.kind));
                         Some(rsx! {
                             div {
                                 key: "{raw_id}",
@@ -300,7 +302,7 @@ pub fn DocumentMapPane(
                                     "{caret}"
                                 }
                                 // Icon
-                                span { class: "dx-swdir-icon" }
+                                span { class: "{row_icon_class}" }
                                 // Label (no separate onclick — the row div handles click)
                                 span {
                                     class: "dx-swdir-label",
