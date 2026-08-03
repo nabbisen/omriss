@@ -67,6 +67,7 @@ policy in [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 052 | [Structured Plain-Text Format Expansion](./done/052-structured-plain-text-format-expansion.md) | main (unreleased) |
 | 053 | [Document Format Adapter Architecture](./done/053-document-format-adapter-architecture.md) | main (unreleased) |
 | 062 | [Crate Package Name Exchange](./done/062-crate-package-name-exchange.md) | main (unreleased) |
+| 063 | [Command-Line File Argument](./done/063-command-line-file-argument.md) | main (unreleased) |
 
 RFCs 048–051 shipped with explicitly deferred residual scope; each carries the
 deferral list in its Status field. The deferrals are tracked by RFC-058,
@@ -84,7 +85,6 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 059 | [Keyboard Focus Follow-Up Controls](./proposed/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
 | 060 | [Accessibility and Screen-Reader Validation Plan](./proposed/060-accessibility-screen-reader-validation-plan.md) | M15 |
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
-| 063 | [Command-Line File Argument](./proposed/063-command-line-file-argument.md) | Verification enablement, ahead of RFC-054 J7 |
 
 ## Archive
 

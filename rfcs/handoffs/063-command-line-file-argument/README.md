@@ -2,7 +2,7 @@
 
 Companion execution package for:
 
-- RFC: `rfcs/proposed/063-command-line-file-argument.md`
+- RFC: `rfcs/done/063-command-line-file-argument.md`
 - Sequenced ahead of RFC-054 J7
 
 ## What this work is

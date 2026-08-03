@@ -2,7 +2,10 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** Verification enablement, ahead of RFC-054 J7
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — landed in `2c4cf2b`. All eight §13
+criteria closed. Its verification purpose was met: a rendered document is now
+reachable without synthetic input, so RFC-054 J7's rendering check no longer
+depends on whether `xdotool` reaches the WebView.
 **Document type:** Small capability RFC
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015 (file open lifecycle), RFC-036 (settings/recent files)

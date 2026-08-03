@@ -1,6 +1,6 @@
 # RFC-063 Implementation Handoff
 
-**Governing RFC:** [RFC-063](../../proposed/063-command-line-file-argument.md)
+**Governing RFC:** [RFC-063](../../done/063-command-line-file-argument.md)
 **Sequenced:** ahead of RFC-054 J7
 
 ---
