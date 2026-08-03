@@ -256,9 +256,19 @@ pub enum CapabilityReason {
     UnsafePreservation,
     UnsupportedForFormat,
     DepthLimit,             // not yet adopted — see note below
+    ValueNotEditable,       // not yet adopted — see note below
     ExternalChangeConflict, // session-overlay only — see note below
 }
 ```
+
+`ValueNotEditable` was added during the RFC-054 J5 review, for the same reason
+as `DepthLimit`: no accurate variant existed. A JSON `null` is not editable —
+RFC-054 §15 Q3 forbids type-changing a value, and there is nothing else to change
+about a `null` literal — but the *format* is editable, so `ReadOnlyFormat`
+("This file can be viewed, not edited yet.") misdescribes it, and
+`UnsupportedForFormat` ("not available for this file type") is no better, since
+the action is available for JSON, just not for this value. J5 ships
+`ReadOnlyFormat` as an accepted interim.
 
 `DepthLimit` was added during the S2 review. The shipped Markdown capability
 logic disables demote at H6 and promote at H1 using `NoSibling` and `NoParent`
@@ -272,6 +282,12 @@ therefore be its own task, and must **not** be folded into RFC-053 S3 or S4,
 both of which are contract-bound to change no observable behavior. Until that
 task runs, adapters continue to emit the shipped reasons, and this variant is
 unconstructed.
+
+**`DepthLimit` and `ValueNotEditable` should be adopted together, in one task.**
+Both are unconstructed variants awaiting the same kind of change — a new catalog
+key in `en` and `ja`, and a menu item whose explanatory text changes. Doing them
+in one pass means one user-visible change and one round of translation review
+rather than two.
 
 `ExternalChangeConflict` is **not emitted by format adapters**. It is applied as
 a session-level overlay after adapter capabilities are built, when external
