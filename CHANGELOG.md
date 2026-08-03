@@ -6,6 +6,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **RFC-063 command-line file argument** — `omriss notes.md` opens that file
+  at startup, through the same load path the Recent Files list already uses.
+  `.md` and `.json` both work. A missing, unreadable, or directory path lands
+  on the Welcome screen with a plain message rather than preventing launch;
+  extra arguments are ignored (the first wins); an argument starting with
+  `-` (e.g. `omriss --help`) is rejected with a plain message rather than
+  parsed as an option — omriss takes a file path and nothing else. No
+  argument behaves exactly as before.
+
 ### Changed
 
 - **RFC-054 J6 container raw focused editing** — `JsonAdapter::validate_focused_edit`

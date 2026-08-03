@@ -4,6 +4,7 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod cli;
 mod components;
 mod file;
 mod input;
@@ -28,6 +29,9 @@ fn detect_locale() -> Locale {
 fn main() {
     // RFC-036: load settings before launching; fall back to defaults silently.
     let settings = AppSettings::load();
+    // RFC-063: the first argument (excluding the program name) is the file
+    // to open at startup, if any.
+    let startup_arg = cli::interpret(std::env::args().skip(1));
 
     let window = WindowBuilder::new()
         .with_title("Omriss")
@@ -36,5 +40,6 @@ fn main() {
         .with_cfg(Config::new().with_window(window).with_menu(None))
         .with_context(detect_locale())
         .with_context(settings)
+        .with_context(startup_arg)
         .launch(shell::app::App);
 }

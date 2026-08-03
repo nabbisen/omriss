@@ -76,6 +76,8 @@ Windows (WebView2) and macOS (WKWebView) need no extra packages:
 cargo run -p omriss
 ```
 
+Open a file straight from the command line: `cargo run -p omriss -- notes.md`.
+
 ## Using omriss
 
 * The left Document Map lists and organizes sections of the open document.

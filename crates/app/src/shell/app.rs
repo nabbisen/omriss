@@ -32,6 +32,8 @@ const STYLE: &str = include_str!("../../assets/style.css");
 pub fn App() -> Element {
     let initial_locale = try_consume_context::<Locale>().unwrap_or_default();
     let initial_settings = try_consume_context::<AppSettings>().unwrap_or_default();
+    let startup_arg =
+        try_consume_context::<crate::cli::StartupArg>().unwrap_or(crate::cli::StartupArg::None);
 
     // ── signals ───────────────────────────────────────────────────────────────
 
@@ -64,6 +66,25 @@ pub fn App() -> Element {
     let do_save = use_callback(move |()| handle_save(ctx, false));
     let do_save_as = use_callback(move |()| handle_save(ctx, true));
     let do_new_guarded = use_callback(move |()| handle_new_guarded(ctx));
+
+    // RFC-063: open the file named on the command line, if any, through the
+    // identical `open_markdown_path` -> `handle_load` route the Recent
+    // Files entry already takes. This closure reads no signal -- only
+    // `startup_arg`, a plain owned value, not a `Signal` -- so it has no
+    // reactive dependency to resubscribe to and runs exactly once, at
+    // mount, never again.
+    use_effect(move || match &startup_arg {
+        crate::cli::StartupArg::None => {}
+        crate::cli::StartupArg::Path(path) => {
+            do_load.call(file_dialog::open_markdown_path(path));
+        }
+        crate::cli::StartupArg::RejectedOption(_) => {
+            let mut modal = modal;
+            modal.set(Modal::OpenError {
+                cause: "omriss takes a file path and accepts no options.".into(),
+            });
+        }
+    });
 
     let on_unsaved_choice =
         use_callback(move |choice: UnsavedChoice| handle_unsaved_choice(choice, ctx));
