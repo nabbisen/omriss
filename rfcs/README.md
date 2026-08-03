@@ -84,11 +84,12 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 059 | [Keyboard Focus Follow-Up Controls](./proposed/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
 | 060 | [Accessibility and Screen-Reader Validation Plan](./proposed/060-accessibility-screen-reader-validation-plan.md) | M15 |
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
+| 063 | [Command-Line File Argument](./proposed/063-command-line-file-argument.md) | Verification enablement, ahead of RFC-054 J7 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **063**.
+Next free RFC number: **064**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.
