@@ -1,14 +1,20 @@
-//! RFC-054 J3: session wiring for non-Markdown formats.
+//! RFC-054 J3/J7a: session wiring for non-Markdown formats.
 //!
-//! `EditorSession::open_detected` and the `document_map_nodes()` branch it
-//! feeds are the new surface this slice adds. Markdown regression coverage
-//! matters as much as the JSON-specific behavior: `open`/`open_with_profile`
-//! must produce byte-identical results to before this slice, since they
-//! delegate to `open_detected(.., DocumentFormat::Markdown)` internally now.
+//! J3: `EditorSession::open_detected` and the `document_map_nodes()`
+//! branch it feeds. J7a adds the read half of app wiring: `focus()`
+//! succeeding for a real JSON-derived id (not just failing safely for
+//! one, which is all J3 could prove before anything built on top of it)
+//! and `focused_structured_content()`, the read-only accessor
+//! `FocusedContentPane`'s JSON branch renders from. Markdown regression
+//! coverage matters as much as the JSON-specific behavior throughout:
+//! `open`/`open_with_profile` must produce byte-identical results to
+//! before J3, since they delegate to `open_detected(..,
+//! DocumentFormat::Markdown)` internally, and `focus()`'s Markdown path
+//! is untouched by J7a.
 
-use omriss_core::{DocumentFormat, StructureNodeKind};
+use omriss_core::{DocumentFormat, FocusedContent, NodeId, StructureNodeKind, ValueKind};
 
-use crate::{EditorSession, node_id_from_raw};
+use crate::{EditorSession, ViewMode, node_id_from_raw};
 
 #[test]
 fn open_and_open_detected_markdown_produce_the_same_session() {
@@ -173,18 +179,29 @@ fn nothing_is_selected_by_default_in_a_freshly_opened_json_session() {
     assert!(root.children.iter().all(|c| !c.is_selected));
 }
 
-/// RFC-054 J3-IMPL-002 (Minor finding, `.git-exclude/reviewed/008-rfc-054-j3-followup-document-map-expansion-fix.md`):
-/// clicking a Document Map row calls `EditorSession::focus()` with the
-/// row's `NodeId`, unconditionally, regardless of format. For JSON that id
-/// was assigned by `JsonAdapter` (RFC-054 §6, an ordinal-path hash), never
-/// by the accidental Markdown outline `Document::parse` builds over JSON
-/// text (RFC-054 §0.1) -- and for source with no `#`-prefixed lines, that
-/// outline has no non-root nodes at all, so `focus()` on any real JSON
-/// node id is *guaranteed*, not merely likely, to miss. This was traced as
-/// safe in the J3 review and confirmed live once during manual testing;
-/// this is its first automated coverage.
+// RFC-054 J7a deliberately invalidates
+// `focusing_a_json_derived_node_id_fails_safely_without_corrupting_session_state`
+// (J3-IMPL-002's coverage, added at the J4 review). That test pinned a real
+// safety property -- focus() must not crash or corrupt state when handed a
+// JSON-space id -- but it proved it by relying on an accident: `focus()`
+// validated every id against the Markdown outline `Document::parse` builds
+// over JSON text, which a JSON-derived id was never a member of, so the
+// call reliably failed. RFC-054 J7a replaces that accident with a real
+// mechanism (`session::focus_bridge::validate_and_snapshot`, dispatching
+// on `EditorSession::format` rather than always reading the Markdown
+// outline), which makes a *valid* JSON-derived id succeed on purpose --
+// the opposite of what the old test asserted.
+//
+// The safety property itself survives, restated for the new mechanism: an
+// id that does not resolve in the *current* structure -- Markdown or
+// JSON -- must still fail without corrupting view state. That is
+// `focus_fails_safely_for_an_id_absent_from_the_current_structure` below.
+// The property the old test could not have tested (nothing implemented it
+// yet) is proved separately: `focusing_a_valid_json_value_node_succeeds_and_updates_view_mode`
+// and `focused_structured_content_reads_the_focused_json_value`.
+
 #[test]
-fn focusing_a_json_derived_node_id_fails_safely_without_corrupting_session_state() {
+fn focusing_a_valid_json_value_node_succeeds_and_updates_view_mode() {
     let source = r#"{"a": 1, "b": 2}"#;
     let mut session = EditorSession::open_detected(
         source.to_string(),
@@ -196,20 +213,102 @@ fn focusing_a_json_derived_node_id_fails_safely_without_corrupting_session_state
 
     let root = session.document_map_nodes();
     let a_id = node_id_from_raw(root.children[0].id);
-    let view_before = session.view_mode();
 
     let result = session.focus(a_id);
 
-    assert!(
-        result.is_err(),
-        "a JSON-space NodeId must not resolve against the accidental Markdown outline"
-    );
+    assert!(result.is_ok(), "a real JSON-derived id must now resolve");
+    assert_eq!(session.view_mode(), ViewMode::Focus(a_id));
+}
+
+#[test]
+fn focus_fails_safely_for_an_id_absent_from_the_current_structure() {
+    // The property the replaced test proved, restated for the new
+    // mechanism: an id absent from the current structure -- not merely an
+    // id from a different format's id space, which no longer applies now
+    // that focus() dispatches on `format` instead of always reading the
+    // Markdown outline -- must fail without touching view state.
+    let source = r#"{"a": 1, "b": 2}"#;
+    let mut session = EditorSession::open_detected(
+        source.to_string(),
+        Some("pkg.json".into()),
+        crate::FileTextProfile::detect(source, false),
+        DocumentFormat::Json,
+    )
+    .unwrap();
+    let view_before = session.view_mode();
+
+    let result = session.focus(NodeId(u64::MAX));
+
+    assert!(result.is_err(), "an id absent from the structure must fail");
     assert_eq!(
         session.view_mode(),
         view_before,
         "a failed focus must leave view state exactly as it was -- no crash, no corruption"
     );
-    // The Document Map itself is unaffected by the failed focus attempt.
     let root_after = session.document_map_nodes();
-    assert_eq!(root_after.children.len(), 2);
+    assert_eq!(
+        root_after.children.len(),
+        2,
+        "the Document Map is unaffected"
+    );
+}
+
+#[test]
+fn focused_structured_content_reads_the_focused_json_value() {
+    let source = r#"{"a": "hello"}"#;
+    let mut session = EditorSession::open_detected(
+        source.to_string(),
+        Some("pkg.json".into()),
+        crate::FileTextProfile::detect(source, false),
+        DocumentFormat::Json,
+    )
+    .unwrap();
+    let a_id = node_id_from_raw(session.document_map_nodes().children[0].id);
+    session.focus(a_id).unwrap();
+
+    let content = session
+        .focused_structured_content()
+        .expect("a focused Value node has real content");
+    let FocusedContent::StructuredValue {
+        value_kind,
+        display_text,
+        ..
+    } = content
+    else {
+        panic!("expected StructuredValue");
+    };
+    assert_eq!(value_kind, ValueKind::Text);
+    assert_eq!(display_text, "hello");
+}
+
+#[test]
+fn focused_structured_content_reads_the_focused_json_group() {
+    let source = r#"{"a": {"x": 1}}"#;
+    let mut session = EditorSession::open_detected(
+        source.to_string(),
+        Some("pkg.json".into()),
+        crate::FileTextProfile::detect(source, false),
+        DocumentFormat::Json,
+    )
+    .unwrap();
+    let a_id = node_id_from_raw(session.document_map_nodes().children[0].id);
+    session.focus(a_id).unwrap();
+
+    let content = session
+        .focused_structured_content()
+        .expect("a focused Group node has real content");
+    let FocusedContent::StructuredGroup { child_count, .. } = content else {
+        panic!("expected StructuredGroup");
+    };
+    assert_eq!(child_count, 1);
+}
+
+#[test]
+fn focused_structured_content_is_none_for_markdown() {
+    let source = "# A\nbody\n";
+    let mut session = EditorSession::open(source.to_string(), Some("doc.md".into())).unwrap();
+    let a_id = session.outline_items()[0].id;
+    session.focus(a_id).unwrap();
+
+    assert!(session.focused_structured_content().is_none());
 }

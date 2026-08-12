@@ -879,6 +879,40 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   gap: 6px;
 }
 
+/* RFC-054 J7a: read-only structured (JSON) focus rendering. No input here
+   is editable yet -- J7b adds the text/number/on-off/container editors. */
+.structured-kind-label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.structured-value-display {
+  padding: 10px 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.structured-item-count {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.structured-group-summary {
+  padding: 10px 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--muted);
+}
+
 /* ── dioxus-swdir-tree overrides ─────────────────────────────────────────── */
 
 /* Row: increase vertical padding for easier clicking and visual breathing room. */

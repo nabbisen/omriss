@@ -19,6 +19,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **RFC-054 J7a app wiring — read half.** Clicking a JSON row in the Document
+  Map now actually focuses it: the right panel shows the value's kind (Text,
+  Number, On/Off, Empty) and its current content, or a group/list's item
+  count and a raw-source preview. Nothing is editable yet — this half only
+  wires up reading what J2/J5/J6 already compute; committing an edit, save,
+  and undo integration is J7b. `.md` files are unaffected: the Markdown
+  focus/edit path is untouched code, and RFC-063's own command-line
+  screenshot check re-confirmed opening, navigating, and rendering a `.md`
+  file live.
 - **RFC-054 J6 container raw focused editing** — `JsonAdapter::validate_focused_edit`
   now accepts a raw-text replacement for a `Group`/`List` node (a JSON
   object or array), not just scalar values: the replacement must parse as

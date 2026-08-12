@@ -54,7 +54,16 @@ pub fn DocumentMapPane(
     // for any format but Markdown (RFC-054 §13 Phase 4 is out of scope for
     // JSON entirely; TOML/YAML remain unimplemented), so gate on format
     // directly rather than inventing a new capability semantic for one button.
-    let mut format_sig = use_signal(|| DocumentFormat::Markdown);
+    //
+    // J3F2-IMPL-001 (`.git-exclude/reviewed/008-rfc-054-j3f-impl-001-gate-creation-strip.md`):
+    // defaulting to `Markdown` here meant the button rendered for one
+    // frame on *any* format, JSON included, before the `use_effect` below
+    // corrected it -- failing open on a control whose whole purpose is
+    // preventing a Markdown heading from being spliced into a JSON file.
+    // `None` fails closed instead: the gate below is `== Some(Markdown)`,
+    // so the button stays hidden until the effect confirms the format
+    // really is Markdown, never the reverse.
+    let mut format_sig: Signal<Option<DocumentFormat>> = use_signal(|| None);
 
     // `session` is subscribed here only. Writing local signals inside this
     // effect is safe: Dioxus 0.7 tracks reactive deps by what is *read*
@@ -111,7 +120,7 @@ pub fn DocumentMapPane(
 
         map_root_sig.set(Some(root_node));
         is_raw_sig.set(is_raw);
-        format_sig.set(format);
+        format_sig.set(Some(format));
     });
 
     let mut on_event = move |ev: ItemTreeEvent| match ev {
@@ -178,7 +187,7 @@ pub fn DocumentMapPane(
                 // scope for JSON; TOML/YAML are unimplemented) -- this button
                 // spliced a Markdown H1 heading into whatever text was open,
                 // corrupting a JSON document's source, before this gate.
-                if *format_sig.read() == DocumentFormat::Markdown {
+                if *format_sig.read() == Some(DocumentFormat::Markdown) {
                     button {
                         class: "document-map-create-action",
                         title: t(lang, "document_map.action.add_top_level"),

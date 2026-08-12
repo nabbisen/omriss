@@ -69,20 +69,36 @@ pub fn App() -> Element {
 
     // RFC-063: open the file named on the command line, if any, through the
     // identical `open_markdown_path` -> `handle_load` route the Recent
-    // Files entry already takes. This closure reads no signal -- only
-    // `startup_arg`, a plain owned value, not a `Signal` -- so it has no
-    // reactive dependency to resubscribe to and runs exactly once, at
-    // mount, never again.
-    use_effect(move || match &startup_arg {
-        crate::cli::StartupArg::None => {}
-        crate::cli::StartupArg::Path(path) => {
-            do_load.call(file_dialog::open_markdown_path(path));
+    // Files entry already takes.
+    //
+    // RFC063-IMPL-001 (Minor, `.git-exclude/reviewed/009-rfc-063-command-line-file-argument-implementation-review.md`):
+    // "runs exactly once" used to be emergent from the closure reading no
+    // signal, not structural -- a future edit adding any signal read,
+    // directly or through a helper, would have silently turned a one-time
+    // startup load into a repeated one, discarding unsaved edits on
+    // regression. `startup_load_done` makes the once-ness structural
+    // instead: the guard is checked *before* the match, so no matter what
+    // the match arms come to read later, they still execute at most once.
+    // (This self-triggers one extra, harmless re-run -- the `set(true)`
+    // is itself a read `use_effect` subscribes to -- which the guard exits
+    // from immediately.)
+    let mut startup_load_done = use_signal(|| false);
+    use_effect(move || {
+        if *startup_load_done.read() {
+            return;
         }
-        crate::cli::StartupArg::RejectedOption(_) => {
-            let mut modal = modal;
-            modal.set(Modal::OpenError {
-                cause: "omriss takes a file path and accepts no options.".into(),
-            });
+        startup_load_done.set(true);
+        match &startup_arg {
+            crate::cli::StartupArg::None => {}
+            crate::cli::StartupArg::Path(path) => {
+                do_load.call(file_dialog::open_markdown_path(path));
+            }
+            crate::cli::StartupArg::RejectedOption(_) => {
+                let mut modal = modal;
+                modal.set(Modal::OpenError {
+                    cause: "omriss takes a file path and accepts no options.".into(),
+                });
+            }
         }
     });
 

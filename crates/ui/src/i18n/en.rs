@@ -164,6 +164,19 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "focused_content.empty_section_hint",
         "Start writing here, or use the Document Map to add smaller sections.",
     ),
+    (
+        "focused_content.json.empty_value_hint",
+        "This is empty. Use Show plain file text to change its type.",
+    ),
+    (
+        "focused_content.json.group_hint",
+        "Use the Document Map to choose an item.",
+    ),
+    ("focused_content.json.item_count_label", "Items"),
+    ("focused_content.json.kind.empty", "Empty"),
+    ("focused_content.json.kind.number", "Number"),
+    ("focused_content.json.kind.onoff", "On/Off"),
+    ("focused_content.json.kind.text", "Text"),
     ("focused_content.title", "Writing Area"),
     (
         "keyboard.overview.hint",

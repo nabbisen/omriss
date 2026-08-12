@@ -168,6 +168,19 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "focused_content.empty_section_hint",
         "ここに書き始めるか、ドキュメントマップを使って小セクションを追加してください。",
     ),
+    (
+        "focused_content.json.empty_value_hint",
+        "値がありません。種類を変更するにはプレーンファイルテキストを使用してください。",
+    ),
+    (
+        "focused_content.json.group_hint",
+        "ドキュメントマップから項目を選んでください。",
+    ),
+    ("focused_content.json.item_count_label", "項目数"),
+    ("focused_content.json.kind.empty", "空"),
+    ("focused_content.json.kind.number", "数値"),
+    ("focused_content.json.kind.onoff", "オン/オフ"),
+    ("focused_content.json.kind.text", "テキスト"),
     ("focused_content.title", "ライティングエリア"),
     (
         "keyboard.overview.hint",

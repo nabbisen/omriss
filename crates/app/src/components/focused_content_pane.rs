@@ -17,12 +17,22 @@
 //! Apply-on-navigation (RFC-053 DraftState): the draft is committed whenever
 //! the user navigates, saves, opens preview, or the component commits via
 //! blur. There is no explicit "Done" primary action.
+//!
+//! RFC-054 J7a: for a non-Markdown (JSON) focus, this dispatches to
+//! `structured::StructuredFocusView` instead of the Markdown body/preview/
+//! children rendering below, which is otherwise completely unchanged --
+//! `session.read().format()` is checked once, first, before any of the
+//! Markdown-only `current_snapshot()` logic runs.
+
+mod structured;
 
 use dioxus::prelude::*;
+use omriss_core::DocumentFormat;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
 use super::{Breadcrumb, PreviewPane};
+use structured::StructuredFocusView;
 
 #[component]
 pub fn FocusedContentPane(
@@ -33,6 +43,18 @@ pub fn FocusedContentPane(
     preview_open: Signal<bool>,
 ) -> Element {
     let lang = *locale.read();
+
+    if session.read().format() != DocumentFormat::Markdown {
+        return rsx! {
+            main {
+                class: "focused-content-pane",
+                "aria-label": t(lang, "focused_content.title"),
+                Breadcrumb { session, locale, draft, status }
+                StructuredFocusView { session, locale }
+            }
+        };
+    }
+
     let Some(snapshot) = session.read().current_snapshot() else {
         return rsx! { main { class: "focused-content-pane" } };
     };

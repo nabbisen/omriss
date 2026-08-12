@@ -40,7 +40,12 @@ pub(super) fn document_map_node(
 /// Tries `format`'s own adapter; falls back to `PlainTextAdapter` on any
 /// failure. `PlainTextAdapter::build_structure` never fails, so this always
 /// returns a usable structure.
-fn build_structure_or_fallback(
+///
+/// `pub(super)`: RFC-054 J7 reuses this from the sibling `focus_bridge`
+/// module, which needs the identical structure the Document Map is built
+/// from -- so any `NodeId` a user could have clicked resolves the same way
+/// in both places.
+pub(super) fn build_structure_or_fallback(
     format: DocumentFormat,
     source: &str,
     revision: DocumentRevision,

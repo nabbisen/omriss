@@ -11,7 +11,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 
 use omriss_core::{
     Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
-    FocusSnapshot, NodeId, OutlineItem, ReplaceSectionBody,
+    FocusSnapshot, OutlineItem, ReplaceSectionBody,
 };
 
 use crate::editor::view_state::{ViewMode, ViewState};
@@ -70,6 +70,7 @@ pub struct EditorSession {
 }
 
 mod document_map_bridge;
+mod focus_bridge;
 mod outline_bridge;
 mod structural;
 mod structure_bridge;
@@ -275,13 +276,6 @@ impl EditorSession {
             }
         }
         self.prune_dead_history();
-    }
-
-    /// Focuses a section and returns its snapshot.
-    pub fn focus(&mut self, id: NodeId) -> Result<FocusSnapshot, DocumentError> {
-        let snapshot = self.document.focus_snapshot(id)?;
-        self.view.focus(id);
-        Ok(snapshot)
     }
 
     /// Returns to the whole-document outline view.
