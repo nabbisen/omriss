@@ -24,6 +24,67 @@ make your changes, then re-open the file in omriss.
 
 ---
 
+## JSON Limitations
+
+JSON is supported from 0.17.0. You can open a `.json` file, navigate its
+structure in the Document Map, edit values, and save with the rest of the file
+byte-for-byte unchanged. The following are deliberately not in this release.
+
+### Structure Cannot Be Changed
+
+You can change what a value *is*, but not what keys or elements *exist*. Adding,
+deleting, renaming, and reordering keys and array elements are all unavailable.
+On a JSON document those structure actions are not shown at all, rather than
+shown greyed out — there is no committed plan for when they arrive, so
+displaying them as blocked buttons would promise something undated.
+
+**Why:** Those operations synthesize punctuation — commas, braces, brackets — at
+positions the editor has to infer. That is where the real risk to your file
+lives, and it is being designed separately rather than folded in alongside value
+editing.
+
+**Workaround:** Use the "Show this part as text" action on a group or list to
+replace that whole part with JSON you write yourself, or edit the file in a
+standard text editor.
+
+### Null Values Are Read-Only
+
+A value that is `null` is displayed but cannot be edited.
+
+**Why:** Changing `null` to a string, number, or object is a change of type,
+which is a structure change rather than a value edit — the same reason as above.
+
+**Workaround:** Use the containing group's "Show this part as text" action.
+
+### Strict JSON Only
+
+Comments (`//`, `/* */`) and trailing commas are not accepted. A file using them
+is reported as invalid — this includes most `tsconfig.json`-style and VS Code
+configuration files, which are JSONC rather than JSON.
+
+**Why:** JSONC is a different format with no single agreed specification.
+Accepting it silently would mean guessing which dialect you meant, and guessing
+wrong writes damage into your file.
+
+**Workaround:** The plain file text view still opens, so the source is readable
+and nothing is lost; edit the file in a standard text editor.
+
+### Duplicate Keys Are Kept, Not Merged
+
+If an object contains the same key twice, both appear in the Document Map and
+each is edited independently. omriss will not drop one or combine them.
+
+**Why:** Silently discarding a key would be a data loss, and which duplicate
+"wins" varies between JSON parsers. Preserving what you actually wrote is the
+safer answer even though the file is unusual.
+
+### Other Structured Formats
+
+TOML and YAML are not available yet; a `.toml` or `.yaml` file opens as plain
+text. See [File Formats](./file-formats.md) for the current support table.
+
+---
+
 ## Heading Style Limitations
 
 ### Setext Headings Cannot Be Moved In or Out
@@ -104,14 +165,21 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
   committing an edit (re-indexing is synchronous and full).
 - Very deep heading trees (>50 levels of nesting, which is unusual) are
   supported but not performance-optimised.
+- JSON documents are re-parsed in full after each committed edit and each undo,
+  rather than incrementally. This has not been measured against a large file;
+  correctness was prioritised over parse cost in this release.
 
 ---
 
 ## What Is Not Limited
 
-- Markdown source is **never silently modified** by omriss. If you open a
-  file, navigate around, and close without saving, the file is unchanged.
+- Your source file is **never silently modified** by omriss, in any supported
+  format. If you open a file, navigate around, and close without saving, the
+  file is unchanged.
+- Committed edits rewrite **only the part you edited**. Formatting, ordering,
+  indentation, and line endings everywhere else survive a save untouched — this
+  holds for JSON exactly as it does for Markdown.
 - All structural operations (move in/out, move up/down, add, delete, join)
   are **undoable** via Ctrl+Z.
-- Saved files are **standard UTF-8 Markdown**. They open correctly in any
-  text editor, with no omriss-specific metadata.
+- Saved files are **standard UTF-8** in their original format. They open
+  correctly in any text editor, with no omriss-specific metadata.
