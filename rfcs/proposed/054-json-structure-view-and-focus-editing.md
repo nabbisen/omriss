@@ -182,8 +182,6 @@ name
 
 Text
 [ omriss ]
-
-[Done]
 ```
 
 ### 4.5 Selected number value
@@ -193,8 +191,6 @@ version
 
 Number
 [ 3 ]
-
-[Done]
 ```
 
 If invalid:
@@ -202,6 +198,21 @@ If invalid:
 ```text
 This number is not valid yet.
 ```
+
+> **Corrected after the J7b review.** Both mockups previously showed a
+> `[Done]` button. That contradicts binding, shipped design: **RFC-048 §9.3** —
+> "The UI must not expose a primary Done action for this lifecycle" — and
+> **RFC-050 §9** — "omriss uses apply-on-navigation with a single user-visible
+> dirty state. There is no primary `Done` action." Both are Implemented
+> (v0.16.0); this RFC was drafted before them and was never reconciled.
+>
+> A focused value applies on navigation, save, preview, search, or blur, exactly
+> as a Markdown section body does. `DraftState` (RFC-053 §9.3) blocks navigation
+> while the draft is invalid — which only makes sense *because* navigation is
+> the commit trigger; a `[Done]` button would render that property inert.
+>
+> **RFC-055 faces the identical question for TOML values. The answer is the
+> same: no Done control.**
 
 ### 4.6 Selected on/off value
 
