@@ -13,7 +13,7 @@ format will eventually do.
 | Format | Status |
 |---|---|
 | Markdown | Fully supported |
-| JSON | Planned — not available yet (RFC-054) |
+| JSON | Supported (RFC-054) |
 | TOML | Planned — not available yet (RFC-055) |
 | YAML | Under investigation (RFC-056) |
 
@@ -28,6 +28,29 @@ omriss's file picker accepts `.md`, `.markdown`, `.mdown`, and `.txt`, and
 opens all four as fully editable Markdown documents. This is existing,
 reliable behavior — not part of the JSON/TOML/YAML work above — and you can
 rely on it continuing to work.
+
+## What "Supported" means for JSON
+
+Open a `.json` file and its keys, objects, arrays, and values appear in the
+Document Map exactly like Markdown's headings do. Select a value to edit it
+in place:
+
+- text, numbers, and on/off (`true`/`false`) values, validated as you type;
+- an object or array's raw text, via "Show this part as text" — the
+  replacement must itself be valid JSON and keep the same shape (an object
+  cannot become an array, or the reverse);
+- `null` values are read-only in this version — changing what *kind* of
+  value something is remains out of scope, not just changing its content.
+
+Every edit changes only the bytes you touched: indentation, key order, and
+line endings elsewhere in the file are untouched, and Undo restores the
+exact original bytes. Only strict JSON (RFC 8259) opens as structured; a
+file with comments or trailing commas opens with its exact source text
+preserved and a plain-text fallback, not silently reinterpreted.
+
+**Not yet supported:** adding, deleting, renaming, or reordering
+keys/items. Editing changes what a value *is*, not the document's shape —
+that is a larger, separate piece of work with its own preservation risks.
 
 ## Your file stays your file
 

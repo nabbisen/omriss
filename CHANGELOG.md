@@ -8,6 +8,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **RFC-054 JSON editing — JSON is now Supported.** Select a text, number,
+  or on/off value in the Document Map and edit it in place, validated as
+  you type; select an object or array and edit its raw text via "Show this
+  part as text" (the replacement must stay valid JSON and keep the same
+  shape — an object can't become an array). Save writes the edited file;
+  Undo restores it byte-exactly. Every edit changes only the bytes you
+  touched — indentation, key order, and line endings elsewhere are
+  untouched. `null` values, and adding/deleting/renaming/reordering
+  keys or items, remain out of scope for this version. See
+  `docs/src/file-formats.md` for the full picture of what "Supported"
+  covers.
 - **RFC-063 command-line file argument** — `omriss notes.md` opens that file
   at startup, through the same load path the Recent Files list already uses.
   `.md` and `.json` both work. A missing, unreadable, or directory path lands

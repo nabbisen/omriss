@@ -74,6 +74,7 @@ mod focus_bridge;
 mod outline_bridge;
 mod structural;
 mod structure_bridge;
+mod structured_edit;
 pub use outline_bridge::OutlineNode;
 
 impl EditorSession {
@@ -349,14 +350,6 @@ impl EditorSession {
         let result = self.document.redo()?;
         self.prune_dead_history();
         Ok(result)
-    }
-
-    fn prune_dead_history(&mut self) -> bool {
-        let mode_before = self.view.mode();
-        let outline = self.document.outline();
-        self.view.retain_alive(|id| outline.contains(id));
-        // If the current mode changed, a stale node was pruned.
-        self.view.mode() != mode_before
     }
 
     /// Prunes dead history and returns `true` if a stale focus target was

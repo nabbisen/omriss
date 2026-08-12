@@ -173,6 +173,22 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "値がありません。種類を変更するにはプレーンファイルテキストを使用してください。",
     ),
     (
+        "focused_content.json.error.invalid_number",
+        "この数値はまだ有効ではありません。",
+    ),
+    (
+        "focused_content.json.error.invalid_raw_value",
+        "このテキストは有効なJSONに見えません。",
+    ),
+    (
+        "focused_content.json.error.unsafe_change",
+        "この変更は安全に行えませんでした。",
+    ),
+    (
+        "focused_content.json.error.unsupported_change",
+        "このJSONの変更はまだサポートされていません。",
+    ),
+    (
         "focused_content.json.group_hint",
         "ドキュメントマップから項目を選んでください。",
     ),
@@ -181,6 +197,13 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("focused_content.json.kind.number", "数値"),
     ("focused_content.json.kind.onoff", "オン/オフ"),
     ("focused_content.json.kind.text", "テキスト"),
+    ("focused_content.json.onoff.off", "オフ"),
+    ("focused_content.json.onoff.on", "オン"),
+    ("focused_content.json.raw_text_label", "生テキスト"),
+    (
+        "focused_content.json.show_as_text",
+        "この部分をテキストとして表示",
+    ),
     ("focused_content.title", "ライティングエリア"),
     (
         "keyboard.overview.hint",

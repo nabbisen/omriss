@@ -8,6 +8,7 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
 use crate::components::SectionTitleAction;
+use crate::shell::draft_sync;
 
 // ── Modal state ──────────────────────────────────────────────────────────────
 
@@ -54,43 +55,26 @@ pub(crate) struct AppCtx {
 }
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
+//
+// Thin wrappers over `draft_sync` (RFC-054 J7b), which owns the one
+// format-aware implementation shared with `document_map_pane/draft.rs`
+// and `toolbar.rs`.
 
-/// Syncs the draft editor buffer to the committed body of the focused section.
-pub(crate) fn sync_draft(ctx: AppCtx) {
-    let mut draft = ctx.draft;
-    let body = ctx
-        .session
-        .read()
-        .current_snapshot()
-        .map(|s| s.body)
-        .unwrap_or_default();
-    draft.set(body);
+/// Syncs the draft editor buffer to the committed content of the focused
+/// node — Markdown's section body, or (RFC-054 J7b) a focused JSON node's
+/// current editable/raw text.
+pub(crate) fn sync_draft(mut ctx: AppCtx) {
+    draft_sync::sync(&ctx.session, &mut ctx.draft);
 }
 
-/// True when the Writing Area contains text that has not yet been applied to
-/// the canonical document session.
+/// True when the Writing Area contains text that has not yet been applied
+/// to the canonical document session — Markdown's body, or (RFC-054 J7b)
+/// a focused JSON node's draft.
 pub(crate) fn has_pending_draft(ctx: AppCtx) -> bool {
-    let draft = ctx.draft.read().clone();
-    ctx.session
-        .read()
-        .current_snapshot()
-        .is_some_and(|snapshot| draft != snapshot.body)
+    draft_sync::is_pending(&ctx.session, &ctx.draft)
 }
 
 /// Commits any pending draft into `omriss` before a save or navigation.
 pub(crate) fn commit_pending(mut ctx: AppCtx) -> bool {
-    let snap = ctx.session.read().current_snapshot();
-    if let Some(snapshot) = snap {
-        let d = ctx.draft.read().clone();
-        if d != snapshot.body {
-            return match ctx.session.write().commit_focused_body(&snapshot, d) {
-                Ok(_) => true,
-                Err(_) => {
-                    ctx.status.set("error.stale_edit".into());
-                    false
-                }
-            };
-        }
-    }
-    true
+    draft_sync::commit_or_block(&mut ctx.session, &mut ctx.draft, &mut ctx.status)
 }

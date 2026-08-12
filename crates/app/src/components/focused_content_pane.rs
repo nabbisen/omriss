@@ -18,7 +18,7 @@
 //! the user navigates, saves, opens preview, or the component commits via
 //! blur. There is no explicit "Done" primary action.
 //!
-//! RFC-054 J7a: for a non-Markdown (JSON) focus, this dispatches to
+//! RFC-054 J7a/J7b: for a non-Markdown (JSON) focus, this dispatches to
 //! `structured::StructuredFocusView` instead of the Markdown body/preview/
 //! children rendering below, which is otherwise completely unchanged --
 //! `session.read().format()` is checked once, first, before any of the
@@ -50,7 +50,7 @@ pub fn FocusedContentPane(
                 class: "focused-content-pane",
                 "aria-label": t(lang, "focused_content.title"),
                 Breadcrumb { session, locale, draft, status }
-                StructuredFocusView { session, locale }
+                StructuredFocusView { session, locale, draft, status }
             }
         };
     }

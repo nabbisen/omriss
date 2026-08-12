@@ -879,8 +879,8 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   gap: 6px;
 }
 
-/* RFC-054 J7a: read-only structured (JSON) focus rendering. No input here
-   is editable yet -- J7b adds the text/number/on-off/container editors. */
+/* RFC-054 J7a/J7b: structured (JSON) focus rendering, read (J7a) and
+   write (J7b: text/number input, on/off toggle, container raw editor). */
 .structured-kind-label {
   margin: 0 0 10px;
   font-size: 12px;
@@ -912,6 +912,40 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   word-break: break-word;
   color: var(--muted);
 }
+.structured-value-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 14px;
+}
+.structured-value-input:focus { outline: none; border-color: var(--accent); }
+.structured-value-input.invalid,
+.structured-raw-editor.invalid { border-color: var(--danger); }
+.structured-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+.structured-onoff { display: flex; gap: 8px; }
+.btn-onoff.active { background: var(--accent-soft); border-color: var(--accent); }
+.structured-raw-editor {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+.structured-raw-editor:focus { outline: none; border-color: var(--accent); }
+.btn-show-raw { margin-top: 6px; font-size: 12px; padding: 3px 10px; }
 
 /* ── dioxus-swdir-tree overrides ─────────────────────────────────────────── */
 

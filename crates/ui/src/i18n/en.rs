@@ -169,6 +169,22 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "This is empty. Use Show plain file text to change its type.",
     ),
     (
+        "focused_content.json.error.invalid_number",
+        "This number is not valid yet.",
+    ),
+    (
+        "focused_content.json.error.invalid_raw_value",
+        "This text does not look like valid JSON yet.",
+    ),
+    (
+        "focused_content.json.error.unsafe_change",
+        "This change could not be made safely.",
+    ),
+    (
+        "focused_content.json.error.unsupported_change",
+        "This JSON change is not supported yet.",
+    ),
+    (
         "focused_content.json.group_hint",
         "Use the Document Map to choose an item.",
     ),
@@ -177,6 +193,13 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("focused_content.json.kind.number", "Number"),
     ("focused_content.json.kind.onoff", "On/Off"),
     ("focused_content.json.kind.text", "Text"),
+    ("focused_content.json.onoff.off", "Off"),
+    ("focused_content.json.onoff.on", "On"),
+    ("focused_content.json.raw_text_label", "Raw text"),
+    (
+        "focused_content.json.show_as_text",
+        "Show this part as text",
+    ),
     ("focused_content.title", "Writing Area"),
     (
         "keyboard.overview.hint",

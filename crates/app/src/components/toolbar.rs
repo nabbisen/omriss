@@ -4,6 +4,8 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
+use crate::shell::draft_sync;
+
 #[component]
 pub fn Toolbar(
     session: Signal<EditorSession>,
@@ -17,13 +19,7 @@ pub fn Toolbar(
     on_search: EventHandler<()>,
 ) -> Element {
     let lang = *locale.read();
-    let local_dirty = {
-        let d = draft.read().clone();
-        session
-            .read()
-            .current_snapshot()
-            .is_some_and(|s| d != s.body)
-    };
+    let local_dirty = draft_sync::is_pending(&session, &draft);
     let dirty = session.read().is_dirty() || local_dirty;
     let can_undo = session.read().can_undo();
     let can_redo = session.read().can_redo();
@@ -37,77 +33,41 @@ pub fn Toolbar(
         t(lang, "search.unavailable")
     };
 
+    // Undo/Redo intentionally *block* on a pending draft rather than
+    // committing it first (unlike Back/Forward/Save below) — undoing
+    // while there's an uncommitted edit is ambiguous, so the user resolves
+    // it first.
     let undo = move |_| {
-        let d = draft.read().clone();
-        if session
-            .read()
-            .current_snapshot()
-            .is_some_and(|s| d != s.body)
-        {
+        if draft_sync::is_pending(&session, &draft) {
             status.set("status.unsaved".into());
             return;
         }
         if session.write().undo().is_ok() {
-            let body = session
-                .read()
-                .current_snapshot()
-                .map(|s| s.body)
-                .unwrap_or_default();
-            draft.set(body);
+            draft_sync::sync(&session, &mut draft);
         }
     };
     let redo = move |_| {
-        let d = draft.read().clone();
-        if session
-            .read()
-            .current_snapshot()
-            .is_some_and(|s| d != s.body)
-        {
+        if draft_sync::is_pending(&session, &draft) {
             status.set("status.unsaved".into());
             return;
         }
         if session.write().redo().is_ok() {
-            let body = session
-                .read()
-                .current_snapshot()
-                .map(|s| s.body)
-                .unwrap_or_default();
-            draft.set(body);
+            draft_sync::sync(&session, &mut draft);
         }
     };
     let back = move |_| {
-        let snap = session.read().current_snapshot();
-        if let Some(s) = snap {
-            let d = draft.read().clone();
-            if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
-                status.set("error.stale_edit".into());
-                return;
-            }
+        if !draft_sync::commit_or_block(&mut session, &mut draft, &mut status) {
+            return;
         }
         session.write().back();
-        let body = session
-            .read()
-            .current_snapshot()
-            .map(|s| s.body)
-            .unwrap_or_default();
-        draft.set(body);
+        draft_sync::sync(&session, &mut draft);
     };
     let forward = move |_| {
-        let snap = session.read().current_snapshot();
-        if let Some(s) = snap {
-            let d = draft.read().clone();
-            if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
-                status.set("error.stale_edit".into());
-                return;
-            }
+        if !draft_sync::commit_or_block(&mut session, &mut draft, &mut status) {
+            return;
         }
         session.write().forward();
-        let body = session
-            .read()
-            .current_snapshot()
-            .map(|s| s.body)
-            .unwrap_or_default();
-        draft.set(body);
+        draft_sync::sync(&session, &mut draft);
     };
 
     rsx! {

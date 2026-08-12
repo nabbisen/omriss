@@ -83,4 +83,40 @@ impl super::EditorSession {
             .focused_content(self.document.source(), &structure, id)
             .ok()
     }
+
+    /// Drops any focus/history entries that no longer resolve, returning
+    /// `true` if the current mode changed as a result. `pub(super)`:
+    /// called from several `session.rs` methods (`undo`, `redo`,
+    /// `zoom_out`, ...), which is why this can't be fully private despite
+    /// living in a sibling module.
+    ///
+    /// RFC-054 J7b fix: this used to check `document.outline()`
+    /// unconditionally, regardless of `self.format`. For JSON (or any
+    /// non-Markdown format), no real node id is ever a member of the
+    /// Markdown outline `Document::parse` builds over that text (RFC-054
+    /// §0.1) — so every call (after every `undo()`/`redo()`/commit) pruned
+    /// the just-focused JSON node as "dead," silently kicking the view
+    /// back to the outline. Found live: clicking Undo after a JSON edit
+    /// visibly lost focus, something no unit test asserting only on
+    /// `document.source()` after undo would ever catch.
+    pub(super) fn prune_dead_history(&mut self) -> bool {
+        let mode_before = self.view.mode();
+        match self.format {
+            DocumentFormat::Markdown => {
+                let outline = self.document.outline();
+                self.view.retain_alive(|id| outline.contains(id));
+            }
+            _ => {
+                let structure = super::structure_bridge::build_structure_or_fallback(
+                    self.format,
+                    self.document.source(),
+                    self.document.revision(),
+                );
+                self.view
+                    .retain_alive(|id| structure.nodes.iter().any(|n| n.id == id));
+            }
+        }
+        // If the current mode changed, a stale node was pruned.
+        self.view.mode() != mode_before
+    }
 }
