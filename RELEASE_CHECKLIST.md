@@ -66,24 +66,57 @@ Record pass/fail and the OS version tested.
 11. **Search** — Ctrl+F opens search panel; type a query; result appears
 12. **Close/reopen** — close and reopen the saved file; content intact
 
+### Structured-Format Workflow (RFC-054, from 0.17.0)
+
+Steps 1–12 exercise Markdown only. From 0.17.0 omriss also edits JSON, and a
+release cannot be certified on a workflow that never opens the format the
+release is for. Run these on each supported platform alongside the Markdown
+workflow.
+
+13. **Open from the command line** — `omriss <some.json>` opens with the
+    Document Map populated (RFC-063). This is also the cheapest way to reach a
+    rendered document for the remaining steps.
+14. **Navigate** — click a text value, a number, a group, and a list; each shows
+    its own editor or summary in the right panel
+15. **Edit a value** — change a text or number value; the dirty indicator appears
+16. **Invalid draft blocked** — type a non-number into a number field; an inline
+    message appears, and navigating away is refused with the draft preserved
+17. **Save** — Ctrl+S; then **inspect the file in an external editor**: only the
+    edited value's bytes changed. Indentation, key order, and line endings
+    elsewhere are untouched
+18. **Undo** — the original bytes return *and* the edited node stays focused
+19. **Container raw edit** — select a group or list, use "Show this part as
+    text", replace it with valid JSON of the same kind, commit
+20. **Malformed file** — open a `.json` with a syntax error: the app opens, the
+    source is preserved, the Document Map is empty, and "Show plain file text"
+    still works
+21. **Markdown unaffected** — repeat steps 2–8 on a `.md` file in the same
+    session
+
 ### Release-Blocking Failures (RFC-038 §4)
 
 Any of the following block release:
 
 - app fails to launch on a supported platform
 - open/save corrupts unrelated bytes in the Markdown file
+- **open/save corrupts unrelated bytes in a JSON file** — step 17
 - Ctrl+S / Cmd+S cannot save
 - keyboard navigation traps the user (no Esc/Tab escape)
 - save failure falsely reports success
 - documented source-preservation invariant violated
+- **a malformed structured file loses or rewrites the user's source** — step 20
 
 ### Smoke Test Evidence
+
+Record one block per platform. "Steps completed" must name the ranges actually
+run — `1–12` alone means the structured-format workflow was not exercised, and
+from 0.17.0 that is an incomplete smoke test, not a passing one.
 
 ```
 OS: 
 Version: 
 Artifact: omriss-X.Y.Z.tar.gz
-Fixture: academic-paper.md
+Fixtures: academic-paper.md, <json fixture>
 Date: 
 Tester: 
 Steps completed: 
