@@ -6,6 +6,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-08-03
+
 ### Added
 
 - **RFC-054 JSON editing — JSON is now Supported.** Select a text, number,
