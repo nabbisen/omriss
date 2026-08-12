@@ -2,7 +2,7 @@
 
 Companion execution package for:
 
-- RFC: `rfcs/proposed/054-json-structure-view-and-focus-editing.md`
+- RFC: `rfcs/done/054-json-structure-view-and-focus-editing.md`
 - Milestone: M12 — Structured Format Support
 
 Replaces the M10-era stub, whose exit condition ("replace after RFC-053 is

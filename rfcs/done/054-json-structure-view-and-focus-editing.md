@@ -2,7 +2,37 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M12 — Structured Format Support
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — delivered as slices J1–J7b plus two
+in-sequence fixes (`5eb763d`, `aedb319`, `06fe30d`, `321144d`, `cf18526`,
+`555b8b5`, `f03b3a8`, `8f3cfad`, `3e2e854`, `72ba8b2`). JSON opens, navigates,
+and edits; `docs/src/file-formats.md` records it as Supported with its boundary
+stated. Markdown behavior is unchanged throughout — the 239-test baseline and the
+`structural_ops*` golden suites were never modified across the whole sequence.
+
+**Deliberately out of scope, recorded rather than deferred silently:**
+
+1. **§13 Phase 4** — add, delete, rename, move of JSON nodes. Those synthesize
+   punctuation, which is where the preservation risk concentrates (§15 Q4). They
+   need their own RFC detail and handoff.
+2. **Node identity is positional, not key-based** (§6.1). Correct within this
+   RFC's scope, since value edits never move siblings; it must change before any
+   structural mutation of objects exists.
+3. **`null` reports `ReadOnlyFormat`** as an accepted interim; `ValueNotEditable`
+   is recorded unconstructed in RFC-053 §6, to be adopted with `DepthLimit` in
+   one user-visible task.
+4. **JSON structure is fully re-parsed** on undo, redo, and every Document Map
+   render. Acceptable per RFC-053 §12 until measurement proves otherwise; nobody
+   has measured, and JSON files can be far larger than the Markdown this app was
+   tuned for.
+5. **`t()` has no interpolation**, so §4.3's "This group contains 2 items." is
+   rendered as a count-free line plus a labeled number. The gap now constrains
+   what the UI can say and deserves its own small RFC when it next blocks
+   wording someone wants.
+
+**§0 records what RFC-053 left ready**, including the `&mut Document` coupling
+resolved by adding `Document::replace_range` rather than extracting a
+`TextDocument` core — a decision with a revisit trigger at RFC-055, when a second
+non-Markdown format makes the evidence real rather than hypothetical.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-053 (Implemented — see §0 for what it did and did not leave ready)

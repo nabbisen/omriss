@@ -67,6 +67,7 @@ policy in [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 052 | [Structured Plain-Text Format Expansion](./done/052-structured-plain-text-format-expansion.md) | main (unreleased) |
 | 053 | [Document Format Adapter Architecture](./done/053-document-format-adapter-architecture.md) | main (unreleased) |
 | 062 | [Crate Package Name Exchange](./done/062-crate-package-name-exchange.md) | main (unreleased) |
+| 054 | [JSON Structure View and Focus Editing](./done/054-json-structure-view-and-focus-editing.md) | main (unreleased) |
 | 063 | [Command-Line File Argument](./done/063-command-line-file-argument.md) | main (unreleased) |
 
 RFCs 048–051 shipped with explicitly deferred residual scope; each carries the
@@ -77,7 +78,6 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 
 | ID | Title | Milestone |
 |----|-------|-----------|
-| 054 | [JSON Structure View and Focus Editing](./proposed/054-json-structure-view-and-focus-editing.md) | M12 |
 | 055 | [TOML Structure View and Preservation Rules](./proposed/055-toml-structure-view-and-preservation-rules.md) | M12 |
 | 056 | [YAML Feasibility Spike](./proposed/056-yaml-feasibility-spike.md) | M12 |
 | 057 | [Multi-Document Workspace and Tabs](./proposed/057-multi-document-workspace-and-tabs.md) | M13 |

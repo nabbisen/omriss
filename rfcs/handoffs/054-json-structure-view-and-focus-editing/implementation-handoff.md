@@ -1,6 +1,6 @@
 # RFC-054 Implementation Handoff
 
-**Governing RFC:** [RFC-054](../../proposed/054-json-structure-view-and-focus-editing.md)
+**Governing RFC:** [RFC-054](../../done/054-json-structure-view-and-focus-editing.md)
 **Milestone:** M12 — Structured Format Support
 **Supersedes:** the RFC-054 stub, written during M10 when the adapter boundary
 did not yet exist. Its own exit condition — "replace after RFC-053 is accepted"
