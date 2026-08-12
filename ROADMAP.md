@@ -7,8 +7,7 @@ breakdown live in the design documents:
 - Lifecycle policy: [`rfcs/done/000-rfc-lifecycle-policy.md`](rfcs/done/000-rfc-lifecycle-policy.md)
 
 Status snapshot (v0.16.0+): RFCs 000–054, RFC-062, and RFC-063 are implemented;
-M0–M11
-themes are complete. The desktop MVP runs on
+M0–M11 themes are complete and M12 is under way. The desktop MVP runs on
 Linux/macOS/Windows (the desktop shell requires platform WebView libraries to
 build — see `PLATFORMS.md`). The outline/tree UI uses `dioxus-swdir-tree`.
 
