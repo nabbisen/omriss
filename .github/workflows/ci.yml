@@ -1,0 +1,122 @@
+name: CI
+
+# TESTING.md "CI Requirements" has described this as mandatory since v0.11.0,
+# but no workflow existed until now. Items 1-4 there are the floor; this adds
+# a Windows job because the app crate links the platform WebView and has only
+# ever been built on Linux.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+# NOTE: no `--locked` anywhere below. Cargo.lock is gitignored (.gitignore:8),
+# so there is nothing for CI to lock against and `--locked` would fail on the
+# first run. That also means two builds of the same tag can resolve different
+# dependency versions -- add `--locked` here once the lockfile is committed.
+
+jobs:
+  # Formatting and the RFC invariants are host-independent; running them once
+  # keeps the matrix jobs about compilation rather than about style.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt
+
+      - name: cargo fmt --check
+        run: cargo fmt --all --check
+
+      - name: RFC index invariants
+        run: bash scripts/check-rfcs.sh
+
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+
+      # crates/app links wry/tao. Windows and macOS use the system WebView with
+      # no extra packages; Linux needs these or the app crate cannot build,
+      # which would silently reduce --workspace to core+ui.
+      - name: Install Linux WebView build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libwebkit2gtk-4.1-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libgtk-3-dev \
+            libxdo-dev \
+            libssl-dev
+
+      - name: cargo test --workspace
+        run: cargo test --workspace
+
+      - name: cargo clippy --workspace --all-targets
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+  # The release artifact is a Windows build. Proving it compiles in release
+  # profile on every push is what makes a tag push a formality rather than a
+  # gamble -- a debug-only green CI would not.
+  build-windows-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-release
+
+      - name: Build release binary
+        run: cargo build --release -p omriss
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: omriss-windows-exe
+          path: target/release/omriss.exe
+          if-no-files-found: error
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mdBook
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.40/mdbook-v0.4.40-x86_64-unknown-linux-gnu.tar.gz \
+            | tar -xz -C "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build the book
+        run: mdbook build docs

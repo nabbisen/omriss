@@ -1,0 +1,154 @@
+name: Release to Microsoft Store
+
+# Tag-triggered, but a tag alone cannot reach the Store.
+#
+# A tag can point at any commit, including one never reviewed or merged. So the
+# trigger only *proposes* a release; three things gate it:
+#
+#   1. `verify` refuses tags whose commit is not on main, and refuses tags whose
+#      version does not match Cargo.toml and AppxManifest.xml.
+#   2. `publish` targets the `microsoft-store` environment, which must be
+#      configured with required reviewers. That approval is RFC-042 section 5's
+#      "explicit confirmation from the product owner", encoded rather than
+#      remembered -- a stray tag creates a pending deployment, not a submission.
+#   3. The Store credentials live in that environment, not at repo level, so no
+#      other workflow or branch can read them.
+#
+# See RELEASE_CHECKLIST.md: the GUI smoke workflow cannot run here and remains
+# a human step before approving the deployment.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release (e.g. v0.17.0)'
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Tag must match Cargo.toml and AppxManifest, and be on main
+        id: check
+        run: |
+          set -euo pipefail
+          raw="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${raw#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          cargo_version=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          if [ "$cargo_version" != "$version" ]; then
+            echo "::error::tag $raw does not match Cargo.toml version $cargo_version"
+            exit 1
+          fi
+
+          # The Store rejects a resubmission of an existing version, and a
+          # mismatch here is the easiest way to ship 0.17.0 code labelled
+          # 0.18.0 to users.
+          manifest_version=$(grep -m1 -o 'Version="[0-9.]*"' packaging/windows/AppxManifest.xml | cut -d'"' -f2)
+          if [ "$manifest_version" != "$version.0" ]; then
+            echo "::error::AppxManifest version $manifest_version does not match tag $raw (expected $version.0)"
+            exit 1
+          fi
+
+          # Use the checked-out HEAD, not GITHUB_SHA: under workflow_dispatch
+          # GITHUB_SHA is the dispatching ref, not the tag being released.
+          tagged_commit=$(git rev-parse HEAD)
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor "$tagged_commit" origin/main; then
+            echo "::error::tagged commit $tagged_commit is not an ancestor of main; refusing to publish unreviewed code"
+            exit 1
+          fi
+
+  package:
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Test before packaging
+        run: cargo test --workspace
+
+      - name: Build release binary
+        run: cargo build --release -p omriss
+
+      # NOTE: this reproduces what has until now been a manual, undocumented
+      # step on the maintainer's machine. It must be confirmed against that
+      # process before the first automated publish -- see the readiness report.
+      - name: Stage MSIX layout
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staging | Out-Null
+          Copy-Item target/release/omriss.exe staging/
+          Copy-Item packaging/windows/AppxManifest.xml staging/
+          Copy-Item -Recurse packaging/windows/Assets staging/Assets
+
+      - name: Pack MSIX
+        shell: pwsh
+        run: |
+          $makeappx = Get-ChildItem `
+            -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" `
+            -Recurse -Filter makeappx.exe |
+            Where-Object { $_.FullName -match '\\x64\\' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $makeappx) { throw "makeappx.exe not found in the Windows SDK" }
+          & $makeappx.FullName pack /d staging /p omriss-${{ needs.verify.outputs.version }}.msix /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx failed with $LASTEXITCODE" }
+
+      - name: Upload MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: omriss-msix
+          path: omriss-*.msix
+          if-no-files-found: error
+
+  publish:
+    needs: [verify, package]
+    runs-on: windows-latest
+    # Configure this environment with required reviewers, and put the four
+    # Store secrets on it rather than at repository level.
+    environment: microsoft-store
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: omriss-msix
+
+      # TODO: pin to a commit SHA rather than a moving tag before first use.
+      # This action runs with the Store credentials in scope.
+      - name: Configure Microsoft Store CLI
+        uses: microsoft/microsoft-store-apppublisher@v1.1
+
+      - name: Reconfigure store credentials
+        run: >
+          msstore reconfigure
+          --tenantId ${{ secrets.AZURE_AD_TENANT_ID }}
+          --sellerId ${{ secrets.SELLER_ID }}
+          --clientId ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
+          --clientSecret ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+
+      - name: Publish package
+        run: >
+          msstore publish
+          '${{ github.workspace }}/omriss-${{ needs.verify.outputs.version }}.msix'
+          -id ${{ secrets.STORE_PRODUCT_ID }}
