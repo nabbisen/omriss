@@ -8,9 +8,26 @@ Language: English
 
 **Project:** omriss — Omriss Editor  
 **Milestone:** M3 — File Lifecycle and Recovery  
-**Status.** Implemented (v0.3.0)  
+**Status.** Implemented (v0.3.0), with one guard never built — see below  
 **Document type:** Detailed RFC design  
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer  
+
+> **Unmet criterion, recorded 2026-08-16.** §4's guard list includes "closing
+> app", §6 requires "Close with unsaved changes prompts", and §7's acceptance
+> criterion is "No user text is discarded without explicit confirmation."
+> The app implements the *file-level* guards — `Modal::UnsavedBeforeOpen` and
+> `Modal::UnsavedBeforeNew` cover opening another file and starting a new one —
+> but there is **no window-close guard**. Closing the window with an unsaved
+> in-memory edit discards it silently, with no prompt.
+>
+> Found by the 0.17.0 Linux smoke run (Task 011, finding 5), not by any test.
+> This RFC was marked Implemented in v0.3.0 with the criterion already unmet;
+> the gap is long-standing, not a regression.
+>
+> Scope note: the saved file is never altered by this — the loss is confined to
+> uncommitted in-memory edits, which is why it is not a source-preservation
+> failure. It is still a promise this RFC makes and the app does not keep.
+> Tracked for a future slice alongside RFC-059's keyboard focus work.
 
 ---
 

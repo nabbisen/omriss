@@ -118,17 +118,52 @@ is tracked as an RFC-059 keyboard follow-up.
 **Workaround:** Use the search field and arrow keys to choose a command, then
 press Enter. Use Escape or Ctrl+P to dismiss Quick Actions.
 
-### Focus Does Not Return to Card After Zoom Out (WebView constraint)
+### Keyboard Shortcuts Stop Working After a View Change (WebView constraint)
 
-When pressing Esc to zoom out, keyboard focus moves to the document body
-rather than back to the specific heading card that was zoomed into.
+Keyboard shortcuts are delivered to the application window. When an action
+changes the view — zooming into a section, for example — the element that had
+keyboard focus is replaced, and focus falls back to the document body, outside
+the window's shortcut handler. Shortcuts pressed from that state do nothing
+until focus returns.
 
-**Why:** Programmatic focus management in the Dioxus WebView environment
-requires JavaScript `element.focus()` calls that are not yet implemented in
-this release.
+The most visible case is **Esc to zoom out**: after zooming in with Enter, Esc
+often does not zoom back out, because focus was lost during the zoom itself.
+Ctrl+` for plain file text, and typing straight into the Search panel after
+Ctrl+F, can be affected the same way.
 
-**Workaround:** Press Tab to move focus into the Document Map, then use arrow
-keys to navigate.
+**Why:** Restoring focus after a view change needs programmatic
+`element.focus()` calls in the Dioxus WebView environment, which are not
+implemented in this release. The shortcuts themselves are correctly bound; they
+are simply not reached.
+
+**Workaround:** Click once anywhere in the window, or press Tab, to put focus
+back inside it — shortcuts then work normally. Every affected action also has an
+on-screen control: use the "Document" breadcrumb to zoom out, the toolbar button
+for plain file text, and click into the search field before typing.
+
+### Closing the Window Does Not Warn About Unsaved Changes
+
+Closing the window while an edit is unsaved discards that edit without asking.
+Opening another file or starting a new one *does* warn; only window close does
+not.
+
+**Why:** The window-close guard was never built, though it has been part of the
+design since v0.3.0. Recorded against RFC-016.
+
+**Workaround:** Save with Ctrl+S before closing. The saved file on disk is never
+affected — only edits you have not yet committed are lost.
+
+### Search Does Not Match Heading Text
+
+Searching finds text inside section bodies, but not the text of the headings
+themselves. Searching for a heading title you can see in the Document Map may
+return "No results".
+
+**Why:** The search index covers section body ranges and excludes the heading
+line.
+
+**Workaround:** Use the Document Map to navigate to a heading by name, and use
+search for body content.
 
 ---
 
