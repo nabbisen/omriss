@@ -1,0 +1,21 @@
+{
+  "title": "Omriss smoke sample",
+    "description": "Indentation on this line is deliberately wrong. A save must leave it wrong.",
+  "version": 1.50,
+  "scale": 1e3,
+  "offset": -0,
+  "released": false,
+  "maintainer": null,
+  "tags": ["structured", "plain-text", "日本語"],
+  "quoted": "escapes must survive: \"quotes\", a \\ backslash, a é escape, and a\ttab",
+  "nested": {
+    "level_two": {
+      "level_three": ["deep", 42, true, null]
+    },
+    "empty_object": {},
+    "empty_array": []
+  },
+  "duplicate": "first occurrence",
+  "duplicate": "second occurrence",
+  "trailing_space_after_colon":    "three spaces before this value"
+}

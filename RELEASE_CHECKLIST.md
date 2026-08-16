@@ -73,11 +73,19 @@ release cannot be certified on a workflow that never opens the format the
 release is for. Run these on each supported platform alongside the Markdown
 workflow.
 
-13. **Open from the command line** — `omriss <some.json>` opens with the
-    Document Map populated (RFC-063). This is also the cheapest way to reach a
-    rendered document for the remaining steps.
+Use `crates/core/tests/fixtures/structured-sample.json`. It is formatted
+deliberately badly — irregular indentation, `1.50`, `1e3`, `-0`, a duplicate
+key, a `null`, and non-ASCII text — precisely so that step 17 can detect an
+editor that reserializes the file instead of patching it. Do not tidy it;
+`structured_fixture_smoke` fails if those constructs are removed.
+
+13. **Open from the command line** — `omriss crates/core/tests/fixtures/structured-sample.json`
+    opens with the Document Map populated (RFC-063). This is also the cheapest
+    way to reach a rendered document for the remaining steps.
 14. **Navigate** — click a text value, a number, a group, and a list; each shows
-    its own editor or summary in the right panel
+    its own editor or summary in the right panel. Confirm both `duplicate` keys
+    appear as separate rows, and that `maintainer` (a `null`) is shown but its
+    editor is unavailable
 15. **Edit a value** — change a text or number value; the dirty indicator appears
 16. **Invalid draft blocked** — type a non-number into a number field; an inline
     message appears, and navigating away is refused with the draft preserved
@@ -116,7 +124,7 @@ from 0.17.0 that is an incomplete smoke test, not a passing one.
 OS: 
 Version: 
 Artifact: omriss-X.Y.Z.tar.gz
-Fixtures: academic-paper.md, <json fixture>
+Fixtures: academic-paper.md, structured-sample.json
 Date: 
 Tester: 
 Steps completed: 
