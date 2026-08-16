@@ -19,11 +19,15 @@ name: Release to Microsoft Store
 
 on:
   push:
-    tags: ['v*']
+    # Release tags are bare semver, no "v" prefix, per Rust crate convention
+    # (0.16.0, 0.15.6, ...). This is a GitHub filter-pattern glob, not a regex:
+    # "+" means one or more of the preceding character and "." is literal.
+    # Pre-release tags such as 0.17.0-rc1 deliberately do not match.
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing tag to release (e.g. v0.17.0)'
+        description: 'Existing tag to release (e.g. 0.17.0)'
         required: true
 
 permissions:
@@ -47,13 +51,12 @@ jobs:
         id: check
         run: |
           set -euo pipefail
-          raw="${{ github.event.inputs.tag || github.ref_name }}"
-          version="${raw#v}"
+          version="${{ github.event.inputs.tag || github.ref_name }}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
           cargo_version=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
           if [ "$cargo_version" != "$version" ]; then
-            echo "::error::tag $raw does not match Cargo.toml version $cargo_version"
+            echo "::error::tag $version does not match Cargo.toml version $cargo_version"
             exit 1
           fi
 
@@ -62,7 +65,7 @@ jobs:
           # 0.18.0 to users.
           manifest_version=$(grep -m1 -o 'Version="[0-9.]*"' packaging/windows/AppxManifest.xml | cut -d'"' -f2)
           if [ "$manifest_version" != "$version.0" ]; then
-            echo "::error::AppxManifest version $manifest_version does not match tag $raw (expected $version.0)"
+            echo "::error::AppxManifest version $manifest_version does not match tag $version (expected $version.0)"
             exit 1
           fi
 
@@ -126,7 +129,7 @@ jobs:
   publish:
     needs: [verify, package]
     runs-on: windows-latest
-    # Configure this environment with required reviewers, and put the four
+    # Configure this environment with required reviewers, and put all five
     # Store secrets on it rather than at repository level.
     environment: microsoft-store
     steps:
