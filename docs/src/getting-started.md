@@ -2,7 +2,7 @@
 
 ## Install & run
 
-Core logic builds with stable Rust 1.85+:
+Core logic builds with stable Rust 1.88+:
 
 ```sh
 cargo build

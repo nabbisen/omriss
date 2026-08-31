@@ -109,7 +109,7 @@ to the upstream issue where applicable.
 ## Release Platform Matrix
 
 A release may only claim support for a platform that has passed the smoke
-test checklist in `docs/smoke-tests.md`. Platforms tested and passing are
+test checklist in `RELEASE_CHECKLIST.md`. Platforms tested and passing are
 listed in the release notes under "Platform Notes".
 
 ---

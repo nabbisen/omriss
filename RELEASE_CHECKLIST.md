@@ -54,7 +54,7 @@ Record pass/fail and the OS version tested.
 ### Smoke Workflow
 
 1. **Launch** — app opens without error
-2. **Open** — open `tests/fixtures/academic-paper.md` via Ctrl+O
+2. **Open** — open `crates/core/tests/fixtures/academic-paper.md` via Ctrl+O
 3. **Overview** — top-level sections appear as heading cards
 4. **Zoom in** — press Enter on the first heading card
 5. **Edit body** — type a word, confirm textarea is responsive
