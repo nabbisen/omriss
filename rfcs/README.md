@@ -85,11 +85,17 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 059 | [Keyboard Focus Follow-Up Controls](./proposed/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
 | 060 | [Accessibility and Screen-Reader Validation Plan](./proposed/060-accessibility-screen-reader-validation-plan.md) | M15 |
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
+| 064 | [Preview HTML Sanitization and WebView Trust Boundary](./proposed/064-preview-html-sanitization-and-webview-trust-boundary.md) | M12 hardening |
+| 065 | [Structural Operation Boundary Integrity](./proposed/065-structural-operation-boundary-integrity.md) | M12 hardening |
+| 066 | [Property-Based and Fuzz Testing](./proposed/066-property-based-and-fuzz-testing.md) | M12 hardening |
+| 067 | [Structure Projection Caching and Commit Cost](./proposed/067-structure-projection-caching.md) | M12 hardening |
+| 068 | [Durable File Writes and Path Integrity](./proposed/068-durable-file-writes-and-path-integrity.md) | M13 |
+| 069 | [Draft Lifecycle and Session Guards](./proposed/069-draft-lifecycle-and-session-guards.md) | M13 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **064**.
+Next free RFC number: **070**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.

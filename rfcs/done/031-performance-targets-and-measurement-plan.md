@@ -8,9 +8,24 @@ Language: English
 
 **Project:** omriss — Omriss Editor  
 **Milestone:** M7 — Performance and Large Document Readiness  
-**Status.** Implemented (v0.10.0)  
+**Status.** Implemented (v0.10.0), with its central deliverable never produced — see below  
 **Document type:** Detailed RFC design  
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer  
+
+
+> **Unmet criterion, recorded 2026-09-01.** §4 says "exact millisecond
+> thresholds should be calibrated after M0/M1 measurements" and §7's acceptance
+> criterion is "regression thresholds documented before enforcement." No
+> thresholds were ever calibrated, documented, or enforced. Benchmarks exist but
+> do not run in CI.
+>
+> The first performance numbers on record for this project were produced by the
+> 0.17.0 full-project audit, not by this RFC's plan. RFC-067 carries the
+> measurements; thresholds should be set from them and this header updated when
+> they are.
+>
+> Recorded in the pattern RFC-016's header established: keep the status honest
+> rather than the folder tidy.
 
 ---
 
