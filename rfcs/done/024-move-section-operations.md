@@ -8,9 +8,29 @@ Language: English
 
 **Project:** omriss — Omriss Editor  
 **Milestone:** M5 — Structural Editing  
-**Status.** Implemented (v0.9.0)  
+**Status.** Implemented (v0.9.0); two `MoveTarget` variants withdrawn in 0.17.0 — see below  
 **Document type:** Detailed RFC design  
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer  
+
+
+> **Variants withdrawn, decided 2026-09-01.** `MoveTarget::AsFirstChildOf` and
+> `MoveTarget::AsLastChildOf` were published but never worked as named.
+> `AsLastChildOf(t)` resolves to the same offset as `After(t)` and produces
+> byte-identical output; `AsFirstChildOf(t)` inserts at `heading_range.end`,
+> splitting the target's own body and handing the first half to the moved
+> section. Neither adjusts heading levels, so neither creates a child.
+>
+> The GUI uses only `Before` and `After`, so the defect was confined to the
+> published `omriss-core` API. Found by the 0.17.0 full-project audit.
+>
+> Owner decision: **remove them** rather than implement them now. Shipping a
+> named operation that silently does something else is worse than shipping
+> fewer operations, and 0.17.0 is already a breaking release for library
+> consumers (RFC-062 renamed the crate), so this is the cheapest moment to
+> withdraw them. Re-proposing real child-placement semantics — which must also
+> adjust heading levels — belongs with RFC-058's placement work.
+>
+> Implementation is tracked in the RFC-065 handoff.
 
 ---
 
