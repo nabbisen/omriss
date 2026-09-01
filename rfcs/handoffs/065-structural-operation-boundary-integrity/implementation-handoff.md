@@ -39,9 +39,19 @@ happened — the same reasoning was needed in five places and written in none.
 | **B5** | Join preserves heading source — closes AUDIT-004 | medium |
 | **B6** | Inserted headings derive the newline from the target — closes AUDIT-013 | low |
 | **B7** | Withdraw `MoveTarget::AsFirstChildOf` / `AsLastChildOf` | low, but **breaking** |
+| **B8** | `delete_section`'s removal seam — closes RFC-065 §2.6 | **high** — primary operation |
 
-B2 and B3 are the ship gate. B4–B6 are Major/Minor and should land in the same
-sequence while the code is open, but may be split out if B2/B3 review runs long.
+B2, B3 and **B8** are the ship gate. B4–B6 are Major/Minor and should land in
+the same sequence while the code is open, but may be split out if review runs
+long.
+
+**B8 was not in this handoff's first version.** RFC-066's P2 property found it:
+`delete_section` welds its neighbours together, losing two titles and inventing
+a corrupted one. It is the same root cause through a sixth call site, and it is
+a primary operation — every Document Map delete reaches it. Note the shape of
+the miss: the original five sites are all *insertions*, and `joining_separator`
+was scoped to insertion. A deletion creates a boundary too. **The helper must
+take the two sides, not the inserted text.**
 
 ## 4. B7 — the API withdrawal
 
@@ -90,8 +100,9 @@ Per RFC-065 §5, plus:
 
 ## 7. Required review-request content
 
-1. **RFC-066's P1 and P2 now pass**, with the run pasted. This is the primary
-   evidence; the per-defect tests are secondary.
+1. **RFC-066's P2 and P3 now pass with `#[ignore]` removed**, run pasted. This
+   is the primary evidence; the per-defect tests are secondary. P1 passes
+   throughout and is not evidence of anything this RFC fixes — see RFC-066 §3.1.
 2. For B2 and B3: before/after source bytes for each fixed case, quoted.
 3. Confirmation that `structural_ops*` and the 239 baseline are untouched —
    `git diff --stat` on the test tree.
@@ -108,4 +119,7 @@ Stop and report if:
 - `joining_separator` cannot serve all five call sites — that would mean §3's
   root-cause analysis is wrong and needs revisiting, not working around;
 - a fix requires reserializing the document;
-- RFC-066's properties still fail after the intended scope is complete.
+- RFC-066's properties still fail after the intended scope is complete;
+- a *seventh* splice site appears. Two were missed already; a third would mean
+  the call sites should be found by construction — a grep for
+  `apply_replacement` callers — rather than by enumeration.

@@ -92,6 +92,28 @@ correctly, and the `crlf.md` fixture proves it. `NewlinePolicy` and
 `had_trailing_newline` exist on the UI-layer `FileTextProfile` and have no
 reader anywhere — see §6.
 
+### 2.6 Deleting a section welds its neighbours together (Major)
+
+Found by RFC-066's P2 property, not by the audit. `delete_section` removes the
+node's `full_range` with `apply_replacement(range, "")` and no separator logic,
+so the bytes that were on either side become adjacent.
+
+```text
+before "a\n===\n0\n## A\nA\n==="   titles ["a", "A", "A"]
+delete the ATX "## A"
+after  "a\n===\n0\nA\n==="          titles ["a", "0 A"]
+```
+
+The deleted heading was the only thing separating the first section's body
+(`"0"`) from the following setext heading's text (`"A"`). Once removed, those
+become one two-line paragraph, and the `===` underneath turns the whole thing
+into a single setext heading titled `"0 A"`. **Two titles lost, one corrupted
+title invented.**
+
+This is the same root cause as §2.1–2.4 through a sixth call site, and it is a
+primary operation — every "delete section" action in the Document Map reaches
+it. Reproduced independently by the architect before acceptance.
+
 ## 3. Root cause
 
 Every one of these is the same mistake: **an operation that knows its ranges but
@@ -117,8 +139,15 @@ pub(crate) fn joining_separator(left: &str, right: &str, newline: &str) -> &'sta
 ```
 
 Every splice site routes through it: `replace_section_body`'s left edge,
-`move_section`'s three seams, `level.rs`'s promote-relocation branch, and
-`split_section`'s inserted heading.
+`move_section`'s three seams, `level.rs`'s promote-relocation branch,
+`split_section`'s inserted heading, and — the site this RFC originally missed —
+`delete_section`'s **removal seam**, where the question is not what is being
+inserted but what becomes adjacent once a range is gone.
+
+That omission is instructive: the first four sites are all insertions, and the
+helper was scoped to insertion. A deletion creates a boundary just as an
+insertion does. `joining_separator` must take the two sides, not the inserted
+text.
 
 A helper rather than five local fixes, because five local fixes is how this
 happened: the same reasoning was needed in five places and written in none.
@@ -177,8 +206,9 @@ already exists, and §4.4 needs exactly this value.
 
 ## 7. Acceptance criteria
 
-1. All five defects in §2 fixed, each with a regression test.
-2. RFC-066's replace-then-undo property passes over the fixture catalog.
+1. All six defects in §2 fixed, each with a regression test.
+2. RFC-066's P2 and P3 pass, and no property carries `#[ignore]` any more —
+   removing that attribute is this RFC's primary acceptance evidence.
 3. `structural_ops*` golden suites pass unmodified.
 4. `source-preservation.md`'s claims about trailing newlines and line endings
    are true of the implementation — the doc is right; the code changes.

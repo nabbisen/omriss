@@ -58,11 +58,41 @@ P2  For any document source S and any structural operation O
     valid on node N: the outline node count after O differs from
     before by exactly the delta O defines, and every surviving
     node's title is unchanged unless O is rename or join.
+
+P3  For any document source S and any node N: after replacing N's
+    body with B, reading N's body back yields B, and no node's
+    title has changed.
 ```
 
-P1 catches AUDIT-0170-002. P2 catches -003 and -005 — both destroy a heading, so
-both change node count by an amount their operation does not define. -004 is
-caught by P2's title clause.
+P2 catches -003, -005 and the `delete_section` defect — all destroy or corrupt a
+heading, so all change node count or the title multiset by an amount their
+operation does not define. -004 is caught by P2's title clause.
+
+**P3 exists because P1 does not catch AUDIT-0170-002, contrary to what an
+earlier draft of this RFC claimed.** That claim was wrong, and the correction
+matters enough to state rather than quietly edit.
+
+P1 is a **reversibility** property. AUDIT-0170-002 is an **addressing** defect:
+the node's `body_range` is empty and sits *inside* the heading line, so a commit
+writes the user's prose into the heading. Undo then replays the exact bytes at
+the exact recorded range and restores the source perfectly. Verified directly:
+
+```text
+body_range before commit   ByteRange { start: 18, end: 18 }
+after commit               "# One\nbody\n\n# Lasttyped text"   title → "Lasttyped text"
+body read back             ""            (after writing "typed text")
+after undo                 "# One\nbody\n\n# Last"             byte-exact: true
+```
+
+Both facts are true at once, and P1 is right to pass. The invariant -002 breaks
+is that **`body_range` faithfully addresses the body** — write B, read back B.
+That is P3, and the read-back clause is the sharper half: the title corruption is
+a consequence of the mis-addressing, not the defect itself.
+
+P1 is kept as specified rather than redefined. Reversibility is a genuinely
+valuable property — it is the guard against the history-desync failure of
+AUDIT-0170-018 — and weakening a good property to cover for a wrong claim about
+it would lose both.
 
 ### 3.2 Generator
 
@@ -103,23 +133,29 @@ property testing — this RFC establishes one.
 
 ## 5. Validation and test plan
 
-- P1 and P2 pass over the generator at the default case count.
-- Both properties **fail** against the pre-RFC-065 code. A property that passes
-  before the fix is not testing what it claims, and this must be demonstrated in
-  the review request rather than asserted.
+- P1, P2 and P3 pass over the generator at the default case count once RFC-065
+  has landed.
+- **P2 and P3 fail** against the pre-RFC-065 code, demonstrated in the review
+  request rather than asserted. P1 passes throughout, for the reason in §3.1.
+- While RFC-065 is outstanding, the failing properties carry
+  `#[ignore = "fails until RFC-065"]` so `cargo test --workspace` stays green
+  and CI keeps its signal. RFC-065 removes the attribute, and that removal is
+  its primary acceptance evidence.
 - Every shrunk counterexample found during implementation is added to the
   fixture catalog by name.
 - The fuzz target builds and runs for a documented duration without a crash.
 
 ## 6. Acceptance criteria
 
-1. P1 and P2 implemented, passing after RFC-065, demonstrably failing before it.
-2. A generator whose bias is documented and reviewed.
-3. `cargo-fuzz` target over the JSON scanner, with a run recorded.
+1. P2 and P3 implemented, passing after RFC-065, demonstrably failing before it.
+2. P1 implemented and passing throughout — it guards a different invariant and
+   is not expected to fail (§3.1).
+3. A generator whose bias is documented and reviewed.
 4. `TESTING.md` gains a property-testing section stating when a property is
    required rather than optional.
 5. CI runs the properties; total suite time increase recorded in the review
    request.
+6. No property carries `#[ignore]` once RFC-065 has landed.
 
 ## 7. Note on RFC-031
 

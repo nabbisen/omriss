@@ -8,7 +8,9 @@
 
 ## Major and minor
 
+- [ ] Deleting a section does not weld its neighbours (RFC-065 §2.6)
 - [ ] Promote on a root-parented section stays in place
+- [ ] Promote whose relocation destination is a setext underline loses no nodes
 - [ ] Join preserves link URLs, code spans, emphasis
 - [ ] Join refuses unrecognised heading shapes with `UnsafePreservation`
 - [ ] "Add section" on a CRLF file inserts CRLF
@@ -16,8 +18,10 @@
 
 ## Properties (the real gate)
 
-- [ ] RFC-066 P1 passes
-- [ ] RFC-066 P2 passes
+- [ ] RFC-066 P2 passes with `#[ignore]` removed
+- [ ] RFC-066 P3 passes with `#[ignore]` removed
+- [ ] P1 still passes (guards a different invariant; never expected to fail)
+- [ ] No property anywhere still carries `#[ignore]`
 - [ ] Run output pasted in the review request
 - [ ] No counterexample remains unexplained
 
