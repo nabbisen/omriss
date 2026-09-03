@@ -138,7 +138,7 @@ Introduce one place that answers the edge question, in
 pub(crate) fn joining_separator(left: &str, right: &str, newline: &str) -> &'static str
 ```
 
-Every splice site routes through it: `replace_section_body`'s left edge,
+Every splice site routes through it: **both** of `replace_section_body`'s edges,
 `move_section`'s three seams, `level.rs`'s promote-relocation branch,
 `split_section`'s inserted heading, and — the site this RFC originally missed —
 `delete_section`'s **removal seam**, where the question is not what is being
@@ -148,6 +148,21 @@ That omission is instructive: the first four sites are all insertions, and the
 helper was scoped to insertion. A deletion creates a boundary just as an
 insertion does. `joining_separator` must take the two sides, not the inserted
 text.
+
+**"Left edge" was also wrong**, and for the same reason. An earlier draft named
+only `replace_section_body`'s left edge, because §2.1's defect welds the
+inserted body onto the heading *before* it. RFC-066's P3 found the mirror case
+on the right, verified directly:
+
+```text
+before  "intro\n\n# H\nbody\n"     replace the root's body with "intro2"
+after   "intro2# H\nbody\n"          the "# H" heading is destroyed
+```
+
+Editing a document's preamble welds it onto the following heading. Both edges of
+every insertion need the same question asked — which is what a
+`joining_separator(left, right, newline)` signature is for, but only if §4.1
+says so.
 
 A helper rather than five local fixes, because five local fixes is how this
 happened: the same reasoning was needed in five places and written in none.
