@@ -60,8 +60,8 @@ P2  For any document source S and any structural operation O
     node's title is unchanged unless O is rename or join.
 
 P3  For any document source S and any node N: after replacing N's
-    body with B, reading N's body back yields B, and no node's
-    title has changed.
+    body with B, reading N's body back yields B followed only by
+    line-break characters, and no node's title has changed.
 ```
 
 P2 catches -003, -005 and the `delete_section` defect — all destroy or corrupt a
@@ -93,6 +93,20 @@ P1 is kept as specified rather than redefined. Reversibility is a genuinely
 valuable property — it is the guard against the history-desync failure of
 AUDIT-0170-018 — and weakening a good property to cover for a wrong claim about
 it would lose both.
+
+**P3's trailing-line-break clause was added after RFC-065's implementation**, and
+is a real weakening that has to be justified rather than waved through. When a
+right-edge separator is genuinely required, core writes it inside the replaced
+range, and `body_range` is then recomputed as "everything up to the next
+heading" (RFC-006) — so the separator becomes part of the body and reads back
+with it. There is no third bucket for bytes belonging to neither section.
+
+Exact equality is therefore unsatisfiable in that sub-case, and the clause is
+the minimum relaxation that admits it. It does not blunt the property: the
+defect P3 exists to catch reads back `""` against a written `"typed text"`,
+which is not "B followed by line breaks" under any reading. What the clause
+permits is precisely the bytes core is now *required* to add, and nothing else —
+no reflow, no trimming, no reordering.
 
 ### 3.2 Generator
 
@@ -155,7 +169,11 @@ property testing — this RFC establishes one.
    required rather than optional.
 5. CI runs the properties; total suite time increase recorded in the review
    request.
-6. No property carries `#[ignore]` once RFC-065 has landed.
+6. No property carries `#[ignore]` once RFC-065 has landed, **except** one
+   whose reason string names a tracked follow-up RFC. An untracked `#[ignore]`
+   is a silently disabled test; a tracked one is a scheduled defect. The
+   `split_section` offset property is the only permitted case, tracked by
+   RFC-070.
 
 ## 7. Note on RFC-031
 

@@ -132,17 +132,49 @@ Introduce one place that answers the edge question, in
 `core/doc/structural/preflight.rs`:
 
 ```rust
-/// Returns the separator that must be inserted between `left` and `right`
-/// for the result to remain structurally well-formed, using the document's
-/// own newline sequence.
+/// Strict, setext-aware. For every seam where `right` is EXISTING document
+/// structure that a paragraph merge could corrupt.
 pub(crate) fn joining_separator(left: &str, right: &str, newline: &str) -> &'static str
+
+/// A single line break always suffices. For `replace_section_body`'s LEFT
+/// edge only, where `right` is the caller's fresh body and there is nothing
+/// pre-existing on its far side to protect.
+pub(crate) fn heading_line_terminator(left: &str, right: &str, newline: &str) -> &'static str
 ```
 
-Every splice site routes through it: **both** of `replace_section_body`'s edges,
+**Two functions, not one — corrected during implementation.** The original
+single-function model was wrong twice, and both corrections were found by tests
+rather than by reading:
+
+1. **Count line breaks, don't match the newline sequence.** An exact match
+   against the document's own `newline` inserts a redundant separator when the
+   incoming text ends in a bare `\n` inside a CRLF document. Caught by the
+   protected `crlf.md` case.
+2. **One break is not always enough.** CommonMark merges consecutive non-blank
+   lines into one paragraph, and a setext underline captures the *entire* merged
+   paragraph as its title — not just its own line. So a single break is safe only
+   when `right` begins with something that unconditionally starts a fresh block
+   (an ATX `#`); anything else needs a genuine blank line. This is §2.6's
+   mechanism generalized: it is inherent to any splice whose right side is
+   existing paragraph-shaped content.
+
+The asymmetry that forces the second function: the setext-merge risk exists only
+when `right` is **existing structure**. On `replace_section_body`'s left edge,
+`right` is the caller's brand-new body — whatever shape it forms is simply what
+was written, and there is nothing behind it to corrupt. Applying the strict rule
+there inserts a spurious blank line, which the protected `nested_atx.md` case
+caught.
+
+Splice sites route through `joining_separator`: `replace_section_body`'s
+**right** edge,
 `move_section`'s three seams, `level.rs`'s promote-relocation branch,
 `split_section`'s inserted heading, and — the site this RFC originally missed —
 `delete_section`'s **removal seam**, where the question is not what is being
 inserted but what becomes adjacent once a range is gone.
+`replace_section_body`'s **left** edge uses `heading_line_terminator`.
+`split_section` needs neither: its inserted heading already carries an
+unconditional leading newline and trailing blank line, so both of its own seams
+are safe by construction.
 
 That omission is instructive: the first four sites are all insertions, and the
 helper was scoped to insertion. A deletion creates a boundary just as an
