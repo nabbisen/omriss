@@ -2,7 +2,17 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M12 hardening — 0.17.0 ship gate
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — P1, P2 and P3 land with a
+documented, continuously-checked generator. One tracked `#[ignore]` remains, on
+the `split_section` property, naming **RFC-070**; per criterion 6 a tracked
+ignore is a scheduled defect, not a disabled test. The `cargo-fuzz` target is
+deferred to 0.18.0 (§3.3): the JSON scanner module is private, and reaching it
+needs a visibility change this work correctly refused to make.
+
+In its first outing the suite found four things no one had found by reading:
+`delete_section` as a sixth splice site, the right-edge/preamble case, a promote
+counterexample destroying two nodes where the hand-written example destroyed
+one, and two errors in this RFC's own property definitions.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-040

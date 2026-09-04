@@ -2,7 +2,12 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M12 hardening — 0.17.0 ship gate
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — delivered as slices B1–B8 across
+three review rounds. All seven defects in §2 are fixed and regression-tested.
+Two deliberate exclusions, each tracked: `split_section`'s unvalidated offset
+and title are **RFC-070**; the user-facing warning when a body edit legitimately
+changes the outline is **RFC-071**. §4.1's helper is two functions, not one —
+the asymmetry is recorded there.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-004, RFC-023, RFC-024, RFC-025, RFC-026
