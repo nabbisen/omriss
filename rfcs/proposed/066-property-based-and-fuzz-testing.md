@@ -59,9 +59,14 @@ P2  For any document source S and any structural operation O
     before by exactly the delta O defines, and every surviving
     node's title is unchanged unless O is rename or join.
 
-P3  For any document source S and any node N: after replacing N's
-    body with B, reading N's body back yields B followed only by
-    line-break characters, and no node's title has changed.
+P3  For any document source S, any node N, and any INERT body B:
+    after replacing N's body with B, reading N's body back yields B
+    followed only by line-break characters, and no node's title has
+    changed.
+
+    Inert means B opens no block construct: no line of B begins with
+    a heading marker, an HTML-block opener, a setext underline, a
+    fence, a list marker, or a blockquote marker.
 ```
 
 P2 catches -003, -005 and the `delete_section` defect — all destroy or corrupt a
@@ -107,6 +112,31 @@ defect P3 exists to catch reads back `""` against a written `"typed text"`,
 which is not "B followed by line breaks" under any reading. What the clause
 permits is precisely the bytes core is now *required* to add, and nothing else —
 no reflow, no trimming, no reordering.
+
+**The inert-body restriction was added after RFC-065's follow-up**, and is also
+a correction to this RFC rather than to the code. P3's title clause assumed a
+body edit cannot change the outline. It can, legitimately, in **both
+directions**, because a body is Markdown:
+
+```text
+write "# Injected"  →  outline GAINS a node
+write "<!--"        →  the following heading stops being a heading
+```
+
+Neither is corruption. Verified: after writing `"<!--"`, the bytes `# Two` are
+still literally present and undo is byte-exact — CommonMark simply no longer
+*interprets* them as a heading, because the user opened an unclosed HTML block.
+That is what the user's own text means.
+
+Restricting B to inert content is what makes the title clause a statement about
+**omriss's splice** rather than about Markdown's semantics. The distinction this
+property must draw is: did *omriss* destroy structure the user did not touch
+(AUDIT-0170-002 — yes), or did the *user's own text* change what their document
+means (an unclosed comment — yes, and correctly)? Only the first is a defect,
+and only inert bodies isolate it.
+
+The surprise a user gets from the second case is real and is tracked by
+RFC-071 — as a warning, which is what RFC-004 always said it should be.
 
 ### 3.2 Generator
 
