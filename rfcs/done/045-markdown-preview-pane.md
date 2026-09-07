@@ -2,9 +2,23 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** Post-MVP Expansion
-**Status.** Implemented (v0.12.0)
+**Status.** Implemented (v0.12.0) — one presentation defect recorded below
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
+
+
+> **Defect recorded 2026-09-08, not yet fixed.** `Tag::Image`'s handler reads
+> the `alt` attribute from the link *title* (`![alt](url "title")`'s optional
+> third component), not from the image's own accumulated inline text. For an
+> ordinary `![alt](url)` the title is empty, so alt text has never rendered —
+> the output is `<img alt="">` with the alt text leaking out as a sibling text
+> node instead.
+>
+> Found while writing RFC-064's sanitization tests; pre-existing, unrelated to
+> that work, and with no security implication. No test caught it because none
+> previously exercised an image with alt text. Presentation only, so it is not
+> release-blocking, but it does affect screen-reader users and belongs with
+> RFC-060's accessibility validation if not fixed sooner.
 
 ---
 

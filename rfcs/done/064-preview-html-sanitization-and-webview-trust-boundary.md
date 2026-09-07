@@ -2,7 +2,12 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M12 hardening — 0.17.0 ship gate
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — H1 (escaping), H2 (scheme
+checking) and H4 (documentation) landed and close the finding. **H3 (the CSP) is
+deliberately not wired**, deferred to 0.18.0 for cross-platform verification —
+§4.3 records why the originally-specified policy was wrong and §9 why the
+corrected one waits. `crates/app/src/shell/csp.rs` holds it, tested and
+dead-coded, in the meantime.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, security reviewer, QA engineer
 **Depends on:** RFC-045
@@ -95,13 +100,47 @@ is excluded deliberately — `data:text/html` is a script vector.
 
 ### 4.3 Content-Security-Policy on the WebView
 
+**The policy below is corrected. The original was wrong and would have shipped a
+blank window.** It read:
+
 ```text
 default-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'
 ```
 
-`connect-src 'none'` is the load-bearing clause: omriss makes no network
-requests by design, so this costs nothing and turns exfiltration into a console
-error even if layers 1 and 2 are one day bypassed.
+justified as costing nothing "since the app makes no network requests by
+design". That claim is true of *omriss* and false of the framework it runs on,
+which is what matters to a CSP. Verified in `dioxus-desktop` 0.7.9's own source:
+
+- **`connect-src 'none'` blocks every UI update.** `edits.rs` streams all
+  mutations to the page over a loopback websocket —
+  `TcpListener::bind((IpAddr::from([127, 0, 0, 1]), 0))`, an ephemeral port that
+  can change mid-session. Blocked, the page loads and then never receives a
+  single edit. The crate's own doc comment says it plainly: *"Using websockets
+  does mean we need to handle security and content security policies
+  ourselves."*
+- **`script-src 'self'` blocks the interop bridge.** `protocol.rs`'s
+  `module_loader` injects an inline `<script type="module">` whose content
+  varies per launch (it embeds the edits path and connection key), which rules
+  out a hash allowlist. `dioxus-desktop` 0.7 exposes no nonce for it.
+
+Reproduced empirically as well as traced: the literal policy renders a blank
+window; loosening `script-src`/`style-src` alone still renders blank, isolating
+`connect-src` as sufficient on its own to break the app.
+
+The corrected policy:
+
+```text
+default-src 'self'; script-src 'self' 'unsafe-inline';
+img-src 'self' data:; connect-src ws://127.0.0.1:*
+```
+
+`connect-src` remains the load-bearing clause. Narrowed to the loopback
+websocket scheme and host, it still turns an injected `fetch('https://…')` into
+a console error — which is the exfiltration path that matters — while permitting
+the framework's own channel. `'unsafe-inline'` on `script-src` is a real loss of
+the backstop against event-handler attributes, and is accepted because §4.1's
+escaping, not the CSP, is the actual fix; the CSP is defence in depth on top of
+it.
 
 ## 5. Validation and test plan
 
@@ -119,7 +158,8 @@ error even if layers 1 and 2 are one day bypassed.
 
 1. No authored HTML from document source reaches the WebView unescaped.
 2. No `javascript:` or `data:` destination survives into rendered output.
-3. A CSP is set on the window, and its absence fails a test.
+3. A CSP is set on the window, and its absence fails a test. **Deferred to
+   0.18.0** — see §9.
 4. Source text is byte-identical across preview rendering.
 5. `SECURITY.md` exists before this RFC is discussed anywhere public.
 
@@ -135,3 +175,20 @@ tags (`table`, `details`, `summary`, `sup`, `sub`, `br`) with all attributes
 stripped — strictly more work and strictly more risk. **The recommendation is
 escaping.** Ship it, note it in `known-limitations.md`, and revisit only with a
 concrete user need.
+
+## 9. H3 deferred to 0.18.0
+
+The corrected §4.3 policy has been verified on **Linux only**. WebKitGTK,
+WKWebView, and WebView2 differ in how they honour a `<meta>` CSP, and the
+failure mode when one of them disagrees is a blank window — not a degraded
+style, the whole application.
+
+0.17.0 ships to the Microsoft Store, and its Windows smoke run has not yet been
+performed. Wiring an unverifiable CSP into that release trades a catastrophic,
+platform-specific regression risk against defence in depth that §4 already says
+is not the fix: **H1 alone closes this finding**, and H1 and H2 are verified.
+
+So `crates/app/src/shell/csp.rs` holds the corrected policy, documented and
+unit-tested, marked `#[allow(dead_code)]`, and `main.rs` does not apply it. It
+gets wired in 0.18.0, when it can be exercised on all three platforms in the
+same smoke run that would catch it breaking.

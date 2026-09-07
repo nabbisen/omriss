@@ -51,10 +51,10 @@ example-based, which is what RFC-066 addresses.
 
 | RFC | Scope | Why it gates |
 |---|---|---|
-| [RFC-064](rfcs/proposed/064-preview-html-sanitization-and-webview-trust-boundary.md) | preview sanitization, link schemes, CSP | the only defect whose blast radius leaves the open document |
-| [RFC-065](rfcs/proposed/065-structural-operation-boundary-integrity.md) | five splice-boundary defects | two are release-blocking by the checklist |
-| [RFC-066](rfcs/proposed/066-property-based-and-fuzz-testing.md) | two round-trip properties, JSON fuzz target | how we know RFC-065 is complete, not just aimed at five shapes |
-| [RFC-067](rfcs/proposed/067-structure-projection-caching.md) §3.1–3.2 | revision-keyed structure cache | JSON costs ~25 ms/keystroke at 400 KB; it is the release's headline feature |
+| [RFC-064](rfcs/done/064-preview-html-sanitization-and-webview-trust-boundary.md) | preview sanitization, link schemes | **done** — CSP deferred to 0.18.0 for cross-platform verification |
+| [RFC-065](rfcs/done/065-structural-operation-boundary-integrity.md) | seven splice-boundary defects | **done** — two were release-blocking by the checklist |
+| [RFC-066](rfcs/done/066-property-based-and-fuzz-testing.md) | three properties, documented generator | **done** — found four defects nobody found by reading |
+| [RFC-067](rfcs/proposed/067-structure-projection-caching.md) §3.1–3.2 | revision-keyed structure cache | **remaining** — JSON costs ~25 ms/keystroke at 400 KB; it is the release's headline feature |
 
 `SECURITY.md` is in place, which RFC-064 required before its finding could be
 discussed publicly.
@@ -68,7 +68,9 @@ not that it behaves.
 - **M12 remainder:** RFC-055 (TOML) and RFC-056 (the YAML feasibility spike).
   RFC-067 §3.1's cache should land before a second structured format, not after.
 - **M13:** RFC-068 (durable writes and path integrity), RFC-069 (draft lifecycle
-  and session guards), RFC-057 (multi-document workspace and tabs).
+  and session guards), RFC-070 (`split_section` input validation), RFC-071
+  (structure-change warning), RFC-057 (multi-document workspace and tabs), and
+  wiring RFC-064's CSP once it can be verified on all three platforms.
 - **M14:** RFC-058, placement-complete Document Map creation controls.
 - **M15:** RFC-060 and RFC-061, accessibility/screen-reader and
   non-technical-user validation.
