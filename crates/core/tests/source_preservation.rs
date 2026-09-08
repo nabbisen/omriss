@@ -45,6 +45,18 @@ fn node_ids(doc: &Document) -> Vec<NodeId> {
     doc.outline().iter().map(|node| node.id).collect()
 }
 
+/// Every non-root title, as a multiset (order-independent, duplicate
+/// titles counted). A body-only edit must never change this — if it does,
+/// some heading was corrupted or destroyed by the edit, even if the
+/// edited range's own bytes look correct in isolation.
+fn title_multiset(doc: &Document) -> std::collections::HashMap<String, usize> {
+    let mut counts = std::collections::HashMap::new();
+    for node in doc.outline().iter().filter(|n| !n.is_root()) {
+        *counts.entry(node.title.clone()).or_insert(0) += 1;
+    }
+    counts
+}
+
 #[test]
 fn every_fixture_indexes_with_valid_invariants() {
     for (name, source) in FIXTURES {
@@ -61,6 +73,7 @@ fn every_fixture_indexes_with_valid_invariants() {
 fn replacing_any_body_preserves_all_unrelated_bytes() {
     for (name, source) in FIXTURES {
         let pristine = Document::parse((*source).to_string()).unwrap();
+        let before_titles = title_multiset(&pristine);
         for id in node_ids(&pristine) {
             let mut doc = Document::parse((*source).to_string()).unwrap();
             let before = doc.source().to_string();
@@ -87,11 +100,39 @@ fn replacing_any_body_preserves_all_unrelated_bytes() {
                 &before[replaced.end..],
                 "{name}: suffix changed when editing {id:?}"
             );
-            // The replaced span now holds exactly the marker.
+            // The replaced span holds the marker verbatim, optionally
+            // padded on either side by *only* line-break characters — the
+            // minimum separator RFC-004's 2026-09-01 amendment (RFC-065)
+            // authorises core to insert at a body boundary so the marker
+            // can never weld onto an adjacent heading. Anything else in
+            // this span would mean the marker was not stored verbatim.
+            let region = &after[result.new_range.as_range()];
+            let marker_at = region.find(MARKER).unwrap_or_else(|| {
+                panic!("{name}: marker not found verbatim in {id:?}'s replaced region: {region:?}")
+            });
+            let (prefix, rest) = region.split_at(marker_at);
+            let suffix = &rest[MARKER.len()..];
+            assert!(
+                prefix.chars().all(|c| c == '\n' || c == '\r'),
+                "{name}: bytes before the marker must be only line breaks for {id:?}: {region:?}"
+            );
+            assert!(
+                suffix.chars().all(|c| c == '\n' || c == '\r'),
+                "{name}: bytes after the marker must be only line breaks for {id:?}: {region:?}"
+            );
+
+            // The title multiset must be unchanged: a body-only edit must
+            // never corrupt, merge, or destroy any heading, including ones
+            // far from the edited range. This is the check the pre-RFC-065
+            // version of this test lacked — it verified only byte
+            // positions, which stayed internally consistent even while
+            // `setext.md`'s following heading was silently flattened into
+            // the marker's own paragraph. See RFC-004 §Whitespace Policy's
+            // amendment and RFC-065 §2.1/§2.6 for the full history.
             assert_eq!(
-                &after[result.new_range.as_range()],
-                MARKER,
-                "{name}: marker not stored verbatim for {id:?}"
+                title_multiset(&doc),
+                before_titles,
+                "{name}: title multiset changed when editing {id:?} — a heading was corrupted or destroyed by this body-only edit"
             );
         }
     }

@@ -191,6 +191,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
   makes `cargo run -p omriss` run the app. Library users should migrate Rust
   imports from `omriss::...` to `omriss_core::...`. The app package is marked
   `publish = false`; `omriss-core` is the publishable library package.
+- **Breaking (library consumers): `MoveTarget::AsFirstChildOf` and
+  `MoveTarget::AsLastChildOf` removed (RFC-065 §4/B7).** Neither ever
+  adjusted heading levels, so neither ever actually created a child —
+  `AsLastChildOf` duplicated `After`, and `AsFirstChildOf` split the
+  target's own body instead of nesting under it. `MoveTarget` now has
+  only `Before`/`After`. The desktop app never used either variant.
+  Real child-placement semantics are re-proposed by RFC-058.
 
 ## [0.16.0] - 2026-07-15
 

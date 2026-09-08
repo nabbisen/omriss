@@ -8,7 +8,7 @@ use crate::range::ByteRange;
 use crate::{Document, Outline};
 
 use super::error::StructuralEditError;
-use super::preflight::{check_revision, is_descendant};
+use super::preflight::{check_revision, document_newline, is_descendant, joining_separator};
 
 /// Builds a new ATX marker string for `current_level ± delta`.
 /// Returns `None` if the result would be outside H1..H6.
@@ -64,17 +64,45 @@ fn change_heading_level(
         shifted_subtree.replace_range(local_start..local_start + old_marker_len, new_marker);
     }
 
-    let new_source = if delta < 0 && has_following_sibling(outline, id)? {
+    // RFC-065 §4.3: only relocate when the node has a *real* (non-root)
+    // parent. A root-parented section promoted with a following sibling
+    // used to relocate to `parent.full_range.end`, which for the root is
+    // the end of the whole file — teleporting a top-level section to the
+    // end of the document (RFC-065 §2.3) instead of leaving it in place.
+    let relocate = delta < 0
+        && has_following_sibling(outline, id)?
+        && node.parent_id.is_some_and(|p| p != outline.root_id());
+    let new_source = if relocate {
         let parent_id = node.parent_id.ok_or(StructuralEditError::InvalidLevel)?;
         let parent = outline
             .node(parent_id)
             .ok_or(StructuralEditError::StaleNode(parent_id))?;
         let range = node.full_range;
-        let mut s = String::with_capacity(source.len() - range.len() + shifted_subtree.len());
-        s.push_str(&source[..range.start]);
-        s.push_str(&source[range.end..parent.full_range.end]);
+        let newline = document_newline(source);
+        // Three seams (RFC-065 §4.1): the relocated subtree used to sit
+        // where its following siblings now become directly adjacent to
+        // what preceded it, and it is now spliced in at the parent's end,
+        // next to whatever follows the parent there.
+        let a = &source[..range.start];
+        let b = &source[range.end..parent.full_range.end];
+        let d = &source[parent.full_range.end..];
+        let sep_ab = joining_separator(a, b, newline);
+        let sep_bc = joining_separator(b, &shifted_subtree, newline);
+        let sep_cd = joining_separator(&shifted_subtree, d, newline);
+        let mut s = String::with_capacity(
+            source.len() - range.len()
+                + shifted_subtree.len()
+                + sep_ab.len()
+                + sep_bc.len()
+                + sep_cd.len(),
+        );
+        s.push_str(a);
+        s.push_str(sep_ab);
+        s.push_str(b);
+        s.push_str(sep_bc);
         s.push_str(&shifted_subtree);
-        s.push_str(&source[parent.full_range.end..]);
+        s.push_str(sep_cd);
+        s.push_str(d);
         s
     } else {
         let range = node.full_range;

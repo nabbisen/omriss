@@ -54,13 +54,19 @@ fn heading_line_and_children_are_preserved() {
 
 #[test]
 fn replacement_is_stored_verbatim_without_normalization() {
-    // No trailing newline added, no blank-line normalization (RFC-004
-    // whitespace policy). The body may visually collapse into the next
-    // heading; core must not silently rewrite.
+    // No blank-line normalization, no reflow, no trimming (RFC-004
+    // whitespace policy). But per RFC-004's 2026-09-01 amendment (RFC-065),
+    // core does insert the *minimum* separator needed to keep block
+    // structure intact at a body boundary — a replacement is never allowed
+    // to weld onto the next heading and turn it into plain text. Here the
+    // replacement has no trailing newline of its own, and "# B" follows
+    // immediately with none between them, so exactly one line break is
+    // inserted (not two: "# B" is ATX-shaped, which CommonMark always
+    // recognizes as a fresh block after a single break).
     let mut document = doc("# A\nold body\n\n# B\n");
     let a = document.outline().root().children[0];
     replace(&mut document, a, "no trailing newline").unwrap();
-    assert_eq!(document.source(), "# A\nno trailing newline# B\n");
+    assert_eq!(document.source(), "# A\nno trailing newline\n# B\n");
 }
 
 #[test]

@@ -21,4 +21,5 @@ pub use move_ops::MoveTarget;
 pub(crate) use delete_split_merge::{delete_section, merge_with_prev_sibling, split_section};
 pub(crate) use level::{demote_section, promote_section};
 pub(crate) use move_ops::move_section;
+pub(crate) use preflight::{document_newline, heading_line_terminator, joining_separator};
 pub(crate) use rename::rename_section;

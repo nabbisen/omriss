@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4a0f05e103a6ff11fc10c2b5d5dc887012fa5c396946feaeed0a8593aaab4def # shrinks to source = "###### A\r\n### a\r\na\r\n===\r\nA\r\n===\r\n0aa AaA AA aaA\r\n`code span`\r\n---\r\n\r\n##### *emphasis*\r\n6E7ZG7U1\r\n\r\n##### **bold**\r\n  IS87 tR6BGQBV", node_pick = 18346031343190634316, raw_offset = 2280106396241023174, new_title = "cWk8q7qCxShR T", raw_level = 4

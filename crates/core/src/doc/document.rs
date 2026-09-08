@@ -165,7 +165,17 @@ impl Document {
 
     /// Replaces one section body (RFC-004 semantics): the heading line, child
     /// sections, siblings, ancestors, and every unrelated byte are preserved.
-    /// The replacement is stored verbatim — no whitespace normalization.
+    /// The replacement is stored verbatim — no whitespace normalization,
+    /// except for one structural insertion each edge may require (RFC-065
+    /// §2.1, §4.1): if the byte immediately before the body doesn't already
+    /// end the heading line (the section is the last line of the document,
+    /// with no trailing newline of its own), or the byte immediately after
+    /// the body doesn't already start a fresh line (a following heading
+    /// would otherwise be welded onto the new body's last line), the
+    /// document's own newline sequence is inserted at that edge — never
+    /// more than one separator per edge, and never when there is nothing on
+    /// the other side to protect (an empty body, or the section being the
+    /// document's last).
     pub fn replace_section_body(
         &mut self,
         cmd: ReplaceSectionBody,
@@ -182,12 +192,28 @@ impl Document {
             .ok_or(EditError::StaleNode(cmd.node_id))?;
         let range = node.body_range;
         let old_text = self.text.slice(range)?.to_string();
-        let result = self.apply_replacement(range, &cmd.new_body)?;
+
+        let source = self.text.as_str();
+        let newline = crate::doc::structural::document_newline(source);
+        let left = &source[..range.start];
+        let right = &source[range.end..];
+        // Left edge: `right` here is the caller's brand-new body, so a
+        // single break always suffices (`heading_line_terminator`). Right
+        // edge: `right` here is whatever *existing* content followed the
+        // old body (commonly a following heading), which needs the fuller
+        // setext-aware check (`joining_separator`) — see both functions'
+        // doc comments in `preflight.rs`.
+        let sep_left =
+            crate::doc::structural::heading_line_terminator(left, &cmd.new_body, newline);
+        let sep_right = crate::doc::structural::joining_separator(&cmd.new_body, right, newline);
+        let full_replacement = format!("{sep_left}{}{sep_right}", cmd.new_body);
+
+        let result = self.apply_replacement(range, &full_replacement)?;
         self.history.record(EditRecord {
             replaced_range: result.replaced_range,
             old_text,
             new_range: result.new_range,
-            new_text: cmd.new_body,
+            new_text: full_replacement,
             revision_before: result.old_revision,
             revision_after: result.new_revision,
         });

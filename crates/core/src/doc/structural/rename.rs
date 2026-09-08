@@ -8,7 +8,7 @@ use crate::index::outline::NodeId;
 use crate::range::ByteRange;
 
 use super::error::StructuralEditError;
-use super::preflight::check_revision;
+use super::preflight::{atx_title_range, check_revision};
 
 pub(crate) fn rename_section(
     doc: &mut Document,
@@ -55,38 +55,4 @@ pub(crate) fn rename_section(
         revision_after: result.new_revision,
     });
     Ok(result)
-}
-
-fn atx_title_range(line_start: usize, line: &str) -> Option<ByteRange> {
-    let bytes = line.as_bytes();
-    let marker_len = bytes.iter().take_while(|&&b| b == b'#').count();
-    if marker_len == 0 || marker_len > 6 {
-        return None;
-    }
-
-    let mut title_start = marker_len;
-    while matches!(bytes.get(title_start), Some(b' ' | b'\t')) {
-        title_start += 1;
-    }
-
-    let mut title_end = line.len();
-    while title_end > title_start && matches!(bytes[title_end - 1], b' ' | b'\t') {
-        title_end -= 1;
-    }
-
-    let mut hash_start = title_end;
-    while hash_start > title_start && bytes[hash_start - 1] == b'#' {
-        hash_start -= 1;
-    }
-    if hash_start < title_end && hash_start > title_start {
-        let mut before_hash = hash_start;
-        while before_hash > title_start && matches!(bytes[before_hash - 1], b' ' | b'\t') {
-            before_hash -= 1;
-        }
-        if before_hash < hash_start {
-            title_end = before_hash;
-        }
-    }
-
-    ByteRange::new(line_start + title_start, line_start + title_end).ok()
 }
