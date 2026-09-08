@@ -68,7 +68,30 @@ The probability is negligible; the design is still wrong for a product whose
 promise is not losing work, and the document is already in memory, so the exact
 comparison is available for free.
 
-### 2.4 Status is simultaneously a display string and a command bus
+### 2.4 Search-navigate bypasses the format-aware commit path
+
+`shell/app.rs:340-356`'s `on_navigate` does **not** call
+`draft_sync::commit_or_block`. It calls `current_snapshot()` and
+`commit_focused_body()` directly — the Markdown section-body path, with no
+format check anywhere in it.
+
+On a JSON document this is harmless **today, by accident**. `current_snapshot()`
+resolves the focused id against the *Markdown* outline, and a JSON node's
+`NodeId` does not exist there, so it returns `None` and the commit is skipped.
+Verified: opening a JSON file, focusing a value through the Document Map, and
+calling `current_snapshot()` returns `None` in both states.
+
+Nothing in `on_navigate` expresses that intent. It works because two unrelated
+representations happen not to collide. If a JSON id ever resolves in the outline
+— which RFC-067 §3.2's deferred work touches directly, and which a degenerate
+outline would cause outright — this becomes a path that replaces the entire JSON
+document with a single value's draft text.
+
+The fix is the same as §2.1's: route it through `commit_or_block`, which is
+already format-aware, rather than leaving a second, unguarded copy of the commit
+sequence in a component.
+
+### 2.5 Status is simultaneously a display string and a command bus
 
 `app/shell/app.rs:192-272`. The Document Map requests modals by writing sentinel
 strings (`"struct.delete.pending"`, `"struct.rename.pending"`) into the
@@ -87,11 +110,13 @@ render loop later. It also conflates `struct.split.pending` and
    AUDIT-0170-018 requests for history recording. Three callers forgetting the
    same follow-up call is a signature that the call should not be the caller's
    responsibility.
-2. **Handle `WindowEvent::CloseRequested`**, routing to the existing unsaved
+2. **Route `on_navigate` through `commit_or_block`** (§2.4), removing the
+   second, unguarded copy of the commit sequence.
+3. **Handle `WindowEvent::CloseRequested`**, routing to the existing unsaved
    modal with Save / Discard / Cancel, per RFC-016 §5's wireframe.
-3. **Key dirtiness off retained text or off revision plus undo depth**, not a
+4. **Key dirtiness off retained text or off revision plus undo depth**, not a
    digest.
-4. **Replace the status sentinel bus** with a typed
+5. **Replace the status sentinel bus** with a typed
    `Signal<Option<StructureRequest>>` consumed in an effect rather than in
    render, and split the conflated action.
 

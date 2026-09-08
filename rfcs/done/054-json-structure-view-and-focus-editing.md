@@ -21,9 +21,16 @@ stated. Markdown behavior is unchanged throughout — the 239-test baseline and 
    is recorded unconstructed in RFC-053 §6, to be adopted with `DepthLimit` in
    one user-visible task.
 4. **JSON structure is fully re-parsed** on undo, redo, and every Document Map
-   render. Acceptable per RFC-053 §12 until measurement proves otherwise; nobody
-   has measured, and JSON files can be far larger than the Markdown this app was
-   tuned for.
+   render. ~~Acceptable per RFC-053 §12 until measurement proves otherwise;
+   nobody has measured, and JSON files can be far larger than the Markdown
+   this app was tuned for.~~ Measured (RFC-067 §2: ~25 ms/keystroke at 405 KB,
+   ~250 ms at 4 MB) and fixed by RFC-067 §3.1's revision-keyed cache — a
+   draft no longer triggers a re-parse at all. §3.2 (skip building the
+   Markdown outline for non-Markdown documents) is **not** done: it turned
+   out the outline is genuinely read for a JSON session today (the Overview
+   Pane, which is JSON's default view on open, and the search-navigate path
+   both read it with no format guard), so RFC-067's "never read" premise for
+   §3.2 was wrong. Recorded against RFC-067's own Status.
 5. **`t()` has no interpolation**, so §4.3's "This group contains 2 items." is
    rendered as a count-free line plus a labeled number. The gap now constrains
    what the UI can say and deserves its own small RFC when it next blocks
@@ -107,7 +114,7 @@ is the first format that will actually show these messages to a user, so
 RFC-054 builds the table. New catalog keys are expected here, in both `en` and
 `ja`.
 
-### 0.4 The revision discipline (RFC-053 §7.0, S6)
+### 0.4 The revision discipline (RFC-053 §7.0, S6; amended by RFC-067 §3.1)
 
 `build_structure` takes the live revision explicitly:
 
@@ -115,10 +122,26 @@ RFC-054 builds the table. New catalog keys are expected here, in both `en` and
 adapter.build_structure(document.source(), document.revision())
 ```
 
-The session must pass `document.revision()` **at the moment of building**, never
-a cached value. Getting this wrong produces a rejected command rather than a
-corrupted document — a safe failure, but a confusing one. This is the single
-most likely wiring mistake in §0.2's work.
+**The rule, stated precisely (RFC-067 §3.1): never serve a structure whose
+`revision` does not match the document's current `document.revision()`.**
+That is what "never a cached value" always meant — the original wording
+(below, kept for the history) reads as "never cache", but a revision-keyed
+cache satisfies the actual rule exactly, because `DocumentRevision` is
+monotonic and every mutation bumps exactly one: a match is a *proof* the
+source hasn't changed since the structure was built, not merely "we rebuilt
+it recently". `EditorSession::structure_result`/`structure_or_fallback`
+(`crates/ui/src/session/structure_bridge.rs`) is this rule's one
+implementation: one cache slot, keyed on `DocumentRevision`, replaced
+whenever the revision moves and read as-is when it doesn't — a draft
+never bumps the revision, so it is invisible to this cache by construction.
+
+Original wording, for the history: the session must pass
+`document.revision()` **at the moment of building**, never a cached value.
+Getting this wrong produces a rejected command rather than a corrupted
+document — a safe failure, but a confusing one. This is the single most
+likely wiring mistake in §0.2's work. That failure mode is unchanged by the
+amendment: a cache entry is keyed on the revision it was captured with, so a
+stale entry cannot silently masquerade as fresh.
 
 ### 0.5 Binding decisions from RFC-052
 

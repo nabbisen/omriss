@@ -54,14 +54,14 @@ example-based, which is what RFC-066 addresses.
 | [RFC-064](rfcs/done/064-preview-html-sanitization-and-webview-trust-boundary.md) | preview sanitization, link schemes | **done** — CSP deferred to 0.18.0 for cross-platform verification |
 | [RFC-065](rfcs/done/065-structural-operation-boundary-integrity.md) | seven splice-boundary defects | **done** — two were release-blocking by the checklist |
 | [RFC-066](rfcs/done/066-property-based-and-fuzz-testing.md) | three properties, documented generator | **done** — found four defects nobody found by reading |
-| [RFC-067](rfcs/proposed/067-structure-projection-caching.md) §3.1–3.2 | revision-keyed structure cache | **remaining** — JSON costs ~25 ms/keystroke at 400 KB; it is the release's headline feature |
+| [RFC-067](rfcs/done/067-structure-projection-caching.md) §3.1 | revision-keyed structure cache | **done** — 21.1 ms → 4.7 ms per keystroke; §3.2 deferred, its premise was false |
 
 `SECURITY.md` is in place, which RFC-064 required before its finding could be
 discussed publicly.
 
-Also required before the tag: the **Windows smoke run**, which has not happened.
-Windows is what the Microsoft Store ships, and CI proves the binary compiles,
-not that it behaves.
+**All four gate RFCs are now implemented.** The remaining gate is the **Windows
+smoke run**, which has not happened. Windows is what the Microsoft Store ships,
+and CI proves the binary compiles, not that it behaves.
 
 ## After 0.17.0
 
@@ -70,7 +70,9 @@ not that it behaves.
 - **M13:** RFC-068 (durable writes and path integrity), RFC-069 (draft lifecycle
   and session guards), RFC-070 (`split_section` input validation), RFC-071
   (structure-change warning), RFC-057 (multi-document workspace and tabs), and
-  wiring RFC-064's CSP once it can be verified on all three platforms.
+  wiring RFC-064's CSP once it can be verified on all three platforms, and
+  RFC-067 §3.2/§3.3/§3.4 (skipping the Markdown outline for non-Markdown
+  documents, splice inversion, and the search hot loop).
 - **M14:** RFC-058, placement-complete Document Map creation controls.
 - **M15:** RFC-060 and RFC-061, accessibility/screen-reader and
   non-technical-user validation.

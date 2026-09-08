@@ -2,7 +2,19 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M12 hardening — 0.17.0 ship gate (conditional, see §7)
-**Status.** Proposed
+**Status.** Implemented (main, unreleased) — C1 (the revision-keyed cache), C3
+(RFC-054 §0.4's amendment) and C4 (measured limitations text) landed. Measured
+on a 374 KB / 8000-item JSON fixture: per-keystroke `structured_draft_state`
+21.1 ms → 4.7 ms, `focus` 10.4 ms → 2.6 ms, which is what §7's ship gate asked
+for.
+
+Three deliberate exclusions, each recorded: **C2** (skipping `build_outline` for
+non-Markdown) is deferred to 0.18.0 — §3.2's "never read" premise is false and
+the correction is recorded inline; **C5** (splice inversion) and **C6** (the
+search hot loop) were always 0.18.0. One measurement is honestly short of the
+others: `document_map_nodes` on a warm cache is ~9 ms, because the
+`DocumentStructure` → `DocumentMapNode` projection is a second layer this RFC
+did not cache. That is a candidate follow-up, not a regression.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053, RFC-054
@@ -64,9 +76,34 @@ revision does not match the document's*, which is what it meant.
 ### 3.2 Skip the Markdown outline for non-Markdown formats
 
 `open_detected` calls `Document::parse` regardless of format, so a JSON document
-carries a Markdown outline rebuilt on **every edit** and then never read —
-`document_map_nodes`, `focus` and `prune_dead_history` all branch away from it
-for non-Markdown formats.
+carries a Markdown outline rebuilt on **every edit**.
+
+> **Correction, 2026-09-08: "never read" was wrong, and §3.2 cannot be
+> implemented as written.** `document_map_nodes`, `focus` and
+> `prune_dead_history` do branch away from the outline for non-Markdown formats
+> — that part is accurate — but they are not the complete list of what reads
+> `document.outline()`.
+>
+> **`outline_items()` reads it unconditionally, on every JSON open.**
+> `shell/actions.rs:56` deliberately skips auto-focus for non-Markdown, so a
+> JSON file opens in `ViewMode::Outline`; `shell/app.rs:319` branches on
+> `ViewMode` with no format guard and renders `OverviewPane`, which calls
+> `outline_items()` → `focus_snapshot(root_id())` → `.expect("root always
+> exists")` (`session.rs:243`).
+>
+> Skipping `build_outline`, or returning a degenerate `Outline`, therefore turns
+> that `expect` into a **panic on opening a JSON file** — the most basic JSON
+> interaction there is. `actions.rs:48-54`'s own comment already said as much
+> ("`outline_items`/`focus` both still read the Markdown heading parse"); this
+> RFC contradicted a comment that was already in the tree.
+>
+> The error was method: §3.2 enumerated three readers and concluded "never
+> read". The readers should have been found by construction — every caller of
+> `document.outline()` — not by listing the ones this RFC happened to touch.
+>
+> **Deferred to 0.18.0.** Doing it properly means making `OverviewPane` and
+> `SearchPanel` format-aware first, which is real scope in two more app
+> components, not the "cheap win" §3.2 called it.
 
 ### 3.3 Invert the splice instead of copying the document
 
