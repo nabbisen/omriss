@@ -31,12 +31,10 @@ impl super::EditorSession {
                 let outline = self.document.outline();
                 build_map_node(outline, outline.root_id(), selected)
             }
-            other => super::structure_bridge::document_map_node(
-                other,
-                self.document.source(),
-                self.document.revision(),
-                selected,
-            ),
+            _ => {
+                let structure = self.structure_or_fallback();
+                super::structure_bridge::document_map_node(&structure, selected)
+            }
         }
     }
 }

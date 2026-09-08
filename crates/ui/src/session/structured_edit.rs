@@ -20,9 +20,7 @@ impl super::EditorSession {
             return None;
         }
         let id = self.view.focused()?;
-        let structure = JsonAdapter
-            .build_structure(self.document.source(), self.document.revision())
-            .ok()?;
+        let structure = self.structure_result().ok()?;
         let node = structure.nodes.iter().find(|n| n.id == id)?;
         if !matches!(
             node.kind,
@@ -66,16 +64,16 @@ impl super::EditorSession {
     }
 
     /// Validates `draft` against the focused JSON node without committing.
-    /// Rebuilds structure fresh (RFC-054 §0.4), same as every other
-    /// structured read here — never cached across calls.
+    /// Structure comes from the revision-keyed cache (RFC-067 §3.1) — sound
+    /// per RFC-054 §0.4 because a draft never bumps the revision, so this
+    /// and every other read below it in one render/keystroke share a single
+    /// build rather than one each.
     pub fn validate_structured_draft(&self, draft: &str) -> Result<(), StructureErrorKind> {
         let id = self
             .view
             .focused()
             .ok_or(StructureErrorKind::InternalInvariantFailed)?;
-        let structure = JsonAdapter
-            .build_structure(self.document.source(), self.document.revision())
-            .map_err(|e| e.kind)?;
+        let structure = self.structure_result().map_err(|e| e.kind)?;
         JsonAdapter
             .validate_focused_edit(self.document.source(), &structure, id, draft)
             .map(|_| ())
@@ -97,9 +95,7 @@ impl super::EditorSession {
             .view
             .focused()
             .ok_or(StructureErrorKind::InternalInvariantFailed)?;
-        let structure = JsonAdapter
-            .build_structure(self.document.source(), self.document.revision())
-            .map_err(|e| e.kind)?;
+        let structure = self.structure_result().map_err(|e| e.kind)?;
         let edit = JsonAdapter
             .validate_focused_edit(self.document.source(), &structure, id, draft)
             .map_err(|e| e.kind)?;

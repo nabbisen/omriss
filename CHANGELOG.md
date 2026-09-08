@@ -198,6 +198,23 @@ project adheres to [Semantic Versioning](https://semver.org/).
   target's own body instead of nesting under it. `MoveTarget` now has
   only `Before`/`After`. The desktop app never used either variant.
   Real child-placement semantics are re-proposed by RFC-058.
+- **RFC-067 §3.1 revision-keyed structure cache.** A JSON document's
+  structure used to be rebuilt from source on every read — four to five
+  full re-parses per keystroke while typing in the focused-content editor,
+  plus another per Document Map render. `EditorSession` now caches one
+  `DocumentStructure`, keyed on `DocumentRevision`: a cache hit is sound
+  proof the source hasn't changed since it was built (revisions are
+  monotonic), and a draft edit never bumps the revision, so per-keystroke
+  reads share a single build instead of rebuilding from scratch each time.
+  Measured on a 374 KB / 8000-item fixture: per-keystroke structure reads
+  dropped from ~21 ms to ~4.7 ms, `focus()` from ~10.4 ms to ~2.6 ms, and
+  the Document Map's own rebuild from ~18 ms to ~9 ms. Committing an edit
+  and undo/redo still cost a real re-parse, correctly — the cache is
+  invalidated on both. §3.2 (skip building the unused Markdown outline for
+  non-Markdown documents) turned out not to be safe as specified: the
+  outline is genuinely read for a JSON session today (the Overview Pane,
+  JSON's default view on open, and the search-navigate path), so it is not
+  in this release — see RFC-067's Status.
 
 ### Security
 

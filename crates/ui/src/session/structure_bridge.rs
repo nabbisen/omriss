@@ -11,64 +11,101 @@
 //! shows, and RFC-052 §5.2 forbids inventing a hierarchy for a format this
 //! slice cannot parse — an empty Document Map is the honest result, not a
 //! bug.
+//!
+//! `EditorSession::structure_result`/`structure_or_fallback` (RFC-067 §3.1)
+//! are the single place a non-Markdown structure is built: one cache entry,
+//! keyed on `DocumentRevision`, shared by every reader — the Document Map,
+//! `focus`, `prune_dead_history`, and JSON's structured-editing read/write
+//! path in `focus_bridge.rs`/`structured_edit.rs`. RFC-054 §0.4's rule is
+//! unweakened by this: a revision match is a *proof* the source hasn't
+//! changed since the cached structure was built, not a guess, and a draft
+//! (held in a UI signal, never passed to `Document`) never bumps the
+//! revision — so this is exactly the layer RFC-054 §0.4 always needed
+//! beneath it, not an exception to it.
 
 use omriss_core::{
     DocumentFormat, DocumentFormatAdapter, DocumentRevision, DocumentStructure, JsonAdapter,
-    NodeId, PlainTextAdapter, TomlAdapter, YamlExperimentalAdapter,
+    NodeId, PlainTextAdapter, StructureError, TomlAdapter, YamlExperimentalAdapter,
 };
 
 use crate::interface::document_map::DocumentMapNode;
 
-/// Builds the `DocumentMapNode` tree for `format` from `source`/`revision`
-/// (read live, per call, never cached — RFC-053 §7.0/§0.4: the session
-/// must pass `document.revision()` at the moment of building).
-pub(super) fn document_map_node(
-    format: DocumentFormat,
-    source: &str,
+/// One cache slot: the active format adapter's own `build_structure`
+/// attempt (not merged with the `PlainTextAdapter` fallback — see
+/// `EditorSession::structure_or_fallback`), plus the revision it was built
+/// from. `Markdown`/`PlainText`/`Unsupported` never populate this; they
+/// have no adapter attempt to cache (`document_map_nodes` doesn't call
+/// through here for Markdown at all, and the other two have nothing but
+/// the fallback).
+#[derive(Debug, Clone)]
+pub(super) struct StructureCache {
     revision: DocumentRevision,
+    result: Result<DocumentStructure, StructureError>,
+}
+
+impl super::EditorSession {
+    /// The active format adapter's own structure for the current document —
+    /// from cache if the revision matches, freshly built and cached
+    /// otherwise (RFC-067 §3.1). `Err` means the adapter couldn't parse the
+    /// source as its format (today, only `JsonAdapter` is real); callers
+    /// needing "real structure, or nothing" (JSON's structured-editing
+    /// reads/writes, in `focus_bridge.rs`/`structured_edit.rs`) use this
+    /// directly. Callers needing "always something to show" (the Document
+    /// Map) use `structure_or_fallback` instead. `pub(super)`: shared by
+    /// the sibling `focus_bridge`/`structured_edit` modules.
+    pub(super) fn structure_result(&self) -> Result<DocumentStructure, StructureError> {
+        let revision = self.document.revision();
+        if let Some(cached) = self.structure_cache.borrow().as_ref()
+            && cached.revision == revision
+        {
+            return cached.result.clone();
+        }
+        let source = self.document.source();
+        let result = match self.format {
+            DocumentFormat::Json => JsonAdapter.build_structure(source, revision),
+            DocumentFormat::Toml => TomlAdapter.build_structure(source, revision),
+            DocumentFormat::YamlExperimental => {
+                YamlExperimentalAdapter.build_structure(source, revision)
+            }
+            DocumentFormat::PlainText | DocumentFormat::Unsupported | DocumentFormat::Markdown => {
+                Err(fallback_only())
+            }
+        };
+        *self.structure_cache.borrow_mut() = Some(StructureCache {
+            revision,
+            result: result.clone(),
+        });
+        result
+    }
+
+    /// `structure_result`, falling back to `PlainTextAdapter` (which never
+    /// fails) when the active adapter can't parse the source. Used by every
+    /// reader that needs a structure to display rather than to edit
+    /// against: the Document Map, `focus`, `prune_dead_history`.
+    pub(super) fn structure_or_fallback(&self) -> DocumentStructure {
+        self.structure_result().unwrap_or_else(|_| {
+            PlainTextAdapter
+                .build_structure(self.document.source(), self.document.revision())
+                .expect("PlainTextAdapter::build_structure never fails")
+        })
+    }
+}
+
+fn fallback_only() -> StructureError {
+    omriss_core::StructureErrorKind::UnsupportedFeature.into()
+}
+
+/// Builds the `DocumentMapNode` tree from an already-built `structure`.
+pub(super) fn document_map_node(
+    structure: &DocumentStructure,
     selected: Option<NodeId>,
 ) -> DocumentMapNode {
-    let structure = build_structure_or_fallback(format, source, revision);
-    let index = Index::build(&structure);
+    let index = Index::build(structure);
     // The root id always resolves: it came from the same `structure` the
     // index was just built over.
     index
         .node(structure.root_id, selected)
         .expect("root_id from the same DocumentStructure is always present")
-}
-
-/// Tries `format`'s own adapter; falls back to `PlainTextAdapter` on any
-/// failure. `PlainTextAdapter::build_structure` never fails, so this always
-/// returns a usable structure.
-///
-/// `pub(super)`: RFC-054 J7 reuses this from the sibling `focus_bridge`
-/// module, which needs the identical structure the Document Map is built
-/// from -- so any `NodeId` a user could have clicked resolves the same way
-/// in both places.
-pub(super) fn build_structure_or_fallback(
-    format: DocumentFormat,
-    source: &str,
-    revision: DocumentRevision,
-) -> DocumentStructure {
-    let primary = match format {
-        DocumentFormat::Json => JsonAdapter.build_structure(source, revision),
-        DocumentFormat::Toml => TomlAdapter.build_structure(source, revision),
-        DocumentFormat::YamlExperimental => {
-            YamlExperimentalAdapter.build_structure(source, revision)
-        }
-        DocumentFormat::PlainText | DocumentFormat::Unsupported | DocumentFormat::Markdown => {
-            Err(fallback_only())
-        }
-    };
-    primary.unwrap_or_else(|_| {
-        PlainTextAdapter
-            .build_structure(source, revision)
-            .expect("PlainTextAdapter::build_structure never fails")
-    })
-}
-
-fn fallback_only() -> omriss_core::StructureError {
-    omriss_core::StructureErrorKind::UnsupportedFeature.into()
 }
 
 /// A `NodeId` -> `StructureNode` index over one `DocumentStructure`, built

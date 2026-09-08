@@ -230,3 +230,68 @@ fn the_focused_node_stays_focused_after_a_successful_commit() {
     };
     assert_eq!(display_text, "new");
 }
+
+// ── RFC-067 §3.1: revision-keyed structure cache ────────────────────────────
+
+#[test]
+fn committing_a_container_edit_invalidates_the_structure_cache() {
+    // Same node id throughout; the commit changes the number of structure
+    // nodes under it (one key -> two), so a stale cached structure from
+    // before the commit would under-report the new child.
+    let source = r#"{"a": {"x": 1}}"#;
+    let mut session = open_json(source);
+    focus_child(&mut session, "a");
+    assert_eq!(session.document_map_nodes().children[0].children.len(), 1);
+
+    session
+        .commit_structured_draft(r#"{"x": 2, "y": 3}"#)
+        .unwrap();
+
+    assert_eq!(
+        session.document_map_nodes().children[0].children.len(),
+        2,
+        "structure must reflect the just-committed edit, not a cached pre-commit shape"
+    );
+}
+
+#[test]
+fn undo_after_a_container_edit_invalidates_the_structure_cache_back() {
+    // Undo mints a fresh revision too (RFC-044) -- the cache entry left
+    // behind by the commit above must not be served after undo moves the
+    // document back past it.
+    let source = r#"{"a": {"x": 1}}"#;
+    let mut session = open_json(source);
+    focus_child(&mut session, "a");
+    session
+        .commit_structured_draft(r#"{"x": 2, "y": 3}"#)
+        .unwrap();
+    assert_eq!(session.document_map_nodes().children[0].children.len(), 2);
+
+    session.undo().unwrap();
+
+    assert_eq!(
+        session.document_map_nodes().children[0].children.len(),
+        1,
+        "undo's new revision must invalidate the post-commit cache entry"
+    );
+}
+
+#[test]
+fn structured_draft_state_reflects_each_draft_without_committing() {
+    // Neither call commits, so the document's revision -- and the cached
+    // structure both reads share -- never changes between them. A cache
+    // keyed on anything but the draft-independent structure must still
+    // answer each call correctly.
+    let mut session = open_json(r#"{"a": 1}"#);
+    focus_child(&mut session, "a");
+
+    assert_eq!(
+        session.structured_draft_state("not a number"),
+        DraftState::InvalidUncommitted
+    );
+    assert_eq!(
+        session.structured_draft_state("42"),
+        DraftState::ValidUncommitted
+    );
+    assert_eq!(session.structured_draft_state("1"), DraftState::Clean);
+}

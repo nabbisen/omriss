@@ -227,9 +227,17 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
   committing an edit (re-indexing is synchronous and full).
 - Very deep heading trees (>50 levels of nesting, which is unusual) are
   supported but not performance-optimised.
-- JSON documents are re-parsed in full after each committed edit and each undo,
-  rather than incrementally. This has not been measured against a large file;
-  correctness was prioritised over parse cost in this release.
+- JSON documents are re-parsed in full after each **committed** edit and each
+  undo — never incrementally, and never while you are still typing (RFC-067
+  §3.1: a draft is cached alongside the document's revision and does not
+  trigger a re-parse). Measured on a release build, 374 KB JSON / 8000 array
+  items: committing keeps costing a real parse (`focus()` ~2.6 ms), but
+  reading structure repeatedly at an unchanged revision — what typing in the
+  focused-content editor now does — dropped from ~21 ms to ~4.7 ms per
+  keystroke, and the Document Map's own rebuild from ~18 ms to ~9 ms per
+  render. At 4 MB (roughly 10x this fixture) those numbers scale
+  proportionally with parse cost, so the committed-edit and undo/redo cases
+  remain full re-parses and are not yet incremental.
 
 ---
 

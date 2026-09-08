@@ -7,12 +7,15 @@
 //! It also stores the `FileTextProfile` detected when the file was opened
 //! (line endings, BOM, trailing newline — RFC-018).
 
+use std::cell::RefCell;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use omriss_core::{
     Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
     FocusSnapshot, OutlineItem, ReplaceSectionBody,
 };
+
+use self::structure_bridge::StructureCache;
 
 use crate::editor::view_state::{ViewMode, ViewState};
 use crate::file::file_profile::FileTextProfile;
@@ -67,6 +70,14 @@ pub struct EditorSession {
     /// field is what tells `document_map_nodes()` which adapter's structure
     /// to project instead of that outline.
     format: DocumentFormat,
+    /// The active format adapter's last-built structure, keyed on the
+    /// revision it was built from (RFC-067 §3.1). `RefCell` because most
+    /// readers of structure (`document_map_nodes`, `focused_structured_content`,
+    /// `structured_draft_state`, ...) take `&self` — a Dioxus render pass
+    /// only ever borrows the session immutably. Cloning a session clones the
+    /// cache's *contents*, not a handle to the same cell, so two sessions
+    /// never see each other's cached structure.
+    structure_cache: RefCell<Option<StructureCache>>,
 }
 
 mod document_map_bridge;
@@ -121,6 +132,7 @@ impl EditorSession {
             profile,
             document_open: true,
             format,
+            structure_cache: RefCell::new(None),
         })
     }
 

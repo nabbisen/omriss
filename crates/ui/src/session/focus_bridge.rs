@@ -5,9 +5,11 @@
 //! still the literal `document.focus_snapshot(id)` call every existing
 //! `crates/ui/src/tests/session_tests.rs` assertion already exercises, so
 //! that protected suite needed no change here. Every other format
-//! validates `id` against that format's own `DocumentStructure` — built
-//! fresh per RFC-054 §0.4, never cached — instead of the Markdown outline
-//! a JSON-space `NodeId` was never a member of.
+//! validates `id` against that format's own `DocumentStructure`, via
+//! `EditorSession::structure_result`/`structure_or_fallback` (RFC-067
+//! §3.1's revision-keyed cache, sitting under RFC-054 §0.4's freshness
+//! rule rather than weakening it) — instead of the Markdown outline a
+//! JSON-space `NodeId` was never a member of.
 
 use omriss_core::{
     DocumentError, DocumentFormat, DocumentFormatAdapter, FocusSnapshot, JsonAdapter, NodeId,
@@ -33,11 +35,7 @@ impl super::EditorSession {
         let snapshot = match self.format {
             DocumentFormat::Markdown => self.document.focus_snapshot(id)?,
             _ => {
-                let structure = super::structure_bridge::build_structure_or_fallback(
-                    self.format,
-                    self.document.source(),
-                    self.document.revision(),
-                );
+                let structure = self.structure_or_fallback();
                 let node = structure
                     .nodes
                     .iter()
@@ -71,14 +69,12 @@ impl super::EditorSession {
         if self.format != DocumentFormat::Json {
             return None;
         }
-        // Built directly, not via `build_structure_or_fallback`: this call
-        // is adapter-specific (`JsonAdapter::focused_content` on a
+        // `structure_result`, not `structure_or_fallback`: this call is
+        // adapter-specific (`JsonAdapter::focused_content` on a
         // `PlainTextAdapter`-built structure would be a category error),
         // so a parse failure here must mean "nothing to show," not "fall
         // back."
-        let structure = JsonAdapter
-            .build_structure(self.document.source(), self.document.revision())
-            .ok()?;
+        let structure = self.structure_result().ok()?;
         JsonAdapter
             .focused_content(self.document.source(), &structure, id)
             .ok()
@@ -107,11 +103,7 @@ impl super::EditorSession {
                 self.view.retain_alive(|id| outline.contains(id));
             }
             _ => {
-                let structure = super::structure_bridge::build_structure_or_fallback(
-                    self.format,
-                    self.document.source(),
-                    self.document.revision(),
-                );
+                let structure = self.structure_or_fallback();
                 self.view
                     .retain_alive(|id| structure.nodes.iter().any(|n| n.id == id));
             }
