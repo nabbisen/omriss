@@ -199,6 +199,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
   only `Before`/`After`. The desktop app never used either variant.
   Real child-placement semantics are re-proposed by RFC-058.
 
+### Security
+
+- **RFC-064 preview HTML sanitization.** The Markdown preview renders
+  directly into the app's own WebView, not a sandboxed browser tab, so raw
+  HTML in a document — `<img src=x onerror="...">`, a `javascript:` link,
+  a `<script>` tag — could previously execute with the app's own
+  privileges the moment its preview was viewed. Raw HTML is now always
+  escaped to visible text rather than rendered; link and image
+  destinations are checked against an allow-list (`http`, `https`,
+  `mailto`, relative paths) and any other scheme, `data:` included, has
+  its destination dropped while the link text or alt text is kept. This is
+  a user-visible behavior change: HTML that used to render (`<table>`,
+  `<details>`) now shows as text — see `docs/src/known-limitations.md`.
+  The WebView's Content-Security-Policy hardening from RFC-064 §4.3 is
+  **not yet shipped**: as specified it conflicts with dioxus-desktop
+  0.7's own edit-streaming WebSocket and inline interop script, leaving
+  the window blank — tracked separately pending a compatible policy.
+
 ## [0.16.0] - 2026-07-15
 
 ### Changed

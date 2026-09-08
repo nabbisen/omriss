@@ -85,6 +85,33 @@ text. See [File Formats](./file-formats.md) for the current support table.
 
 ---
 
+## Preview Limitations
+
+### Raw HTML in Markdown Is Shown as Text, Not Rendered
+
+Markdown preview used to render any HTML written directly in the document —
+`<table>`, `<details>`, `<b>`, and so on — as live markup. As of this release,
+raw HTML is shown as visible, escaped text instead: you will see `<table>`
+rather than an actual table. Link and image destinations using a scheme other
+than `http`, `https`, `mailto`, or a relative path (`javascript:`, `data:`,
+and similar) are also no longer rendered — the destination is dropped and the
+link text or image alt text is kept.
+
+**Why:** The preview renders directly into the app's own window, not a
+sandboxed browser tab, so live HTML or an unusual link scheme in a document
+could run with the same privileges as the app itself. This was a real
+trust-boundary gap (RFC-064): a document containing `<img src=x
+onerror="...">` or a `javascript:` link could execute code the moment its
+preview was viewed. Escaping is the fix; there is no sandboxing layer in this
+release to render such HTML safely instead.
+
+**Workaround:** The plain file text view (Ctrl+\`) always shows your source
+exactly as written, HTML included. If you need to see how a document's HTML
+actually renders, open it in a web browser or a dedicated Markdown renderer
+outside omriss.
+
+---
+
 ## Heading Style Limitations
 
 ### Setext Headings Cannot Be Moved In or Out

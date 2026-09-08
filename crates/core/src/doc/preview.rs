@@ -22,6 +22,37 @@ fn html_escape(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
+/// RFC-064 §4.2: whether `url` is safe to render as a link/image
+/// destination in the preview's WebView. Allows `http`, `https`,
+/// `mailto`, and scheme-less destinations (relative paths, and in-page
+/// fragments like `#section`) — deliberately excludes every other
+/// scheme, `data:` most of all: `data:text/html` is itself a script
+/// vector, not merely an unusual one.
+///
+/// A destination with no scheme at all, or with a prefix that isn't
+/// shaped like a URI scheme (RFC 3986: a letter, then letters/digits/`+`/
+/// `-`/`.`, then `:`), is treated as scheme-less and allowed — the
+/// allow-list below is what actually excludes anything dangerous, so
+/// erring permissive here only affects whether an ordinary relative path
+/// is recognised as one, never whether `javascript:`/`data:` gets through.
+fn is_allowed_destination(url: &str) -> bool {
+    let Some(colon) = url.find(':') else {
+        return true; // no scheme: relative path or bare fragment
+    };
+    let scheme = &url[..colon];
+    let looks_like_a_scheme = scheme.starts_with(|c: char| c.is_ascii_alphabetic())
+        && scheme
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
+    if !looks_like_a_scheme {
+        return true;
+    }
+    matches!(
+        scheme.to_ascii_lowercase().as_str(),
+        "http" | "https" | "mailto"
+    )
+}
+
 fn heading_tag(level: HeadingLevel) -> u8 {
     match level {
         HeadingLevel::H1 => 1,
@@ -133,15 +164,23 @@ fn render_html(markdown: &str) -> String {
                 title,
                 ..
             }) => {
-                let href = html_escape(&dest_url);
+                // RFC-064 §4.2: a disallowed scheme (javascript:, data:,
+                // vbscript:, ...) drops only the destination attribute —
+                // the link text (and title, if any) still render, just
+                // as unlinked text wrapped in an otherwise-inert <a>.
+                let href_attr = if is_allowed_destination(&dest_url) {
+                    format!(" href=\"{}\"", html_escape(&dest_url))
+                } else {
+                    String::new()
+                };
                 let is_plain = link_type == LinkType::Autolink
                     || link_type == LinkType::Email
                     || title.is_empty();
                 if is_plain {
-                    out.push_str(&format!("<a href=\"{href}\">"));
+                    out.push_str(&format!("<a{href_attr}>"));
                 } else {
                     let t = html_escape(&title);
-                    out.push_str(&format!("<a href=\"{href}\" title=\"{t}\">"));
+                    out.push_str(&format!("<a{href_attr} title=\"{t}\">"));
                 }
             }
             Event::End(TagEnd::Link) => out.push_str("</a>"),
@@ -149,9 +188,15 @@ fn render_html(markdown: &str) -> String {
             Event::Start(Tag::Image {
                 dest_url, title, ..
             }) => {
-                let src = html_escape(&dest_url);
+                // RFC-064 §4.2: same scheme check as links; a disallowed
+                // source drops only the `src` attribute.
+                let src_attr = if is_allowed_destination(&dest_url) {
+                    format!(" src=\"{}\"", html_escape(&dest_url))
+                } else {
+                    String::new()
+                };
                 let alt = html_escape(&title);
-                out.push_str(&format!("<img src=\"{src}\" alt=\"{alt}\">"));
+                out.push_str(&format!("<img{src_attr} alt=\"{alt}\">"));
             }
             Event::End(TagEnd::Image) => {}
 
@@ -163,8 +208,17 @@ fn render_html(markdown: &str) -> String {
                 out.push_str("</code>");
             }
             Event::Html(raw) | Event::InlineHtml(raw) => {
-                // Pass raw HTML through unchanged (user-authored HTML in Markdown).
-                out.push_str(&raw);
+                // RFC-064 §4.1: show authored HTML as text, never render it.
+                // The preview is injected into the app's own WebView via
+                // `dangerous_inner_html` (`crates/app/src/components/preview_pane.rs`) —
+                // passing raw markup through unchanged would execute
+                // whatever script tags or event-handler attributes a
+                // document's author (not necessarily this user) wrote,
+                // inside the same process as the open document. The
+                // preview is a reading aid for structure, not a browser;
+                // a user who wants their HTML rendered as HTML has the
+                // raw source view and an external tool.
+                out.push_str(&html_escape(&raw));
             }
             Event::SoftBreak => out.push('\n'),
             Event::HardBreak => out.push_str("<br>\n"),
@@ -262,5 +316,169 @@ mod tests {
         assert!(html.contains("&lt;"), "{html}");
         assert!(html.contains("&gt;"), "{html}");
         assert!(!html.contains("<2"), "{html}");
+    }
+
+    // ── RFC-064: preview HTML sanitization ──────────────────────────────
+
+    /// Markers that must never appear as *live* (unescaped) markup in
+    /// rendered output — RFC-064 §5/handoff §6's own list, restricted to
+    /// the forms that actually require an unescaped `<` or `"` to matter.
+    /// An attribute name like `onerror=` is expected, and safe, to survive
+    /// as plain escaped text once its enclosing tag has been turned to
+    /// text by H1 — that is the whole point of "renders as text, not as
+    /// an element" (acceptance checklist). What must never survive is the
+    /// literal, unescaped `<script`/`<iframe` open, or one of our own
+    /// generated `href=`/`src=` attributes pointing at a disallowed
+    /// scheme — both of which require a real `<` or `"`, not just the
+    /// word appearing inside inert text.
+    const DANGEROUS_MARKERS: &[&str] = &[
+        "<script",
+        "<iframe",
+        "href=\"javascript:",
+        "src=\"javascript:",
+        "href=\"data:",
+        "src=\"data:",
+    ];
+
+    fn assert_no_dangerous_markers(html: &str, source: &str) {
+        for marker in DANGEROUS_MARKERS {
+            assert!(
+                !html.contains(marker),
+                "rendered output contains {marker:?} for source {source:?}: {html}"
+            );
+        }
+    }
+
+    /// Table-driven per RFC-064 §5/handoff §6: `section_html` (and, via
+    /// `document_html`, the whole-document path) must escape every one of
+    /// these vectors rather than render them as live markup, for both the
+    /// body of a section and the top-level document text.
+    #[test]
+    fn dangerous_html_never_reaches_the_rendered_output() {
+        const VECTORS: &[&str] = &[
+            // RFC-064 §2's own two reproductions, verbatim.
+            r#"<img src=x onerror="alert(1)">"#,
+            r#"[c](javascript:alert(1))"#,
+            // Acceptance checklist's remaining escaping cases.
+            r#"<iframe src="https://evil.example"></iframe>"#,
+            r#"<script>alert(document.cookie)</script>"#,
+            r#"<a href="x" onmouseover="alert(1)">click</a>"#,
+            r#"<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>"#,
+            // Acceptance checklist's remaining link/image-scheme cases.
+            r#"![i](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)"#,
+            r#"[c](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)"#,
+        ];
+
+        for vector in VECTORS {
+            let source = format!("# A\n{vector}\n");
+            let d = doc(&source);
+            let id = d.outline().root().children[0];
+            let section = section_html(&d, id).unwrap();
+            assert_no_dangerous_markers(&section, vector);
+
+            let whole = document_html(&d);
+            assert_no_dangerous_markers(&whole, vector);
+        }
+    }
+
+    /// Complements the blanket marker check above: the attribute names
+    /// (`onerror=`, `onmouseover=`, `srcdoc=`) are expected to survive as
+    /// plain text once escaped — this pins that they do so *only* inside
+    /// an escaped, inert tag, never a live one.
+    #[test]
+    fn event_handler_attributes_survive_only_as_escaped_inert_text() {
+        let d = doc(
+            "# A\n<img src=x onerror=\"alert(1)\">\n\n<a href=\"x\" onmouseover=\"alert(1)\">click</a>\n",
+        );
+        let id = d.outline().root().children[0];
+        let html = section_html(&d, id).unwrap();
+        assert!(
+            html.contains("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;"),
+            "{html}"
+        );
+        assert!(
+            html.contains("&lt;a href=&quot;x&quot; onmouseover=&quot;alert(1)&quot;&gt;"),
+            "{html}"
+        );
+        assert_no_dangerous_markers(&html, "onerror=/onmouseover= vectors");
+    }
+
+    #[test]
+    fn raw_html_block_and_inline_html_render_as_visible_text() {
+        let d = doc("# A\n<script>alert(1)</script>\n\nSome <b>bold</b> text.\n");
+        let id = d.outline().root().children[0];
+        let html = section_html(&d, id).unwrap();
+        // The tags themselves are visible, escaped text, not live markup.
+        assert!(html.contains("&lt;script&gt;"), "{html}");
+        assert!(html.contains("&lt;b&gt;"), "{html}");
+        assert_no_dangerous_markers(&html, "<script>/<b>");
+    }
+
+    #[test]
+    fn javascript_scheme_link_drops_the_href_but_keeps_the_text() {
+        let d = doc("# A\n[click me](javascript:alert(1))\n");
+        let id = d.outline().root().children[0];
+        let html = section_html(&d, id).unwrap();
+        assert!(!html.contains("javascript:"), "{html}");
+        assert!(html.contains("click me"), "{html}");
+    }
+
+    #[test]
+    fn data_scheme_image_drops_the_src() {
+        // Alt-text fidelity for images is a pre-existing, unrelated concern
+        // (`Tag::Image::title` is the optional `"title"` in `![alt](url
+        // "title")`, not the alt text itself — this renderer has never
+        // captured the accumulated inline text as `alt`) — out of RFC-064's
+        // scope, flagged separately rather than fixed here.
+        let d = doc("# A\n![evil](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)\n");
+        let id = d.outline().root().children[0];
+        let html = section_html(&d, id).unwrap();
+        assert!(!html.contains("data:"), "{html}");
+    }
+
+    #[test]
+    fn allowed_link_schemes_still_render_their_destination() {
+        for (source, expected_href) in [
+            ("[a](http://example.com)", "href=\"http://example.com\""),
+            ("[a](https://example.com)", "href=\"https://example.com\""),
+            (
+                "[a](mailto:person@example.com)",
+                "href=\"mailto:person@example.com\"",
+            ),
+            ("[a](relative/path.md)", "href=\"relative/path.md\""),
+            ("[a](#fragment)", "href=\"#fragment\""),
+        ] {
+            let d = doc(&format!("# A\n{source}\n"));
+            let id = d.outline().root().children[0];
+            let html = section_html(&d, id).unwrap();
+            assert!(
+                html.contains(expected_href),
+                "expected {expected_href:?} in rendered output for {source:?}: {html}"
+            );
+        }
+    }
+
+    #[test]
+    fn allowed_image_scheme_still_renders_its_source() {
+        let d = doc("# A\n![alt text](https://example.com/pic.png)\n");
+        let id = d.outline().root().children[0];
+        let html = section_html(&d, id).unwrap();
+        assert!(
+            html.contains("src=\"https://example.com/pic.png\""),
+            "{html}"
+        );
+    }
+
+    #[test]
+    fn source_text_is_byte_identical_across_a_preview_render() {
+        let source = "# A\n<img src=x onerror=\"alert(1)\">\n\n[c](javascript:alert(1))\n";
+        let d = doc(source);
+        let _ = document_html(&d);
+        let _ = section_html(&d, d.outline().root().children[0]);
+        assert_eq!(
+            d.source(),
+            source,
+            "rendering the preview must never mutate the stored source"
+        );
     }
 }
