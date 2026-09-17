@@ -101,6 +101,37 @@ editor that reserializes the file instead of patching it. Do not tidy it;
 21. **Markdown unaffected** — repeat steps 2–8 on a `.md` file in the same
     session
 
+### Reduced Run for a CI-Covered Platform (from 0.17.0)
+
+Steps 1–21 were written before CI ran the full suite on each platform. Where
+`ci.yml` already runs `cargo test --workspace` on that platform — today Linux
+and Windows — most of the steps re-check logic that CI proves on every push:
+invalid-draft rejection, container raw edit, malformed-file recovery, undo
+bytes, and (once the save round-trip test lands) byte preservation through the
+real save path.
+
+A human run on such a platform only needs to cover what automation cannot
+reach: the WebView actually rendering, keyboard delivery inside the WebView,
+the native file dialog, and switching files inside one running process.
+
+The full 1–21 run remains required for a platform **without** CI coverage
+(macOS today) and for the first release on any new platform.
+
+| Check | What to do | Replaces |
+|---|---|---|
+| **A** | Launch. The toolbar and Document Map appear. | 1 |
+| **B** | Ctrl+O, open `academic-paper.md` through the dialog. Section cards appear. | 2, 3 |
+| **C** | Click a card, type a word in the body, Ctrl+S. Status shows "Saved". | 4, 5, 6 |
+| **D** | Try Esc, Ctrl+\`, and Ctrl+F, then type into the search field. Note which work. This checks `known-limitations.md`, so record what happened rather than pass/fail. | 8–11 |
+| **E** | Without restarting, Ctrl+O and open `structured-sample.json`. Both `duplicate` keys show as separate rows. | 13, 14, 21 |
+| **F** | Click a number, change it, Ctrl+S, then Ctrl+Z. The old value returns and stays selected. | 15, 17, 18 |
+| **G** | Close the app, reopen both files. The saved changes are there. | 12 |
+| **H** | Only on a Japanese-language Windows install: omriss starts in Japanese. Otherwise record as not run. | 22 |
+
+Steps 7, 16, 19 and 20 have no human check here: CI covers them on this
+platform. Step 17's byte inspection moves to an automated round-trip test
+through `open_markdown_path` and `save_markdown`, run on `windows-latest`.
+
 ### Windows-Only Step (from 0.17.0)
 
 22. **OS language** — on a Windows install whose display language is Japanese,
