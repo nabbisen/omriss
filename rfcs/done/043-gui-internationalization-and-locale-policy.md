@@ -10,13 +10,26 @@ Language: English
 **Milestone:** M2 — Basic Desktop UX (catalog infrastructure) / M8 — Cross-Platform Delivery (locale switching UX)
 **Status.** Implemented (v0.1.0) — deferred: explicit locale setting persistence awaits RFC-036; startup detection is environment-based until then
 
-> **Gap recorded 2026-09-17.** Environment-based startup detection reads `LC_ALL`,
-> `LC_MESSAGES` and `LANG`, which Windows does not set. On Windows the "else OS
-> locale" step of §92's startup order therefore never fires, and the app always
-> starts in English regardless of the OS UI language. Found while deciding whether
-> the MSIX manifest should declare `ja-JP`. Being fixed for 0.17.0 by dev-team
-> Task 013, together with the manifest declaration; this note is updated when that
-> lands.
+> **Windows gap fixed 2026-09-17 (Task 013, `6c8b86e`).** Startup detection read
+> only `LC_ALL`, `LC_MESSAGES` and `LANG`, which Windows does not set, so the app
+> always started in English there. Windows now reads the user's preferred UI
+> language through `GetUserPreferredUILanguages`; other platforms keep the
+> environment-variable lookup unchanged. The MSIX manifest declares `ja-JP`.
+>
+> **Three follow-ups remain:**
+>
+> 1. **Windows uses only the first preferred language.** The environment path
+>    skips an unsupported value and tries the next; the Windows path stops at the
+>    first entry. A user whose list is `fr-FR, ja-JP` gets English. Fix: return
+>    the first tag in the list that maps to a shipped locale.
+> 2. **macOS very likely still starts in English.** Apps launched from Finder or
+>    the Dock generally do not inherit `LANG`. Unverified — no Mac has been
+>    available to test.
+> 3. **The explicit locale setting was never built.** This Status deferred it
+>    until RFC-036 existed. RFC-036 shipped in v0.11.0, but no locale field was
+>    added to `AppSettings`, and the toolbar language switcher writes only to a
+>    runtime signal. A chosen language is lost on every restart, so the first step
+>    of §92's startup order has nothing to read.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 
