@@ -166,3 +166,6 @@ pub fn was_modified_externally(path: &str, saved_mtime: SystemTime) -> bool {
         .map(|disk_mtime| disk_mtime > saved_mtime)
         .unwrap_or(false)
 }
+
+#[cfg(test)]
+mod round_trip_tests;
