@@ -101,6 +101,13 @@ editor that reserializes the file instead of patching it. Do not tidy it;
 21. **Markdown unaffected** — repeat steps 2–8 on a `.md` file in the same
     session
 
+### Windows-Only Step (from 0.17.0)
+
+22. **OS language** — on a Windows install whose display language is Japanese,
+    with no saved language preference, omriss starts in Japanese. If no Japanese
+    Windows installation is available, record the step as not run rather than
+    passed.
+
 ### Release-Blocking Failures (RFC-038 §4)
 
 Any of the following block release:

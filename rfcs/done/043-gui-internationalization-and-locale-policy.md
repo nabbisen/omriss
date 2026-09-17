@@ -9,6 +9,14 @@ Language: English
 **Project:** omriss — Omriss Editor
 **Milestone:** M2 — Basic Desktop UX (catalog infrastructure) / M8 — Cross-Platform Delivery (locale switching UX)
 **Status.** Implemented (v0.1.0) — deferred: explicit locale setting persistence awaits RFC-036; startup detection is environment-based until then
+
+> **Gap recorded 2026-09-17.** Environment-based startup detection reads `LC_ALL`,
+> `LC_MESSAGES` and `LANG`, which Windows does not set. On Windows the "else OS
+> locale" step of §92's startup order therefore never fires, and the app always
+> starts in English regardless of the OS UI language. Found while deciding whether
+> the MSIX manifest should declare `ja-JP`. Being fixed for 0.17.0 by dev-team
+> Task 013, together with the manifest declaration; this note is updated when that
+> lands.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 
