@@ -234,6 +234,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
   0.7's own edit-streaming WebSocket and inline interop script, leaving
   the window blank — tracked separately pending a compatible policy.
 
+### Fixed
+
+- **Windows now starts in the OS UI language.** `detect_locale()` only ever
+  read `LC_ALL`/`LC_MESSAGES`/`LANG`, POSIX variables Windows does not set,
+  so a Japanese Windows install silently started in English — RFC-043's
+  "explicit setting, else OS locale, else English" startup order never
+  reached its middle step on that platform. Windows now reads the user's
+  preferred UI language directly from the OS; Linux and macOS are
+  unaffected (still the same environment-variable lookup, unchanged). The
+  Microsoft Store package now also declares Japanese support
+  (`packaging/windows/AppxManifest.xml`), which would otherwise have
+  advertised a language the app could never actually start in.
+
 ## [0.16.0] - 2026-07-15
 
 ### Changed

@@ -8,23 +8,14 @@ mod cli;
 mod components;
 mod file;
 mod input;
+mod locale;
 mod shell;
 mod storage;
 
 use dioxus::desktop::{Config, WindowBuilder};
-use omriss_ui::i18n::Locale;
 
+use crate::locale::detect_locale;
 use crate::storage::settings::AppSettings;
-
-/// Detects the OS locale at startup from environment variables.
-/// Explicit user preference from saved settings will take precedence.
-fn detect_locale() -> Locale {
-    ["LC_ALL", "LC_MESSAGES", "LANG"]
-        .iter()
-        .filter_map(|var| std::env::var(var).ok())
-        .find_map(|tag| Locale::from_tag(&tag))
-        .unwrap_or_default()
-}
 
 fn main() {
     // RFC-036: load settings before launching; fall back to defaults silently.

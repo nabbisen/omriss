@@ -76,3 +76,13 @@ fn locale_tags_round_trip_and_tolerate_regions() {
         assert_eq!(Locale::from_tag(locale.tag()), Some(*locale));
     }
 }
+
+#[test]
+fn locale_tags_in_the_shape_windows_reports_map_correctly() {
+    // Task 013: GetUserPreferredUILanguages reports tags like "ja-JP" and
+    // "en-US"; an unsupported language (e.g. French) must fall back to
+    // English rather than `from_tag` returning `None` and being mishandled.
+    assert_eq!(Locale::from_tag("ja-JP"), Some(Locale::Ja));
+    assert_eq!(Locale::from_tag("en-US"), Some(Locale::En));
+    assert_eq!(Locale::from_tag("fr-FR"), None);
+}

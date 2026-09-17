@@ -31,6 +31,13 @@ dirs                = { workspace = true }
 serde               = { workspace = true }
 toml                = { workspace = true }
 
+# Task 013: Windows-only startup locale detection (GetUserPreferredUILanguages).
+# Already in the dependency tree transitively via tao/wry (dioxus-desktop's
+# window/webview backends) at this same 0.61 line, so this adds no new crate
+# to the tree — only a direct edge to one already resolved.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = ["Win32_Globalization", "Win32_Foundation"] }
+
 [[bin]]
 name = "omriss"
 path = "src/main.rs"
