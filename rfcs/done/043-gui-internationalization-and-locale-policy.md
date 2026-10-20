@@ -30,6 +30,12 @@ Language: English
 >    added to `AppSettings`, and the toolbar language switcher writes only to a
 >    runtime signal. A chosen language is lost on every restart, so the first step
 >    of §92's startup order has nothing to read.
+>
+> **Follow-ups 1 and 3 are taken up by RFC-073**, together with the
+> interpolation and typed-error-cause work AUDIT-0170-026 found: counts and
+> every error cause are hardcoded English, so a Japanese user meets English
+> exactly when something has gone wrong. Follow-up 2 (macOS) stays unverified
+> rather than scheduled — no Mac has been available.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 
