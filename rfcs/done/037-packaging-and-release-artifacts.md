@@ -8,7 +8,20 @@ Language: English
 
 **Project:** omriss — Omriss Editor  
 **Milestone:** M8 — Cross-Platform Delivery  
-**Status.** Implemented (v0.11.0)  
+**Status.** Implemented (v0.11.0)
+
+> **Superseded in part, 2026-10-21.** §3's "No app store distribution
+> requirement" no longer holds: omriss ships on the Microsoft Store, and two AUR
+> packages are registered. The artifact matrix is also inaccurate — it lists a
+> Cargo source tarball as "produced by the release process" and Linux/macOS/
+> Windows binaries as "planned", while `release.yml` produces only a Store MSIX
+> and no checksum for anything (AUDIT-0170-016).
+>
+> GitHub releases stopped at `0.6.1` (2025-02-08), under the former name
+> `layered`, which did publish three-platform binaries. The last 46 tags have no
+> release. **RFC-072** rebuilds the Linux half of this in CI and corrects the
+> matrix; the Store channel is recorded in RFC-064 §9 and
+> `.git-exclude/release/0.17.0/ci-and-store-publishing.md`.  
 **Document type:** Detailed RFC design  
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer  
 
