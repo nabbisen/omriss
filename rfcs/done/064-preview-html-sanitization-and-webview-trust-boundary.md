@@ -176,6 +176,32 @@ stripped — strictly more work and strictly more risk. **The recommendation is
 escaping.** Ship it, note it in `known-limitations.md`, and revisit only with a
 concrete user need.
 
+## 9a. The CSP also has a privacy dimension (recorded 2026-10-21)
+
+Noted while reviewing `PRIVACY.md` for the Store listing. §4.2's scheme check
+allows `http` and `https` for `Tag::Image`, so a Markdown image with a remote
+address renders as `<img src="https://…">` and the WebView fetches it on
+preview. Verified:
+
+```text
+in   ![logo](https://example.com/tracker.png)
+out  <p><img src="https://example.com/tracker.png" alt="">logo</p>
+```
+
+That is a tracking pixel: a document from someone else learns the reader's IP
+address and when they opened it. It is not a security hole — no code executes,
+and raw HTML `<img>` is escaped by §4.1 — but it is the only path by which
+viewing a document reaches the network, and it contradicts the obvious reading
+of "local-first".
+
+**`img-src 'self' data:`, already in §4.3's corrected policy, blocks it.** So
+wiring the CSP is not only defence in depth over an already-closed finding; it
+also closes a live privacy gap. That strengthens the case for doing it in
+0.18.0, and the three-platform verification requirement in §9 is unchanged.
+
+`PRIVACY.md` §4 documents the behaviour and its mitigation in the meantime,
+because the policy has to be true of the shipped build.
+
 ## 9. H3 deferred to 0.18.0
 
 The corrected §4.3 policy has been verified on **Linux only**. WebKitGTK,
