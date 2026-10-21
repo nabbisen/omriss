@@ -119,13 +119,14 @@ The full 1–21 run remains required for a platform **without** CI coverage
 
 | Check | What to do | Replaces |
 |---|---|---|
-| **A** | Launch. The toolbar and Document Map appear. | 1 |
+| **A** | Launch. The toolbar and the Welcome screen appear. The Document Map stays empty until a file is open (RFC-048 layout). | 1 |
 | **B** | Ctrl+O, open `academic-paper.md` through the dialog. Section cards appear. | 2, 3 |
 | **C** | Click a card, type a word in the body, Ctrl+S. Status shows "Saved". | 4, 5, 6 |
 | **D** | Try Esc, Ctrl+\`, and Ctrl+F, then type into the search field. Note which work. This checks `known-limitations.md`, so record what happened rather than pass/fail. | 8–11 |
 | **E** | Without restarting, Ctrl+O and open `structured-sample.json`. Both `duplicate` keys show as separate rows. | 13, 14, 21 |
 | **F** | Click a number, change it, Ctrl+S, then Ctrl+Z. The old value returns and stays selected. | 15, 17, 18 |
 | **G** | Close the app, reopen both files. The saved changes are there. | 12 |
+| **I** | Open a Markdown file containing raw HTML (`<table>`, `<b>`) and view the preview. The markup must show as **visible text**, never rendered. Live markup here is release-blocking (RFC-064). | — |
 | **H** | Only on a Japanese-language Windows install: omriss starts in Japanese. Otherwise record as not run. | 22 |
 
 Steps 7, 16, 19 and 20 have no human check here: CI covers them on this
