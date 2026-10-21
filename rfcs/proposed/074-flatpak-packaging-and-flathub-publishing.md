@@ -68,18 +68,27 @@ Flathub IDs are reverse-DNS, must match the MetaInfo `<id>`, and renames are
 granted conservatively and not soon after acceptance. It is effectively a
 one-way door, and it is needed **before RFC-072 is implemented** (§9).
 
-| Option | Verification needed | Listing |
+> **Decided by the project owner on 2026-10-21: `io.github.nabbisen.omriss`.**
+> This is a final decision, not a recommendation. RFC-072's asset names were
+> amended to match on the same day.
+
+| Option | How it is verified | Listing |
 |---|---|---|
-| `io.github.nabbisen.omriss` | none — allowed code-hosting prefix, 4 components | unverified |
-| `com.reflerd.omriss` | a token at `https://reflerd.com/.well-known/org.flathub.VerifiedApps.txt` | **verified badge** |
+| `io.github.nabbisen.omriss` | log in to Flathub's Developer Portal with the GitHub account that **owns** `nabbisen/omriss` | **verified badge** |
+| `com.reflerd.omriss` (not chosen) | a token at `https://reflerd.com/.well-known/org.flathub.VerifiedApps.txt`, or a `_flathub.reflerd.com` TXT record | **verified badge** |
 
-**Architect's recommendation: `com.reflerd.omriss`**, if the owner intends to
-keep that domain. It costs one static file, it does not tie the project's
-identity to a code host it might one day leave, and the verified badge is the
-clearest signal to a user that the upload is the real upstream.
+`io.github.nabbisen.omriss` satisfies every ID rule: an allowed code-hosting
+prefix, exactly four components, no reserved suffix. It is also the ordinary
+choice on Flathub for a project whose home is a code host.
 
-Examples below use `com.reflerd.omriss`. If the owner chooses the code-hosting
-ID the substitution is mechanical and nothing else in this RFC changes.
+**An earlier draft of this section claimed the code-hosting ID could not be
+verified. That was wrong.** Flathub's login-provider path verifies an
+`io.github.<user>.<app>` ID through the GitHub account that owns the
+repository — no domain, no `.well-known` file, no DNS record. Both options
+reach the same badge, so the only real difference is what the ID is tied to:
+the domain path survives a move off GitHub, the login path does not. Renames
+are granted conservatively, so an eventual move would mean living with the old
+ID — which many published applications do.
 
 ### 4.2 Network access
 
@@ -105,7 +114,7 @@ preview may fetch remote images. If one channel does not, that section says so
 
 ## 5. The manifest
 
-`packaging/flatpak/com.reflerd.omriss.yaml`, kept upstream in this repository
+`packaging/flatpak/io.github.nabbisen.omriss.yaml`, kept upstream in this repository
 and copied into the Flathub repository by CI (§10).
 
 ### 5.1 Runtime and SDK
@@ -190,10 +199,10 @@ decision, not an omission:
 
 ```text
 /app/bin/omriss
-/app/share/applications/com.reflerd.omriss.desktop
-/app/share/icons/hicolor/scalable/apps/com.reflerd.omriss.svg
-/app/share/metainfo/com.reflerd.omriss.metainfo.xml
-/app/share/licenses/com.reflerd.omriss/LICENSE
+/app/share/applications/io.github.nabbisen.omriss.desktop
+/app/share/icons/hicolor/scalable/apps/io.github.nabbisen.omriss.svg
+/app/share/metainfo/io.github.nabbisen.omriss.metainfo.xml
+/app/share/licenses/io.github.nabbisen.omriss/LICENSE
 ```
 
 The licence path is a Flathub requirement, and it needs RFC-072 §4.4's
@@ -204,7 +213,7 @@ since v0.1.0 with no such file in the tree.
 
 Flathub requires a MetaInfo file that passes validation, and requires it to be
 **integrated upstream** rather than added in the submission pull request. So it
-is repository content, not packaging content: `packaging/linux/com.reflerd.omriss.metainfo.xml`,
+is repository content, not packaging content: `packaging/linux/io.github.nabbisen.omriss.metainfo.xml`,
 installed by both the Flatpak manifest and the AUR package.
 
 Minimum contents:
@@ -213,7 +222,7 @@ Minimum contents:
 - `<name>`, `<summary>`, `<description>` — the summary is a single sentence
   with no marketing and no trailing period
 - `<metadata_license>` and `<project_license>Apache-2.0</project_license>`
-- `<launchable type="desktop-id">com.reflerd.omriss.desktop</launchable>`
+- `<launchable type="desktop-id">io.github.nabbisen.omriss.desktop</launchable>`
 - `<screenshots>` — at least one, at an absolute HTTPS URL, showing the
   application doing its actual job. A screenshot of an empty Welcome screen is
   worse than none
@@ -292,7 +301,7 @@ to a native install. The Flatpak manifest patches the `Exec` line at build time
 with a documented one-line substitution, and §12 asserts the result rather than
 trusting it.
 
-**Proof required:** `flatpak run com.reflerd.omriss ~/notes.md` opens the file,
+**Proof required:** `flatpak run io.github.nabbisen.omriss ~/notes.md` opens the file,
 and "Open With" from a file manager does too.
 
 ### G4 — The runtime provides `webkit2gtk-4.1`
@@ -341,9 +350,9 @@ misleading as one that understates it.
 
 | Asset | Today in RFC-072 | After this RFC |
 |---|---|---|
-| Desktop entry | `packaging/linux/omriss.desktop` | `packaging/linux/com.reflerd.omriss.desktop` |
-| Icon | `packaging/linux/omriss.svg` | `packaging/linux/com.reflerd.omriss.svg` |
-| MetaInfo | absent | `packaging/linux/com.reflerd.omriss.metainfo.xml`, installed by both |
+| Desktop entry | `packaging/linux/omriss.desktop` | `packaging/linux/io.github.nabbisen.omriss.desktop` |
+| Icon | `packaging/linux/omriss.svg` | `packaging/linux/io.github.nabbisen.omriss.svg` |
+| MetaInfo | absent | `packaging/linux/io.github.nabbisen.omriss.metainfo.xml`, installed by both |
 | `Exec=` | `omriss %f` | unchanged natively; patched to `omriss @@u %u` in the Flatpak build |
 | `LICENSE` | §4.4 adds it | also installed to `/app/share/licenses/$FLATPAK_ID/` |
 
@@ -353,7 +362,7 @@ both channels; the alternative — renaming inside the Flatpak build — creates
 two names for one file and a rename step that breaks silently when someone
 edits the wrong copy.
 
-`Icon=com.reflerd.omriss` resolves correctly for a native install through
+`Icon=io.github.nabbisen.omriss` resolves correctly for a native install through
 `hicolor`, so this costs the AUR package nothing.
 
 **RFC-072 is still Proposed, so this is an amendment and not a correction to
@@ -362,7 +371,7 @@ implemented.** That ordering is the one piece of this RFC that is urgent.
 
 ## 10. CI
 
-Flathub **builds on its own infrastructure**, from a `flathub/com.reflerd.omriss`
+Flathub **builds on its own infrastructure**, from a `flathub/io.github.nabbisen.omriss`
 repository created after review, to which the maintainer gets push access. Our
 CI therefore does two different jobs, and neither of them produces the published
 artifact.
@@ -373,7 +382,7 @@ artifact.
 - uses: flatpak/flatpak-github-actions/flatpak-builder@<pinned-sha>
   with:
     bundle: omriss.flatpak
-    manifest-path: packaging/flatpak/com.reflerd.omriss.yaml
+    manifest-path: packaging/flatpak/io.github.nabbisen.omriss.yaml
     cache-key: flatpak-builder-${{ github.sha }}
 ```
 
@@ -394,7 +403,7 @@ minutes, instead of by a volunteer reviewer, in days.
 2. Point the manifest's `sources` at the tagged archive from RFC-072 §5.2,
    with its `sha256`.
 3. Append a `<release version="X.Y.Z" date="…"/>` to the MetaInfo.
-4. Push to `flathub/com.reflerd.omriss`, whose buildbot builds and publishes.
+4. Push to `flathub/io.github.nabbisen.omriss`, whose buildbot builds and publishes.
 
 **This job runs only after the release job that verifies tests pass**, exactly
 as the Microsoft Store job does. The same rule applies for the same reason:
@@ -433,22 +442,24 @@ it as an owner decision rather than resolving it here.
 - **G1–G4 pass**, each with the command and its output recorded, not a claim.
 - `appstreamcli validate --explain` is clean; `desktop-file-validate` is clean.
 - The exported desktop entry contains the forwarding token:
-  `grep -- '--file-forwarding' ~/.local/share/flatpak/exports/share/applications/com.reflerd.omriss.desktop`
-- `flatpak run com.reflerd.omriss` and
-  `flatpak run com.reflerd.omriss <path>` both open correctly (G3).
+  `grep -- '--file-forwarding' ~/.local/share/flatpak/exports/share/applications/io.github.nabbisen.omriss.desktop`
+- `flatpak run io.github.nabbisen.omriss` and
+  `flatpak run io.github.nabbisen.omriss <path>` both open correctly (G3).
 - **The reduced smoke run (checks A–I) is executed against the Flatpak build**,
   not only against a `cargo build --release` binary. Flatpak is a distinct
   platform under RFC-038's rules, and check I in particular must be re-proven:
   a different WebKitGTK build is exactly where escaping behaviour could differ.
 - The window's icon and name resolve in the shell's dock — `StartupWMClass`
   matches what `tao` sets.
-- `flatpak run --command=sh com.reflerd.omriss -c 'ls /'` shows no host home
+- `flatpak run --command=sh io.github.nabbisen.omriss -c 'ls /'` shows no host home
   directory.
 
 ## 13. Acceptance criteria
 
-1. `com.reflerd.omriss` (or the chosen ID) is accepted on Flathub and installs
-   from a clean machine with `flatpak install flathub <id>`.
+1. `io.github.nabbisen.omriss` is accepted on Flathub, installs from a clean
+   machine with `flatpak install flathub io.github.nabbisen.omriss`, and is
+   **verified** through the GitHub login path (§4.1) — an unverified listing of
+   a single-maintainer app gives a user no way to tell it from a repackaging.
 2. G1–G4 are proven, with recorded evidence, **before submission**.
 3. The sandbox requests no filesystem permission and no network access, or the
    deviation is recorded in this RFC with the owner's decision.
@@ -461,10 +472,11 @@ it as an owner decision rather than resolving it here.
 
 ## 14. Open decisions for the owner
 
-1. **Application ID** — §4.1. Blocks RFC-072's file naming.
-2. **Network access** — §4.2. Recommendation: no.
-3. **Publication mechanism** — §10.3: hold a deploy key and push, or let
+**Resolved:** the application ID — §4.1, decided 2026-10-21.
+
+1. **Network access** — §4.2. Recommendation: no.
+2. **Publication mechanism** — §10.3: hold a deploy key and push, or let
    `flatpak-external-data-checker` open a pull request we merge.
-4. **Screenshots** — §6 requires at least one hosted at an HTTPS URL. The
+3. **Screenshots** — §6 requires at least one hosted at an HTTPS URL. The
    repository has none today; they are also what a prospective user looks at
    first.

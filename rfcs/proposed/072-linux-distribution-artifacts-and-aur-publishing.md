@@ -6,7 +6,7 @@
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-037, RFC-042
-**Related RFCs:** RFC-035, RFC-038, RFC-064
+**Related RFCs:** RFC-035, RFC-038, RFC-064, RFC-074
 
 ---
 
@@ -65,8 +65,15 @@ the point of §5** — a manual process already failed once, silently.
 
 ### 4.1 `.desktop` entry
 
-`packaging/linux/omriss.desktop`, installed to
-`/usr/share/applications/omriss.desktop`:
+`packaging/linux/io.github.nabbisen.omriss.desktop`, installed to
+`/usr/share/applications/io.github.nabbisen.omriss.desktop`.
+
+**Named after the Flatpak application ID, deliberately** (RFC-074 §4.1, owner
+decision of 2026-10-21). Flathub requires the desktop entry, icon and MetaInfo
+to carry the application ID, and shipping one canonical name upstream beats a
+rename step inside the Flatpak build that breaks silently when someone edits
+the wrong copy. `Icon=` resolves through `hicolor` either way, so this costs
+the AUR package nothing.
 
 ```ini
 [Desktop Entry]
@@ -74,7 +81,7 @@ Type=Application
 Name=Omriss
 Comment=A text editor that helps clarify ideas and refine them, layer by layer
 Exec=omriss %f
-Icon=omriss
+Icon=io.github.nabbisen.omriss
 Terminal=false
 Categories=Office;TextEditor;Utility;
 MimeType=text/markdown;application/json;
@@ -100,8 +107,9 @@ The packaging must not run `xdg-mime default` or install a `mimeapps.list`.
 
 ### 4.3 Icon
 
-`packaging/linux/omriss.svg` installed to
-`/usr/share/icons/hicolor/scalable/apps/omriss.svg`.
+`packaging/linux/io.github.nabbisen.omriss.svg` installed to
+`/usr/share/icons/hicolor/scalable/apps/io.github.nabbisen.omriss.svg`
+(§4.1's naming rule).
 
 Prefer SVG. The existing Windows assets are fixed-size tile images in the wrong
 aspect ratios for `hicolor`; if no vector source exists, install
@@ -113,6 +121,14 @@ into the wrong boxes.
 Add the Apache-2.0 text as `LICENSE` at the repository root. `Cargo.toml` has
 declared `license = "Apache-2.0"` since v0.1.0 with no such file, so neither a
 package nor a crates.io consumer can read the terms.
+
+### 4.5 AppStream metadata
+
+`packaging/linux/io.github.nabbisen.omriss.metainfo.xml`, installed to
+`/usr/share/metainfo/`. Specified in **RFC-074 §6**, which Flathub requires it
+for; it is listed here because GNOME Software and KDE Discover read it for
+natively installed packages too, so the AUR package installs the same file. It
+is not duplicated in this RFC.
 
 ## 5. CI: build, publish, and update the AUR
 
