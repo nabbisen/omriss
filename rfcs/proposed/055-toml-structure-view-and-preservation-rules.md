@@ -91,6 +91,29 @@ Text
 [Done]
 ```
 
+### 4.1 The open dialog's filters
+
+Task 016 made the open dialog default to an **"All supported"** filter built by
+chaining the per-format extension lists (`crates/app/src/file/file_dialog.rs`),
+so that a format added to one list cannot be missing from the default view.
+TOML is the first format to arrive after that, and two things follow.
+
+**Order is load-bearing, and not obviously so.** `rfd`'s Windows backend calls
+`IFileDialog::SetDefaultExtension` with the **first extension of the first
+filter** (`add_filters`, rfd 0.15.4), so that extension is what a Save-As dialog
+appends when the user types a bare name. `md` is first today. Append
+`TOML_EXTENSIONS` to the chain; do not prepend it, or Save-As silently starts
+suggesting `.toml` for Markdown documents.
+
+**TOML stays out of "All supported" until its preservation tests pass.**
+RFC-052 §14.4 makes TOML *visible, labeled experimental*. An aggregate filter
+entry has nowhere to carry that label: a user who opens a `.toml` from "All
+supported" is never shown the word "experimental". Offering TOML only through
+its own explicitly-labeled filter — `TOML (experimental)` — is how §14.4's two
+halves survive together in a dialog. When §13.2's preservation tests pass and
+the experimental label is dropped, chain `TOML_EXTENSIONS` into the default and
+remove this exception.
+
 ## 5. Plain labels
 
 | TOML concept | omriss label |

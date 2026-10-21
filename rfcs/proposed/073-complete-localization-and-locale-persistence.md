@@ -183,6 +183,24 @@ Real `LANG` values carry a region, so this is theoretical today. While this RFC
 is in locale code, split on `.` as well. One line, and it removes a trap for
 whoever adds the third locale.
 
+### 4.4b File dialog filter labels
+
+`markdown_dialog()` offers three filters — `"All supported"`, `"Markdown"`,
+`"JSON"` — all English literals; the first carries a `TODO(RFC-073)` note
+(Task 016). They are
+§3.2's problem in a second place: `file_dialog.rs` has no `Locale` and should
+not acquire one through a threaded parameter.
+
+`"Markdown"` and `"JSON"` are format names and may reasonably stay as they are
+in any locale. `"All supported"` is a translatable phrase, and it is the
+*default* filter, so it is the first omriss word a Japanese user reads when
+opening a file.
+
+Resolve it the same way as §4.3: the dialog builder takes the already-resolved
+strings from its caller in `shell/`, where a `Locale` is in scope, rather than
+`file_dialog.rs` reaching for a catalog. A locale does not enter the file layer;
+text does.
+
 ### 4.5 Locale persistence
 
 ```rust
