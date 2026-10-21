@@ -240,9 +240,9 @@ to a Flathub reviewer to discover.
 it for natively installed packages too, so the AUR package should install it as
 well. RFC-072 gains it by reference, not by duplication.
 
-## 7. Four gates that must be proven inside a sandbox
+## 7. Five gates that must be proven inside a sandbox
 
-Three of these are invisible to `cargo test --workspace`, because they are
+Four of these are invisible to `cargo test --workspace`, because they are
 properties of the *environment*, not of the code. None may be assumed.
 
 ### G1 — The UI renders at all
@@ -314,6 +314,54 @@ flatpak run --command=sh --devel org.gnome.Sdk//51 \
 
 Pin the newest runtime for which this prints a version ≥ 2.4. Record the
 version in the manifest and in this RFC's Status when it is settled.
+
+### G5 — Assistive technology still reaches the UI
+
+Natively, it does. Probed on 2026-10-22 with `gi.repository.Atspi` — the
+library Orca itself uses — omriss registers on the a11y bus as `omriss`
+[application], toolkit `gtk 3.24.52`, and the WebView's content reaches the
+tree with real landmarks, roles and names, including
+`[entry] 'Edit section text' editable,focusable`. Evidence:
+`.git-exclude/qa/rfc-060-a11y/baseline-tree-20261022.txt`. The systematic
+measurement is Task 018, under RFC-060.
+
+**Under the sandbox this is not guaranteed, and the reason is specific to our
+stack.** A report from another project on the same stack (wry + WebKitGTK,
+2026-10-21) found that accessibility inside a Flatpak needed two conditions,
+neither of them a code change:
+
+1. **WebKit's web-process sandbox must be enabled.** It is off by default in
+   the GTK3 line — the `webkit2gtk-4.1` ABI we use — and is always on in the
+   GTK4 line, which is why GNOME Web does not have this problem.
+   `webkit_web_context_set_sandbox_enabled()` is the API, and it is **fatal if
+   called after any web process exists**, so the reachable lever is the
+   `WEBKIT_FORCE_SANDBOX` environment variable, set in `finish-args`.
+2. **The application must present its Flatpak ID.** WebKit's sandboxed process
+   reaches portals, and portals expect an application ID; without one, upstream
+   reports that saving, printing and notifications break.
+
+**Condition 2 is where omriss has a verified problem.** `tao` 0.34.8 exposes
+`EventLoopBuilderExtUnix::with_app_id`, which passes the ID to
+`gtk::Application::new`. `dioxus-desktop` 0.7.9 exposes
+`Config::with_event_loop`, which would let us supply such an event loop — but
+its parameter type is `EventLoop<UserWindowEvent>`, and `UserWindowEvent` lives
+in a **private** `mod ipc` with no re-export. The API is therefore unreachable
+from a downstream crate.
+
+So if G5 needs the GTK application ID, omriss needs either a direct `glib`
+dependency to set the program name early, or an upstream change to
+`dioxus-desktop`. **That is lead time**, and the point of recording it here is
+that it must be discovered now and not during a Flathub review.
+
+**Proof required:** the accessible tree inside the Flatpak is equivalent to the
+native one — same landmarks, same named controls, the editor entry still
+`editable,focusable`. Run `atspi_probe.py` against the sandboxed process.
+
+Note that conditions 1 and 2 come from another project's report, not from our
+own observation or from upstream documentation of the *accessibility* effect
+specifically. The sandbox API's behaviour and the portal/app-ID requirement are
+documented upstream; the link to accessibility is their finding. Treat it as a
+strong lead, not as established fact, and let G5 decide it.
 
 ## 8. Behaviour that differs under the sandbox
 
@@ -439,7 +487,7 @@ it as an owner decision rather than resolving it here.
 
 ## 12. Validation and test plan
 
-- **G1–G4 pass**, each with the command and its output recorded, not a claim.
+- **G1–G5 pass**, each with the command and its output recorded, not a claim.
 - `appstreamcli validate --explain` is clean; `desktop-file-validate` is clean.
 - The exported desktop entry contains the forwarding token:
   `grep -- '--file-forwarding' ~/.local/share/flatpak/exports/share/applications/io.github.nabbisen.omriss.desktop`
@@ -460,7 +508,7 @@ it as an owner decision rather than resolving it here.
    machine with `flatpak install flathub io.github.nabbisen.omriss`, and is
    **verified** through the GitHub login path (§4.1) — an unverified listing of
    a single-maintainer app gives a user no way to tell it from a repackaging.
-2. G1–G4 are proven, with recorded evidence, **before submission**.
+2. G1–G5 are proven, with recorded evidence, **before submission**.
 3. The sandbox requests no filesystem permission and no network access, or the
    deviation is recorded in this RFC with the owner's decision.
 4. `Cargo.lock` is committed (§5.2, RFC-072 §2).

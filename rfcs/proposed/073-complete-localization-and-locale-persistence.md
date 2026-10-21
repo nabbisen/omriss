@@ -172,6 +172,12 @@ The path is *data* and must be interpolated, not translated — the same rule as
 screen-reader label and gets a catalog key. It is small, and it is exactly the
 string a Japanese screen-reader user would hit.
 
+A second one surfaced when the accessible tree was first dumped (2026-10-22):
+`"collapsed sections"` (`breadcrumb.rs:46`), the `aria-label` on the breadcrumb
+ellipsis. Same treatment, same reason. Both are invisible on screen, which is
+precisely why they were missed — a sighted reviewer never sees them, and no
+test reads them.
+
 ### 4.4a `from_tag` and codeset-only tags
 
 `Locale::from_tag` splits on `-` and `_` and takes the first segment, so
