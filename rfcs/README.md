@@ -95,11 +95,12 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 071 | [Structure-Change Warning on Body Commit](./proposed/071-structure-change-warning-on-body-commit.md) | M13 |
 | 072 | [Linux Distribution Artifacts and AUR Publishing](./proposed/072-linux-distribution-artifacts-and-aur-publishing.md) | M13 |
 | 073 | [Complete Localization and Locale Persistence](./proposed/073-complete-localization-and-locale-persistence.md) | M13 |
+| 074 | [Flatpak Packaging and Flathub Publishing](./proposed/074-flatpak-packaging-and-flathub-publishing.md) | M13 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **074**.
+Next free RFC number: **075**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.

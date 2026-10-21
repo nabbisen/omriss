@@ -73,6 +73,15 @@ and CI proves the binary compiles, not that it behaves.
   wiring RFC-064's CSP once it can be verified on all three platforms, and
   RFC-067 §3.2/§3.3/§3.4 (skipping the Markdown outline for non-Markdown
   documents, splice inversion, and the search hot loop).
+- **M13, distribution:** RFC-072 (Linux artifacts and AUR publishing) and
+  RFC-074 (Flatpak packaging and Flathub publishing). Both are blocked on
+  committing `Cargo.lock` — AUR's `--locked` and Flatpak's offline build fail
+  without it, by unrelated mechanisms. RFC-074 also needs the application ID
+  decided *before* RFC-072 is implemented, or the two channels ship different
+  names for the same files.
+- **M13, localization:** RFC-073 — interpolation, plurals, typed open failures
+  and locale persistence. Japanese is complete in the catalogs and absent
+  exactly where something has gone wrong.
 - **M14:** RFC-058, placement-complete Document Map creation controls.
 - **M15:** RFC-060 and RFC-061, accessibility/screen-reader and
   non-technical-user validation.
