@@ -104,6 +104,16 @@ carries a Markdown outline rebuilt on **every edit**.
 > **Deferred to 0.18.0.** Doing it properly means making `OverviewPane` and
 > `SearchPanel` format-aware first, which is real scope in two more app
 > components, not the "cheap win" §3.2 called it.
+>
+> **One user-visible symptom of the same gap, added 2026-10-21** (Task 015
+> finding O-3): opening a `.json` highlights the first Document Map row while
+> the Writing Area shows a "Document" card rather than that row's value.
+> `shell/actions.rs:56` skips auto-focus for non-Markdown, so nothing is
+> focused, yet the Document Map still renders a highlight — two notions of
+> "current row" disagreeing on the user's first impression of the release's
+> headline feature. Clicking any row behaves correctly, so it is not
+> release-blocking, but it belongs to this deferred scope rather than to a
+> separate RFC.
 
 ### 3.3 Invert the splice instead of copying the document
 

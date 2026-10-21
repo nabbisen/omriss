@@ -172,6 +172,17 @@ The path is *data* and must be interpolated, not translated — the same rule as
 screen-reader label and gets a catalog key. It is small, and it is exactly the
 string a Japanese screen-reader user would hit.
 
+### 4.4a `from_tag` and codeset-only tags
+
+`Locale::from_tag` splits on `-` and `_` and takes the first segment, so
+`ja_JP.UTF-8` resolves correctly — verified in the running app by Task 015's
+check H. A tag carrying a codeset but **no** region, `ja.UTF-8`, returns `None`,
+because `.` is not a separator it splits on.
+
+Real `LANG` values carry a region, so this is theoretical today. While this RFC
+is in locale code, split on `.` as well. One line, and it removes a trap for
+whoever adds the third locale.
+
 ### 4.5 Locale persistence
 
 ```rust
