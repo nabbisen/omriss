@@ -46,10 +46,24 @@ pub enum SaveOutcome {
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-/// The shared open/save dialog. Both filters are always offered: RFC-054 J3
-/// widens the *open* side to `.json` (RFC-052 §14.4, JSON visible by
-/// default — no separate "experimental formats" toggle), and it costs
-/// nothing to offer the same two filters on the Save-As side too, rather
+/// Every extension the open dialog accepts: the union of the per-format
+/// lists, in their order. Built from `MD_EXTENSIONS` and `JSON_EXTENSIONS`
+/// rather than retyped, so a format added to one list (RFC-055: TOML) cannot
+/// be missing from the default filter.
+fn all_extensions() -> Vec<&'static str> {
+    MD_EXTENSIONS
+        .iter()
+        .chain(JSON_EXTENSIONS)
+        .copied()
+        .collect()
+}
+
+/// The shared open/save dialog. The first filter is the dialog's default, so
+/// it is "all supported": a user opening a `.json` file must see it without
+/// finding a filter dropdown (RFC-052 §14.4, JSON visible by default — no
+/// separate "experimental formats" toggle). The per-format filters follow for
+/// narrowing. RFC-054 J3 widened the *open* side to `.json`, and it costs
+/// nothing to offer the same filters on the Save-As side too, rather
 /// than splitting into a second dialog-builder function neither call site
 /// actually needs. Save itself has no JSON-specific behavior yet — nothing
 /// can edit a JSON document until RFC-054 J5/J6 — so writing one back out
@@ -57,6 +71,9 @@ pub enum SaveOutcome {
 /// and that already worked before this slice (the bytes are untouched).
 fn markdown_dialog() -> rfd::FileDialog {
     rfd::FileDialog::new()
+        // TODO(RFC-073): no `Locale` reaches this module, so this label is an
+        // English literal until the dialog's strings get catalog keys.
+        .add_filter("All supported", &all_extensions())
         .add_filter("Markdown", MD_EXTENSIONS)
         .add_filter("JSON", JSON_EXTENSIONS)
 }
@@ -167,5 +184,7 @@ pub fn was_modified_externally(path: &str, saved_mtime: SystemTime) -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(test)]
+mod filter_tests;
 #[cfg(test)]
 mod round_trip_tests;
