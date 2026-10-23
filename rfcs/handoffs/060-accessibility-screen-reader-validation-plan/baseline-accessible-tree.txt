@@ -1,0 +1,67 @@
+Architect's first probe — reference only, NOT a measurement run.
+
+Binary:   target/release/omriss as built on 2026-10-21 14:23 (pre-e03768c)
+Display:  DISPLAY=:1, GDK_BACKEND=x11
+Document: copy of academic-paper.md, root section focused
+Method:   .git-exclude/qa/rfc-060-a11y/atspi_probe.py
+Config:   XDG_CONFIG_HOME isolated; tracked fixture hash OK afterwards
+
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable
+            [document web] 'Dioxus app' focusable
+              [section] '' focusable
+                [tool bar] 'File'
+                  [button] 'Open…' focusable
+                  [button] 'Save' focusable
+                  [button] 'Save As…' focusable
+                  [section] ''
+                  [button] 'Undo'
+                  [button] 'Redo'
+                  [section] ''
+                  [button] 'Back' focusable
+                  [button] 'Forward'
+                  [section] ''
+                  [button] 'Search' focusable
+                  [section] ''
+                    [combo box] 'Settings' focusable
+                      [section] ''
+                [landmark] 'Document Map'
+                  [heading] 'DOCUMENT MAP'
+                  [section] 'Add section'
+                    [button] 'Add top-level section' focusable
+                    [button] 'Add section inside' focusable
+                    [button] 'Add section after' focusable
+                  [section] '' focusable
+                    [section] ''
+                    [combo box] 'Section actions' focusable
+                      [section] ''
+                  [button] 'Show plain file text' focusable
+                [landmark] 'Writing Area'
+                  [landmark] 'Section path'
+                    [button] 'Document' focusable
+                    [panel] ''
+                    [button] 'Up one level' focusable
+                  [heading] 'On Source Preservation in Structured Text Editors'
+                  [entry] 'Edit section text' editable,focusable
+                  [button] 'Preview' focusable
+                  [panel] ''
+                  [landmark] 'Subsections'
+                    [button] 'Abstract' focusable
+                    [button] '1 Introduction (2)' focusable
+                    [button] '2 Background (2)' focusable
+                    [button] '3 The Source Preservation Invariant (2)' focusable
+                    [button] '4 Implementation (2)' focusable
+                    [button] '5 Evaluation (2)' focusable
+                    [button] '6 Conclusion' focusable
+                    [button] 'References' focusable
+                [landmark] ''
+                  [panel] ''
+            [scroll bar] ''
+--- 55 nodes printed ---
