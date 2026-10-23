@@ -118,6 +118,20 @@ The unresolved point from QA is Shift+Tab containment after partial fixes.
 Implementation should not add more ad hoc traps until the intended focus owner
 and restoration target are explicit.
 
+**Measured, 2026-10-24** (RFC-060's first run, finding F-4). "Restores focus
+predictably" is currently "restores focus nowhere": after Escape from Quick
+Actions, and after Cancel from the confirm-delete dialog, **no node in the
+accessible tree reports `focused`** at all. A single Tab recovers it, so a
+sighted keyboard user sees a missing focus ring and presses Tab; a
+screen-reader user is told nothing about where they are, because there is
+nothing to tell.
+
+This is evidence for the restoration target this section says must be made
+explicit — and it widens the scope from the palette to **every** modal overlay.
+`docs/src/known-limitations.md` covers shortcuts stopping after a view change;
+it does not cover focus simply vanishing, which is a different symptom with the
+same smell.
+
 ### 6.3 Pending-Draft Undo and Redo
 
 The Writing Area has two potential undo contexts:
@@ -147,6 +161,15 @@ Current behavior exposes two states:
 
 The design should decide whether the UI needs clearer labels, separate icons,
 or documentation-only clarification.
+
+**From the AT side, 2026-10-24** (RFC-060's first run, finding F-6): the
+toolbar's dirty indicator carries the accessible name **"Unsaved changes"**,
+and it was still in the tree beside a status reading "Saved" after a successful
+save. Visually this is the stuck red dot recorded by Task 011 and Task 015 and
+owned by RFC-069 §2.1. Spoken, it is not a stale pixel but a **contradiction in
+words** — the application says "Saved" and "Unsaved changes" about the same
+document at the same moment. Whatever §6.4 decides about labels and icons, the
+indicator's accessible name must not be able to disagree with the status.
 
 ### 6.5 Direct Focus Commands
 

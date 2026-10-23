@@ -114,6 +114,19 @@ carries a Markdown outline rebuilt on **every edit**.
 > headline feature. Clicking any row behaves correctly, so it is not
 > release-blocking, but it belongs to this deferred scope rather than to a
 > separate RFC.
+>
+> **A second symptom, added 2026-10-24** (RFC-060's first measurement run,
+> finding F-7): a `.json` whose structure cannot be parsed opens with the
+> Document Map showing `document_map.empty` *and* `document_map.no_headings_hint`
+> — "Add headings with # to begin organizing." A Markdown instruction, on a
+> JSON file, as the only thing the user is told. `document_map_pane.rs:222-223`
+> renders both strings on `is_empty` with no format guard.
+>
+> That the file opens silently is **correct** and required by
+> `RELEASE_CHECKLIST.md` step 20, which exists so a malformed structured file
+> cannot lose the user's source. What is wrong is the one message the user does
+> get. A format-aware empty state is the same work as the rest of §3.2's
+> deferred scope.
 
 ### 3.3 Invert the splice instead of copying the document
 

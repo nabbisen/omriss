@@ -94,6 +94,15 @@ acquire one. Consequently:
 The last one is the worst: an untranslated, unstyled operating-system message
 shown to the user as an explanation.
 
+**Measured, 2026-10-24** (RFC-060's first run, finding F-5). Opening a file the
+user cannot read produces the dialog "We couldn't open this file. Try another
+file." described by the exact string **`Permission denied (os error 13)`**. It
+is not only displayed: it reaches assistive technology as the dialog's
+accessible description, because `aria-describedby` survives the AT-SPI mapping
+(`rfcs/handoffs/060-…/tree-X2-error-permission.txt`). RFC-060 §5 forbids raw
+system errors reaching the user, so this is a recorded conformance failure, not
+a style preference. `OpenFailure::Io { kind }` in §4.3 is its fix.
+
 **This is a type problem, and the project already solved it twice.**
 `CapabilityReason` and `StructureErrorKind` are typed, core-owned reasons that
 `omriss-ui` maps to catalog keys at render time, with exhaustive matches so a new
