@@ -1,0 +1,19 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable,focused
+            [document web] 'Dioxus app' focusable,focused
+              [section] '' text='⚙'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [dialog] 'Delete Section?' focusable,modal xml-roles=dialog
+                [heading] 'Delete Section?' level=2
+                [paragraph] '' text='“On Source Preservation in Structured Text Editors” Delete this section and all its child sections? This cannot be undone without Undo. (8 subsections)'
+                [button] 'Delete' focusable
+                [button] 'Cancel' focusable,focused
+--- 15 nodes printed ---

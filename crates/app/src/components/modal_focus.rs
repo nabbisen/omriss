@@ -73,6 +73,13 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
   const root = document.querySelector('.modal-overlay[aria-modal="true"]');
   if (!root) return;
   if (root.contains(document.activeElement)) return;
+  // querySelectorAll returns document order, not selector-list order, so an
+  // `[autofocus]` that is not the first control must be looked up on its own.
+  const preferred = root.querySelector('[autofocus]');
+  if (preferred && preferred.getClientRects().length > 0) {
+    preferred.focus();
+    return;
+  }
   const focusables = Array.from(root.querySelectorAll(
     '[autofocus], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
   )).filter((el) => {

@@ -1,0 +1,36 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable,focused
+            [document web] 'Dioxus app' focusable,focused
+              [section] '' text='⚙'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [dialog] 'File Changed on Disk' focusable,modal xml-roles=dialog
+                [heading] 'File Changed on Disk' level=2
+                [paragraph] '' text='The file on disk was modified after it was opened. Overwrite with your current changes?'
+                [button] 'Overwrite' focusable
+                [button] 'Save As…' focusable
+                [button] 'Cancel' focusable,focused
+--- 32 nodes printed ---

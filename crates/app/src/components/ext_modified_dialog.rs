@@ -37,7 +37,6 @@ pub fn ExtModifiedDialog(
                 div { class: "modal-actions",
                     button {
                         class: "primary",
-                        autofocus: true,
                         onclick: move |_| on_choice.call(ExtModifiedChoice::Overwrite),
                         {t(lang, "dialog.ext_modified.overwrite")}
                     }
@@ -46,6 +45,7 @@ pub fn ExtModifiedDialog(
                         {t(lang, "dialog.ext_modified.save_as")}
                     }
                     button {
+                        autofocus: true,
                         onclick: move |_| on_choice.call(ExtModifiedChoice::Cancel),
                         {t(lang, "dialog.ext_modified.cancel")}
                     }

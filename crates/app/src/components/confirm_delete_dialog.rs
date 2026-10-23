@@ -46,11 +46,11 @@ pub fn ConfirmDeleteDialog(
                 div { class: "modal-actions",
                     button {
                         class: "btn-danger",
-                        autofocus: true,
                         onclick: move |_| on_choice.call(ConfirmDeleteChoice::Delete),
                         {t(lang, "dialog.confirm_delete.confirm")}
                     }
                     button {
+                        autofocus: true,
                         onclick: move |_| on_choice.call(ConfirmDeleteChoice::Cancel),
                         {t(lang, "dialog.confirm_delete.cancel")}
                     }
