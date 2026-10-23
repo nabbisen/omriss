@@ -1,0 +1,34 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable,focused
+            [document web] 'Dioxus app' focusable,focused
+              [section] '' text='⚙'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [dialog] "We couldn't open this file. Try another file." focusable,modal desc='Permission denied (os error 13)' xml-roles=dialog
+                [heading] "We couldn't open this file. Try another file." level=2
+                [paragraph] '' text='Permission denied (os error 13)'
+                [button] 'Cancel' focusable,focused
+--- 30 nodes printed ---

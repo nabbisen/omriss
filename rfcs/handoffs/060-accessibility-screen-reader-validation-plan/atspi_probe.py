@@ -9,7 +9,9 @@ import gi
 gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi  # noqa: E402
 
-TARGET = sys.argv[1] if len(sys.argv) > 1 else "omriss"
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+VERBOSE = "--verbose" in sys.argv
+TARGET = ARGS[0] if ARGS else "omriss"
 DEADLINE = time.time() + 30
 
 
@@ -50,8 +52,45 @@ def dump(node, depth=0, limit=400, counter=None):
         )
     except Exception:  # noqa: BLE001
         states = []
-    keep = [s for s in states if s in ("focusable", "focused", "editable", "selected")]
-    print(f"{'  ' * depth}[{role}] {name!r}{(' ' + ','.join(keep)) if keep else ''}")
+    keep = [
+        s
+        for s in states
+        if s in ("focusable", "focused", "editable", "selected", "modal", "expanded",
+                 "collapsed", "checked", "showing", "enabled")
+        and (s not in ("showing", "enabled") or VERBOSE)
+    ]
+    extra = ""
+    try:
+        desc = node.get_description()
+        if desc:
+            extra += f" desc={desc!r}"
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        attrs = node.get_attributes() or {}
+        for k in ("container-live", "live", "container-atomic", "xml-roles", "level",
+                  "haspopup", "invalid", "required"):
+            if k in attrs:
+                extra += f" {k}={attrs[k]}"
+    except Exception:  # noqa: BLE001
+        pass
+    # Text content: what a screen reader reads for nodes whose *name* is empty
+    # (paragraphs, status regions, <pre>, spans). Truncated; never for entries,
+    # whose text is the user's document.
+    text = ""
+    if role not in ("entry", "document web", "application", "frame") and not name:
+        try:
+            ti = node.get_text_iface() if hasattr(node, "get_text_iface") else None
+            if ti is None:
+                ti = node
+            n_chars = Atspi.Text.get_character_count(node)
+            if n_chars:
+                text = Atspi.Text.get_text(node, 0, min(n_chars, 160))
+        except Exception:  # noqa: BLE001
+            text = ""
+    if text:
+        extra += f" text={text!r}"
+    print(f"{'  ' * depth}[{role}] {name!r}{(' ' + ','.join(keep)) if keep else ''}{extra}")
     try:
         n = node.get_child_count()
     except Exception:  # noqa: BLE001

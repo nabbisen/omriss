@@ -1,0 +1,4 @@
+  0.00s object:children-changed:add [desktop frame] 'main' detail1=5 data="<application 'niri'>"
+
+(process:153029): atspi-WARNING **: 08:30:02.967: AT-SPI: Error in GetItems, sender=:1.67, error=Unknown object '/org/a11y/atspi/cache'
+--- listener done ---

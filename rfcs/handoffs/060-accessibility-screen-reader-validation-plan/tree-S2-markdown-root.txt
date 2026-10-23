@@ -1,0 +1,58 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable
+            [document web] 'Dioxus app' focusable
+              [section] '' focusable text='￼￼￼\n￼￼\n￼￼\n￼\n￼\nDOCUMENT MAP\n￼￼￼\n▸\nOn Source Preservation in Structured Text Editors\n￼\n￼\n￼\n›\nOn Source Preservation in Structured Text Editors\n￼\nOn Source Preserv'
+                [tool bar] 'File' xml-roles=toolbar
+                  [button] 'Open…' focusable
+                  [button] 'Save' focusable
+                  [button] 'Save As…' focusable
+                  [section] ''
+                  [button] 'Undo'
+                  [button] 'Redo'
+                  [section] ''
+                  [button] 'Back' focusable
+                  [button] 'Forward'
+                  [section] ''
+                  [button] 'Search' focusable desc='Search'
+                  [section] '' text='￼'
+                    [combo box] 'Settings' focusable desc='Settings' haspopup=menu
+                      [section] '' text='⚙'
+                [landmark] 'Document Map' xml-roles=complementary
+                  [heading] 'DOCUMENT MAP' level=2
+                  [section] 'Add section'
+                    [button] 'Add top-level section' focusable desc='Add top-level section'
+                    [button] 'Add section inside' focusable desc='Add section inside'
+                    [button] 'Add section after' focusable desc='Add section after'
+                  [section] '' focusable text='▸\nOn Source Preservation in Structured Text Editors\n￼'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                  [button] 'Show plain file text' focusable
+                [landmark] 'Writing Area' xml-roles=main
+                  [landmark] 'Section path' xml-roles=navigation
+                    [button] 'Document' focusable
+                    [panel] '' text='On Source Preservation in Structured Text Editors'
+                    [button] 'Up one level' focusable desc='Up one level'
+                  [heading] 'On Source Preservation in Structured Text Editors' level=1
+                  [entry] 'Edit section text' editable,focusable
+                  [button] 'Preview' focusable desc='Preview'
+                  [panel] '' container-live=polite live=polite text='Saved'
+                  [landmark] 'Subsections' xml-roles=region
+                    [button] 'Abstract' focusable
+                    [button] '1 Introduction (2)' focusable
+                    [button] '2 Background (2)' focusable
+                    [button] '3 The Source Preservation Invariant (2)' focusable
+                    [button] '4 Implementation (2)' focusable
+                    [button] '5 Evaluation (2)' focusable
+                    [button] '6 Conclusion' focusable
+                    [button] 'References' focusable
+                [landmark] '' xml-roles=contentinfo
+                  [panel] '' container-live=polite live=polite container-atomic=true text='Ready'
+--- 54 nodes printed ---

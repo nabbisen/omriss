@@ -1,0 +1,49 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable,focused
+            [document web] 'Dioxus app' focusable,focused
+              [section] '' text='⚙'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [section] '' text='#'
+              [section] '' text='⋯'
+              [dialog] 'Quick Actions' modal xml-roles=dialog
+                [panel] '' focusable text='Quick Actions focus boundary'
+                [entry] 'Search actions…' editable,focusable,focused
+                [section] '' container-live=polite live=polite text='￼￼￼￼￼￼￼￼￼￼￼￼￼￼'
+                  [button] 'Open… Ctrl+O' focusable container-live=polite
+                  [button] 'New' focusable container-live=polite
+                  [button] 'Save Ctrl+S' focusable container-live=polite
+                  [button] 'Save As… Ctrl+Shift+S' focusable container-live=polite
+                  [button] 'Undo Ctrl+Z' focusable container-live=polite
+                  [button] 'Redo Ctrl+Y' focusable container-live=polite
+                  [button] 'Back Alt+←' focusable container-live=polite
+                  [button] 'Forward Alt+→' focusable container-live=polite
+                  [button] 'Parent Esc' focusable container-live=polite
+                  [button] 'Plain File Text Ctrl+`' focusable container-live=polite
+                  [button] 'Preview Ctrl+Shift+P' focusable container-live=polite
+                  [button] 'Search Ctrl+F' focusable container-live=polite
+                  [button] 'Quick Actions Ctrl+P' focusable container-live=polite
+                  [button] 'Show Statistics' focusable container-live=polite
+                [panel] '' focusable text='Quick Actions focus boundary'
+--- 45 nodes printed ---

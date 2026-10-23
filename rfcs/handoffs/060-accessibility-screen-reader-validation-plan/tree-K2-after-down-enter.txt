@@ -1,0 +1,78 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable,focused
+            [document web] 'Dioxus app' focusable,focused
+              [section] '' focusable text='￼￼￼\n￼￼\n￼￼\n￼\n￼\nDOCUMENT MAP\ntitle\n￼\ndescription\n￼\nversion\n￼\nscale\n￼\noffset\n￼\nreleased\n￼\nmaintainer\n￼\n▸\ntags\n￼\nquoted\n￼\n▸\nnested\n￼\nduplicate\n￼\nduplicate\n￼\ntrailin'
+                [tool bar] 'File' xml-roles=toolbar
+                  [button] 'Open…' focusable
+                  [button] 'Save' focusable
+                  [button] 'Save As…' focusable
+                  [section] ''
+                  [button] 'Undo'
+                  [button] 'Redo'
+                  [section] ''
+                  [button] 'Back' focusable
+                  [button] 'Forward'
+                  [section] ''
+                  [button] 'Search' focusable desc='Search'
+                  [section] '' text='￼'
+                    [combo box] 'Settings' focusable desc='Settings' haspopup=menu
+                      [section] '' text='⚙'
+                [landmark] 'Document Map' xml-roles=complementary
+                  [heading] 'DOCUMENT MAP' level=2
+                  [section] 'Add section'
+                  [section] '' focusable text='title\n￼\ndescription\n￼\nversion\n￼\nscale\n￼\noffset\n￼\nreleased\n￼\nmaintainer\n￼\n▸\ntags\n￼\nquoted\n￼\n▸\nnested\n￼\nduplicate\n￼\nduplicate\n￼\ntrailing_space_after_colon\n￼\n'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='[]'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='{}'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='='
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] 'Section actions' focusable,focused xml-roles=menu
+                  [button] 'Show plain file text' focusable
+                [landmark] 'Writing Area' xml-roles=main
+                  [heading] 'trailing_space_after_colon' level=1
+                  [paragraph] '' text='TEXT'
+                  [entry] 'Text' editable,focusable
+                [landmark] '' xml-roles=contentinfo
+                  [panel] '' container-live=polite live=polite container-atomic=true text='Ready'
+--- 74 nodes printed ---

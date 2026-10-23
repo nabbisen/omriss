@@ -1,0 +1,37 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable,focused
+            [document web] 'Dioxus app' focusable,focused
+              [section] '' focusable,focused text='￼￼￼\n￼￼\n￼￼\n￼\n￼\nDOCUMENT MAP\nNo sections yet — the whole document is one layer.\nAdd headings with # to begin organizing.\n￼\nDocument\nReady\n/home/nabbisen/Desktop/o'
+                [tool bar] 'File' xml-roles=toolbar
+                  [button] 'Open…' focusable
+                  [button] 'Save' focusable
+                  [button] 'Save As…' focusable
+                  [section] ''
+                  [button] 'Undo'
+                  [button] 'Redo'
+                  [section] ''
+                  [button] 'Back'
+                  [button] 'Forward'
+                  [section] ''
+                  [button] 'Search' focusable desc='Search'
+                  [section] '' text='￼'
+                    [combo box] 'Settings' focusable desc='Settings' haspopup=menu
+                      [section] '' text='⚙'
+                [landmark] 'Document Map' xml-roles=complementary
+                  [heading] 'DOCUMENT MAP' level=2
+                  [section] 'Add section'
+                  [paragraph] '' text='No sections yet — the whole document is one layer.'
+                  [paragraph] '' text='Add headings with # to begin organizing.'
+                  [button] 'Show plain file text' focusable
+                [landmark] '' xml-roles=main
+                  [button] 'Document' focusable xml-roles=button
+                [landmark] '' xml-roles=contentinfo
+                  [panel] '' container-live=polite live=polite container-atomic=true text='Ready'
+--- 33 nodes printed ---

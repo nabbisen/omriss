@@ -1,0 +1,74 @@
+FOUND on the a11y bus: 'omriss' [application]
+toolkit: gtk 3.24.52
+--- accessible tree ---
+[application] 'omriss'
+  [frame] 'Omriss'
+    [filler] ''
+      [filler] ''
+        [filler] ''
+          [scroll pane] '' focusable
+            [document web] 'Dioxus app' focusable
+              [section] '' focusable text='￼￼￼\n￼￼\n￼￼\n￼\n￼\nDOCUMENT MAP\n￼￼￼\n▾\nOn Source Preservation in Structured Text Editors\n￼\nAbstract\n￼\n▸\n1 Introduction\n￼\n▸\n2 Background\n￼\n▸\n3 The Source Preservation '
+                [tool bar] 'File' xml-roles=toolbar
+                  [button] 'Open…' focusable
+                  [button] 'Save' focusable
+                  [button] 'Save As…' focusable
+                  [section] ''
+                  [button] 'Undo'
+                  [button] 'Redo'
+                  [section] ''
+                  [button] 'Back' focusable
+                  [button] 'Forward'
+                  [section] ''
+                  [button] 'Search' focusable desc='Search'
+                  [section] '' text='￼'
+                    [combo box] 'Settings' focusable desc='Settings' haspopup=menu
+                      [section] '' text='⚙'
+                [landmark] 'Document Map' xml-roles=complementary
+                  [heading] 'DOCUMENT MAP' level=2
+                  [section] 'Add section'
+                    [button] 'Add top-level section' focusable desc='Add top-level section'
+                    [button] 'Add section inside' focusable desc='Add section inside'
+                    [button] 'Add section after' focusable desc='Add section after'
+                  [section] '' focusable text='▾\nOn Source Preservation in Structured Text Editors\n￼\nAbstract\n￼\n▸\n1 Introduction\n￼\n▸\n2 Background\n￼\n▸\n3 The Source Preservation Invariant\n￼\n▸\n4 Implementation\n'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                    [section] '' text='#'
+                    [combo box] 'Section actions' focusable desc='Section actions' haspopup=menu
+                      [section] '' text='⋯'
+                  [button] 'Show plain file text' focusable
+                [landmark] 'Writing Area' xml-roles=main
+                  [landmark] 'Section path' xml-roles=navigation
+                    [button] 'Document' focusable
+                    [button] 'On Source Preservation in Structured Text Editors' focusable
+                    [panel] '' text='Abstract'
+                    [button] 'Up one level' focusable desc='Up one level'
+                  [heading] 'Abstract' level=1
+                  [entry] 'Edit section text' editable,focusable
+                  [button] 'Preview' focusable desc='Preview'
+                  [panel] '' container-live=polite live=polite text='Saved'
+                [landmark] '' xml-roles=contentinfo
+                  [panel] '' container-live=polite live=polite container-atomic=true text='Ready'
+--- 70 nodes printed ---
