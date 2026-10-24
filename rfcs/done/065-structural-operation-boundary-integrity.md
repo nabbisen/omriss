@@ -7,7 +7,9 @@ three review rounds. All seven defects in §2 are fixed and regression-tested.
 Two deliberate exclusions, each tracked: `split_section`'s unvalidated offset
 and title are **RFC-070**; the user-facing warning when a body edit legitimately
 changes the outline is **RFC-071**. §4.1's helper is two functions, not one —
-the asymmetry is recorded there.
+the asymmetry is recorded there. **An eighth defect of the same family was
+found on 2026-10-24 and is recorded in §2.7; it is a wrong predicate inside
+§4.1's own helper, not a missing call site.**
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-004, RFC-023, RFC-024, RFC-025, RFC-026
@@ -118,6 +120,55 @@ title invented.**
 This is the same root cause as §2.1–2.4 through a sixth call site, and it is a
 primary operation — every "delete section" action in the Document Map reaches
 it. Reproduced independently by the architect before acceptance.
+
+### 2.7 `joining_separator` mistakes `#x` for a heading (Major) — found 2026-10-24
+
+**Minimal case**, from RFC-066's P3 property:
+
+```text
+source   "# One\n#x\n---\nrest\n"       write "hello" into One's body
+result   "# One\nhello\n#x\n---\nrest\n"
+titles   ["", "One", "#x"]  →  ["", "One", "hello #x"]
+One's body, read back: ""
+```
+
+The user typed into **One**. **Two** was silently renamed to "hello #x", and
+One's body is empty. Replace `#x` with `plain` and the separator is inserted
+correctly, so the trigger is the `#`.
+
+**Cause**, `structural/preflight.rs:98`:
+
+```rust
+let right_is_atx = right.trim_start_matches(['\n', '\r']).starts_with('#');
+```
+
+CommonMark requires an ATX heading's `#` run to be 1–6 characters **followed by
+a space, a tab, or the end of the line**. `#x` satisfies none of that: it is a
+paragraph line, and the `---` beneath it makes the pair a setext heading. The
+predicate says "ATX, so one line break is enough", the body is spliced in with
+a single break, and it joins the paragraph that the underline then captures.
+
+The reasoning in the lines directly above that predicate is **correct** —
+"anything else on the right could be (or start with) a paragraph line that a
+later setext underline would capture once merged". Only the test for "anything
+else" is wrong. The existing unit tests at `preflight.rs:253-288` exercise both
+branches, but every input they use is a well-formed heading or a plainly
+non-heading line; none is a near-miss.
+
+**Scope.** `joining_separator` is called by `replace_section_body`
+(`document.rs:208`), `move_ops.rs` (six sites), `level.rs` (promote/demote) and
+`delete_split_merge.rs`. The misclassification is in the helper, so every
+structural operation inherits it; the property suite happened to reach it
+through a body replace first.
+
+`atx_title_range` (`preflight.rs:214-224`) accepts the same shape — it checks
+the 1–6 run but not what follows it. It is called only on lines already known
+to be headings, so it is not implicated here, and it should be checked rather
+than assumed while fixing this.
+
+**Not a data-loss defect**: every byte survives, and the text the user typed is
+still in the file. It is a structure defect — the user's words end up in another
+section's title, and their own section looks empty. Fixed before 0.17.0's tag.
 
 ## 3. Root cause
 
