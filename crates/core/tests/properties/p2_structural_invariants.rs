@@ -63,7 +63,7 @@ use std::collections::HashMap;
 use omriss_core::{Document, HeadingLevel, MoveTarget, NodeId, Outline};
 use proptest::prelude::*;
 
-use crate::generator::markdown_source_strategy;
+use crate::generator::inert_markdown_source_strategy;
 
 type TitleMultiset = HashMap<String, i32>;
 
@@ -169,7 +169,7 @@ proptest! {
     /// changes the document's title multiset.
     #[test]
     fn promote_preserves_count_and_titles(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
     ) {
         let Some(mut doc) = parsed_or_skip(&source) else { return Ok(()); };
@@ -191,7 +191,7 @@ proptest! {
 
     #[test]
     fn demote_preserves_count_and_titles(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
     ) {
         let Some(mut doc) = parsed_or_skip(&source) else { return Ok(()); };
@@ -216,7 +216,7 @@ proptest! {
     /// invariant is checked here.
     #[test]
     fn rename_preserves_count(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
         new_title in "[A-Za-z0-9 ]{1,24}",
     ) {
@@ -240,7 +240,7 @@ proptest! {
     /// the document's title multiset.
     #[test]
     fn move_preserves_count_and_titles(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
         target_pick in any::<usize>(),
         placement in 0..2u8,
@@ -293,7 +293,7 @@ proptest! {
     #[ignore = "fails until RFC-070: split can insert inside a descendant heading"]
     #[test]
     fn split_increases_count_by_one_and_preserves_titles(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
         raw_offset in any::<usize>(),
         new_title in "[A-Za-z0-9 ]{0,24}",
@@ -325,7 +325,7 @@ proptest! {
     /// itself plus every descendant — and no other node's title changes.
     #[test]
     fn delete_decreases_count_by_subtree_size_and_preserves_titles(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
     ) {
         let Some(mut doc) = parsed_or_skip(&source) else { return Ok(()); };
@@ -355,7 +355,7 @@ proptest! {
     /// own example-based regression coverage, not this property's job.
     #[test]
     fn merge_decreases_count_by_exactly_one(
-        source in markdown_source_strategy(),
+        source in inert_markdown_source_strategy(),
         node_pick in any::<usize>(),
     ) {
         let Some(mut doc) = parsed_or_skip(&source) else { return Ok(()); };

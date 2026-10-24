@@ -114,6 +114,7 @@ use omriss_core::{Document, NodeId, Outline, ReplaceSectionBody};
 use proptest::prelude::*;
 
 use crate::generator::markdown_source_strategy;
+use crate::inert::{inert_body_strategy, is_inert};
 
 fn title_multiset(outline: &Outline) -> HashMap<String, i32> {
     let mut m = HashMap::new();
@@ -121,63 +122,6 @@ fn title_multiset(outline: &Outline) -> HashMap<String, i32> {
         *m.entry(n.title.clone()).or_insert(0) += 1;
     }
     m
-}
-
-/// Characters that open a block construct when they start a line: a
-/// heading marker (`#`), an HTML-block opener (`<`), a setext underline
-/// (`=`/`-`), a fence (`` ` ``/`~`), a list marker (`-`/`*`/`+`, or a
-/// digit for an ordered-list marker), or a blockquote marker (`>`).
-/// Deliberately conservative — e.g. every digit is treated as a possible
-/// ordered-list marker regardless of what follows it — since the cost of
-/// over-excluding here is only a slightly less varied generator, while
-/// under-excluding would let a non-inert body back into a property meant
-/// to isolate omriss's own splice from Markdown's own semantics.
-const BLOCK_OPENER_STARTS: &[char] = &[
-    '#', '<', '=', '-', '*', '+', '>', '`', '~', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-];
-
-/// CommonMark allows up to three spaces of indentation before a block
-/// construct still counts as one (four or more makes it an indented code
-/// block instead, which *is* inert). Checking `BLOCK_OPENER_STARTS`
-/// against the raw line therefore missed `" # foo"`, `"  ## bar"`, and
-/// `"   # baz"` — each classified inert while actually opening a heading.
-/// Stripping *all* leading spaces before the check, rather than at most
-/// three, over-excludes 4-space-indented lines (genuinely inert code-block
-/// content gets neutralized too) — the same conservative direction already
-/// chosen for digits and `<` above, and for the same reason: over-excluding
-/// only narrows the generator, under-excluding lets a non-inert body back
-/// into a property built to keep them out.
-fn opens_a_block(line: &str) -> bool {
-    line.trim_start_matches(' ')
-        .starts_with(BLOCK_OPENER_STARTS)
-}
-
-fn is_inert(body: &str) -> bool {
-    body.lines().all(|line| !opens_a_block(line))
-}
-
-/// Neutralizes every line of `body` that would open a block construct, by
-/// prepending a harmless letter — chosen over filtering so the strategy
-/// never rejects a generated case (rejection would both slow the suite and
-/// bias the corpus toward whatever happens to survive rejection). Line
-/// endings are normalized to bare `\n` in the process (`str::lines` does
-/// not distinguish `\r\n` from `\n`, and CRLF variation is exercised
-/// elsewhere in this suite, not lost by narrowing this one property).
-fn make_inert(body: String) -> String {
-    body.lines()
-        .map(|line| {
-            if opens_a_block(line) {
-                format!("x{line}")
-            } else {
-                line.to_string()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn inert_body_strategy() -> impl Strategy<Value = String> {
-    any::<String>().prop_map(make_inert)
 }
 
 /// Whether `actual` is `expected` followed by zero or more `\n`/`\r`
@@ -244,67 +188,6 @@ proptest! {
             title_multiset(doc.outline()),
             before_titles,
             "an inert body-only edit changed the title multiset — a heading was corrupted or destroyed by omriss's own splice"
-        );
-    }
-}
-
-#[cfg(test)]
-mod inert_tests {
-    use super::*;
-
-    #[test]
-    fn plain_text_is_inert() {
-        assert!(is_inert("typed text"));
-        assert!(is_inert("line one\nline two"));
-        assert!(is_inert(""));
-    }
-
-    #[test]
-    fn block_openers_are_not_inert() {
-        assert!(!is_inert("# Injected"));
-        assert!(!is_inert("<!--"));
-        assert!(!is_inert("===\n"));
-        assert!(!is_inert("---"));
-        assert!(!is_inert("```rust"));
-        assert!(!is_inert("~~~"));
-        assert!(!is_inert("- item"));
-        assert!(!is_inert("* item"));
-        assert!(!is_inert("+ item"));
-        assert!(!is_inert("1. item"));
-        assert!(!is_inert("> quote"));
-    }
-
-    #[test]
-    fn a_later_line_opening_a_block_is_also_not_inert() {
-        assert!(!is_inert("fine so far\n# but not this line"));
-    }
-
-    /// Pins the fix for the flake found in review: CommonMark allows up
-    /// to three spaces of indentation before a block construct still
-    /// counts as one, so a leading-space-indented opener must be
-    /// classified non-inert exactly like an unindented one.
-    ///
-    /// A four-space indent turns a `#`-line into an indented *code block*
-    /// instead — genuinely inert per CommonMark — but this check strips
-    /// *all* leading spaces before comparing, not just up to three, so it
-    /// is (over-cautiously, deliberately) excluded too: the same
-    /// conservative direction already chosen for digits and `<` above.
-    #[test]
-    fn a_block_opener_indented_by_up_to_three_spaces_is_still_not_inert() {
-        assert!(!is_inert(" # foo"));
-        assert!(!is_inert("  ## bar"));
-        assert!(!is_inert("   # baz"));
-        assert!(!is_inert(
-            "    # over-excluded: this is really an inert code block"
-        ));
-    }
-
-    #[test]
-    fn make_inert_neutralizes_every_offending_line() {
-        let made = make_inert("# H\nfine\n<!--\n> q".to_string());
-        assert!(
-            is_inert(&made),
-            "make_inert did not produce an inert string: {made:?}"
         );
     }
 }

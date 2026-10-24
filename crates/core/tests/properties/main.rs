@@ -5,6 +5,7 @@
 //! `rfcs/handoffs/066-property-based-and-fuzz-testing/implementation-handoff.md`.
 
 mod generator;
+mod inert;
 mod p1_replace_undo;
 mod p2_structural_invariants;
 mod p3_body_addressing;

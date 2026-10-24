@@ -55,6 +55,8 @@
 
 use proptest::prelude::*;
 
+use crate::inert::make_inert;
+
 /// Nesting is capped at one level (top-level sections may have children;
 /// those children may not). The audit's five defects are all about
 /// top-level/sibling relationships (moving a top-level section, promoting a
@@ -273,6 +275,28 @@ pub fn markdown_source_strategy() -> impl Strategy<Value = String> {
     doc_strategy().prop_map(|d| render_doc(&d))
 }
 
+fn make_bodies_inert(sec: &mut GenSection) {
+    sec.body = make_inert(std::mem::take(&mut sec.body));
+    sec.children.iter_mut().for_each(make_bodies_inert);
+}
+
+/// [`doc_strategy`] with every section body made inert (see `crate::inert`).
+/// Used by P2: a structural operation relocates bodies, and a body holding an
+/// unterminated HTML block swallows whatever lands after it (RFC-066 §3.1a).
+/// Headings, levels, setext style, newline style and the bare-trailing-heading
+/// shape are all unchanged — only body text is neutralized.
+pub fn inert_doc_strategy() -> impl Strategy<Value = GenDoc> {
+    doc_strategy().prop_map(|mut doc| {
+        doc.sections.iter_mut().for_each(make_bodies_inert);
+        doc
+    })
+}
+
+/// [`markdown_source_strategy`] over [`inert_doc_strategy`].
+pub fn inert_markdown_source_strategy() -> impl Strategy<Value = String> {
+    inert_doc_strategy().prop_map(|d| render_doc(&d))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -398,5 +422,39 @@ mod tests {
                 panic!("generated document failed to parse: {e:?}\nsource:\n{source:?}")
             });
         }
+    }
+
+    /// How many section bodies in `docs` are not inert.
+    fn non_inert_bodies(docs: &[GenDoc]) -> usize {
+        fn count(sec: &GenSection) -> usize {
+            usize::from(!crate::inert::is_inert(&sec.body))
+                + sec.children.iter().map(count).sum::<usize>()
+        }
+        docs.iter().flat_map(|d| d.sections.iter()).map(count).sum()
+    }
+
+    /// The inert restriction must be a restriction and not an accident: the
+    /// ordinary generator does produce non-inert bodies (that is what let
+    /// RFC-066 §3.1a's counterexample reach P2), and the inert one never does.
+    #[test]
+    fn inert_strategy_removes_non_inert_bodies_and_the_plain_one_has_them() {
+        let mut runner = TestRunner::new(Config {
+            cases: 2000,
+            ..Config::default()
+        });
+        let mut sample = |s: BoxedStrategy<GenDoc>| {
+            (0..2000)
+                .map(|_| s.new_tree(&mut runner).unwrap().current())
+                .collect::<Vec<GenDoc>>()
+        };
+        let plain = sample(doc_strategy().boxed());
+        let inert = sample(inert_doc_strategy().boxed());
+        let (plain_n, inert_n) = (non_inert_bodies(&plain), non_inert_bodies(&inert));
+        eprintln!("non-inert bodies over 2000 docs: plain={plain_n} inert={inert_n}");
+        assert!(
+            plain_n > 0,
+            "the plain generator no longer produces non-inert bodies"
+        );
+        assert_eq!(inert_n, 0, "the inert generator produced a non-inert body");
     }
 }
