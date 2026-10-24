@@ -54,6 +54,35 @@ store valid Markdown its user deliberately wrote — an unclosed comment spannin
 sections is legal, occasionally intentional, and none of the editor's business
 to forbid.
 
+## 2.1 The same thing happens on a structural operation
+
+**Added 2026-10-24.** A body commit is not the only way the outline can change
+without anyone being told. A **move** can do it too, and with no typing at all:
+
+```text
+source  "##### A\nA\n===\n#### a\n<?\n"      move "a" after "A"
+result  "##### A\n#### a\n<?\n\nA\n===\n"     the setext heading "A" disappears
+```
+
+The user moved one section. A different section — one they did not select, did
+not edit, and may not have been looking at — stopped being a heading, because
+the moved section's body carries an unterminated `<?` HTML block that now
+precedes it.
+
+Every byte survives, so §2's reasoning applies unchanged: this is not
+corruption, it is Markdown meaning what the text says. But the warning this RFC
+designs must cover it, and for a sharper reason than the body-commit case —
+**here the user did not author anything.** They asked for a reordering. The
+cause is text that was already in their document, now in a new position, and
+nothing about the operation they requested hints at the outcome.
+
+Found by RFC-066's P2 property, 2026-10-24 (see RFC-066 §3.1a). §4.1's
+detection is already the right shape: compare the outline before and after the
+*operation*, not specifically before and after a body commit. The scope change
+is that the comparison point is every mutation that rewrites the source, which
+is `move_section`, `split_section`, `delete_section` and the body commit
+together.
+
 ## 3. What RFC-004 promised
 
 > *UI may later warn if the result visually collapses into a child heading, but

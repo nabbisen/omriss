@@ -148,6 +148,39 @@ and only inert bodies isolate it.
 The surprise a user gets from the second case is real and is tracked by
 RFC-071 — as a warning, which is what RFC-004 always said it should be.
 
+### 3.1a The same restriction belongs on P2, and was not applied there
+
+**Correction, 2026-10-24, to this RFC and not to the code.** The reasoning
+above was written for P3 and not carried to P2, which asserts that a structural
+operation leaves the node count and the title multiset unchanged. A structural
+operation moves *text*, and a Markdown document's structure is a function of its
+text, so a move can legitimately change what parses as a heading — for exactly
+the reason P3 was restricted.
+
+Found by the property suite itself, on a Task 019 run:
+
+```text
+source  "##### A\nA\n===\n#### a\n<?\n"      move "a" after "A"
+result  "##### A\n#### a\n<?\n\nA\n===\n"     4 nodes → 3
+```
+
+Every byte survives; `A\n===` is still literally present. `<?` opens a
+CommonMark **HTML block of type 3**, which ends only at `?>` and otherwise runs
+to the end of the document. Before the move it was the last thing in the file
+and swallowed nothing. After it, the setext heading follows it and is swallowed.
+Verified three ways: close the block with `?>` and the count is 4; replace `<?`
+with plain text and the count is 4; the setext heading alone parses as a
+heading.
+
+So `move_section` is correct and P2 is too strong. P2 takes the same inert-body
+restriction as P3, for the same reason and with the same consequence — it keeps
+asserting things about **omriss's splice**, which is where the RFC-065 defects
+were, and stops asserting things about Markdown's semantics, which is where
+they were not.
+
+The user-visible surprise — a structural operation silently changing the
+outline — is **RFC-071 §2.1**, not a defect here.
+
 ### 3.2 Generator
 
 A Markdown generator biased toward the shapes that break things, not toward
