@@ -95,7 +95,7 @@ pub(crate) fn joining_separator<'a>(left: &str, right: &str, newline: &'a str) -
     // that a later setext underline would capture once merged with
     // whatever precedes it, so it needs a genuine blank line: a single
     // existing break is not enough on its own to prove the boundary safe.
-    let right_is_atx = right.trim_start_matches(['\n', '\r']).starts_with('#');
+    let right_is_atx = starts_with_atx_heading(right.trim_start_matches(['\n', '\r']));
     let required: usize = if right_is_atx { 1 } else { 2 };
     let existing = trailing_break_count(left) + leading_break_count(right);
     match required.saturating_sub(existing) {
@@ -103,6 +103,30 @@ pub(crate) fn joining_separator<'a>(left: &str, right: &str, newline: &'a str) -
         1 => newline,
         _ => blank_line(newline),
     }
+}
+
+/// Whether the first line of `s` is an ATX heading (CommonMark §4.2): up to
+/// three spaces of indentation, a run of one to six `#`, then a space, a tab,
+/// or the end of the line. `#x`, `#1`, `#®` and a run of seven are paragraph
+/// text, and four spaces of indentation make an indented code block — none of
+/// them interrupts a paragraph or stands as a heading, so none earns the
+/// one-break shortcut in [`joining_separator`] (RFC-065 §2.7).
+///
+/// Looks at the first line only; the caller trims any leading line breaks.
+pub(crate) fn starts_with_atx_heading(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let indent = bytes.iter().take_while(|&&b| b == b' ').count();
+    if indent > 3 {
+        return false;
+    }
+    let hashes = bytes[indent..].iter().take_while(|&&b| b == b'#').count();
+    if !(1..=6).contains(&hashes) {
+        return false;
+    }
+    matches!(
+        bytes.get(indent + hashes),
+        None | Some(b' ' | b'\t' | b'\n' | b'\r')
+    )
 }
 
 /// The separator needed so `left` (ending in an existing heading or body
@@ -357,5 +381,44 @@ mod tests {
     #[test]
     fn a_bare_cr_also_terminates_a_line() {
         assert_eq!(joining_separator("body\r", "# Heading", "\n"), "");
+    }
+
+    #[test]
+    fn starts_with_atx_heading_follows_commonmark_for_near_misses() {
+        // Headings.
+        for yes in [
+            "# x", "###### x", "#", "###", "#\n", "#\r\n", "#\tx", "  # x", "   # x", "## x ##",
+        ] {
+            assert!(starts_with_atx_heading(yes), "{yes:?} is an ATX heading");
+        }
+        // Not headings: paragraph text, seven hashes, indented code, nothing.
+        for no in [
+            "#x",
+            "#®",
+            "#1",
+            "#######x",
+            "####### x",
+            "#######",
+            "    # x",
+            "\t# x",
+            "x # y",
+            "",
+            " ",
+            "#!",
+            "#hashtag",
+        ] {
+            assert!(!starts_with_atx_heading(no), "{no:?} is not an ATX heading");
+        }
+    }
+
+    #[test]
+    fn a_hash_word_is_paragraph_shaped_so_it_needs_a_blank_line() {
+        // RFC-065 §2.7: `#x` followed by a setext underline is a heading, so
+        // a single break before it is not enough.
+        assert_eq!(joining_separator("body\n", "#x\n---\n", "\n"), "\n");
+        assert_eq!(joining_separator("body", "#x", "\n"), "\n\n");
+        // ...whereas a real ATX heading still gets the one-break shortcut.
+        assert_eq!(joining_separator("body\n", "# x\n---\n", "\n"), "");
+        assert_eq!(joining_separator("body", "  # x", "\n"), "\n");
     }
 }
