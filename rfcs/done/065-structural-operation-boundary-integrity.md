@@ -7,9 +7,10 @@ three review rounds. All seven defects in §2 are fixed and regression-tested.
 Two deliberate exclusions, each tracked: `split_section`'s unvalidated offset
 and title are **RFC-070**; the user-facing warning when a body edit legitimately
 changes the outline is **RFC-071**. §4.1's helper is two functions, not one —
-the asymmetry is recorded there. **An eighth defect of the same family was
-found on 2026-10-24 and is recorded in §2.7; it is a wrong predicate inside
-§4.1's own helper, not a missing call site.**
+the asymmetry is recorded there. **Two further defects of the same family were
+found on 2026-10-24 and are recorded in §2.7 and §2.8. Both are the same wrong
+predicate — `starts_with('#')` where CommonMark requires a real ATX heading —
+in §4.1's helper and in the two guards around `atx_title_range`.**
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-004, RFC-023, RFC-024, RFC-025, RFC-026
@@ -169,6 +170,38 @@ than assumed while fixing this.
 **Not a data-loss defect**: every byte survives, and the text the user typed is
 still in the file. It is a structure defect — the user's words end up in another
 section's title, and their own section looks empty. Fixed before 0.17.0's tag.
+
+### 2.8 The same predicate guards `atx_title_range`, in two more places (Major) — found 2026-10-24
+
+Found by the dev team while answering Task 021 §2.2, which asked for the
+callers of `atx_title_range` to be checked **by construction** rather than
+assumed sound. They are not sound, and for the same reason as §2.7.
+
+`rename.rs:37` and `delete_split_merge.rs:186` both guard with
+`line.starts_with('#')`, so a **setext** heading whose title line happens to
+start with a hash-word is treated as ATX and handed to `atx_title_range`, which
+then strips a marker that was never there.
+
+Reproduced against `5c7a2b8`:
+
+| Operation | Source | Result |
+|---|---|---|
+| rename the setext heading `#x` to `Foo` | `# One\n\n#x\n---\nrest\n` | `# One\n\n#Foo\n---\nrest\n` — the title is **`#Foo`**, not what was asked for |
+| merge it with its previous sibling | `## P\n\ntext\n\n#x\n---\nrest\n` | `## P\n\ntext\n\nx\nrest\n` — **the `#` is deleted from the user's text** |
+
+The second is the serious one. §4.2 requires the join to preserve the heading's
+source, and `strip_heading_marker`'s own contract is to return `None` for a
+shape it does not recognise so the caller can refuse with `UnsafePreservation`
+rather than guess. Here it does not refuse — it misrecognises, and a byte the
+user wrote is silently removed.
+
+**The predicate is now enumerated exhaustively.** `starts_with('#')` appears at
+exactly these two sites in `crates/core/src` and nowhere else; §2.7's site is
+already fixed, and `starts_with_atx_heading` exists beside `atx_title_range`
+for both of them to use. With it, `#x\n---` falls into the setext branch, where
+the title line is kept verbatim — which is what §4.2 always specified.
+
+Fixed before 0.17.0's tag.
 
 ## 3. Root cause
 
