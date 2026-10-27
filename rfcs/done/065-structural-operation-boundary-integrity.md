@@ -7,10 +7,11 @@ three review rounds. All seven defects in §2 are fixed and regression-tested.
 Two deliberate exclusions, each tracked: `split_section`'s unvalidated offset
 and title are **RFC-070**; the user-facing warning when a body edit legitimately
 changes the outline is **RFC-071**. §4.1's helper is two functions, not one —
-the asymmetry is recorded there. **Two further defects of the same family were
-found on 2026-10-24 and are recorded in §2.7 and §2.8. Both are the same wrong
-predicate — `starts_with('#')` where CommonMark requires a real ATX heading —
-in §4.1's helper and in the two guards around `atx_title_range`.**
+the asymmetry is recorded there. **Three further defects of the same family were
+found on 2026-10-24 and 2026-10-28 and are recorded in §2.7, §2.8 and §2.9. All
+three are one wrong predicate — "the first byte is `#`" where CommonMark
+requires a real ATX heading — repeated at four sites. §2.9 records the
+exhaustive enumeration that closes the family.**
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-004, RFC-023, RFC-024, RFC-025, RFC-026
@@ -202,6 +203,62 @@ for both of them to use. With it, `#x\n---` falls into the setext branch, where
 the title line is kept verbatim — which is what §4.2 always specified.
 
 Fixed before 0.17.0's tag.
+
+### 2.9 `promote`/`demote` overwrite the user's title text (Major) — found 2026-10-28
+
+Found by widening RFC-066's title generator to emit titles beginning with `#`,
+which Task 022 §4 did on its own initiative after the earlier two defects.
+
+```text
+source   "# One\n\n#x\n---\nrest\n"               promote the setext heading "#x"
+result   "# One\n\n#\n---\nrest\n"                title "#x" -> ""
+
+source   "# One\n\n#hashtag word\n---\nrest\n"    promote it
+result   "# One\n\n#ashtag word\n---\nrest\n"     title -> "#ashtag word"
+```
+
+The second is the dangerous one. One character is removed from the middle of a
+word and the result still reads as a plausible title, so the user has no cue
+that anything happened — they are left with a typo they did not make, in a
+heading they did not edit.
+
+**Cause**, `level.rs:53`:
+
+```rust
+if source.as_bytes().get(heading_start) != Some(&b'#') {
+    return Err(StructuralEditError::UnsupportedHeadingStyle);
+}
+```
+
+§2.7's predicate again, now as a single-byte test. A setext heading whose title
+begins with `#` passes it, and the code then treats `level.as_u8()` bytes as an
+ATX marker to overwrite — a length that comes from the **underline style** and
+has nothing to do with the text at `heading_start`. So `---` (level 2) destroys
+two characters and `===` (level 1) destroys one.
+
+An ordinary setext heading is correctly refused with `UnsupportedHeadingStyle`,
+which is what should happen here too, and what `known-limitations.md` already
+promises.
+
+**The family is now closed by construction.** Every site in `crates/core/src`
+that inspects a `#` byte:
+
+| Site | Role | Status |
+|---|---|---|
+| `level.rs:53` | promote/demote guard | **this defect** |
+| `preflight.rs:122` | inside `starts_with_atx_heading` | correct (§2.7's fix) |
+| `preflight.rs:240`, `:256` | marker run and closing-hash trim inside `atx_title_range` | correct, and now only reached for real ATX lines (§2.8's fix) |
+| `level.rs:20`, `delete_split_merge.rs:89` | `"#".repeat(n)` constructing a marker | not a test |
+
+That is the whole list — a grep for `'#'`, `b'#'` and `0x23` over
+`crates/core/src`, with every hit classified. There is no fourth site.
+
+**`heading_range.start` always points at the `#`, never at indentation** —
+verified, so an indented ATX heading such as `  ## x` promotes correctly today
+and the fix must not regress it. `starts_with_atx_heading` applied to the slice
+from `heading_start` is therefore the right predicate here as well.
+
+Fixed before 0.17.0's tag, under the scope freeze's data-loss exception.
 
 ## 3. Root cause
 
