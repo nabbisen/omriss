@@ -63,6 +63,25 @@ discussed publicly.
 smoke run**, which has not happened. Windows is what the Microsoft Store ships,
 and CI proves the binary compiles, not that it behaves.
 
+Four small fixes were taken before the tag rather than deferred, each because
+the Windows run had not happened yet and so each was nearly free:
+
+| | What | Why it could not wait |
+|---|---|---|
+| Open dialog default filter | `.json` was hidden behind a filter dropdown | the release's headline feature appeared to fail at the most obvious first step |
+| Dialog default focus | Delete Section and File Changed on Disk focused their destructive button | `omriss-external-design` §11 already decided dialogs default to the safest action; File Changed on Disk overwrites data omriss cannot undo |
+| `joining_separator`'s ATX predicate | typing into one section could silently rename another (RFC-065 §2.7) | ordinary typing, and the code was new in 0.17.0 |
+| The same predicate around `atx_title_range` | merging a section deleted a `#` the user typed (RFC-065 §2.8) | a structural operation removing a byte of the user's text |
+
+**Scope freeze, decided by the owner on 2026-10-27.** The last of those is the
+last fix taken before the tag. The Windows run happens against the binary that
+results, and anything found after it goes to 0.18.0 unless it is **data loss or
+a failure to launch**.
+
+The freeze exists because the "nearly free" argument is real but expires: it
+holds only while the Windows run has not happened, and every fix taken after
+that point invalidates the run that was supposed to certify the release.
+
 ## After 0.17.0
 
 - **M12 remainder:** RFC-055 (TOML) and RFC-056 (the YAML feasibility spike).
