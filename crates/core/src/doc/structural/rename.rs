@@ -8,7 +8,7 @@ use crate::index::outline::NodeId;
 use crate::range::ByteRange;
 
 use super::error::StructuralEditError;
-use super::preflight::{atx_title_range, check_revision};
+use super::preflight::{atx_title_range, check_revision, starts_with_atx_heading};
 
 pub(crate) fn rename_section(
     doc: &mut Document,
@@ -34,7 +34,7 @@ pub(crate) fn rename_section(
     let heading = &source[node.heading_range.as_range()];
     let line_len = heading.find('\n').unwrap_or(heading.len());
     let line = &heading[..line_len];
-    let title_range = if line.starts_with('#') {
+    let title_range = if starts_with_atx_heading(line) {
         atx_title_range(node.heading_range.start, line).ok_or(StructuralEditError::InvalidTitle)?
     } else {
         ByteRange::new(

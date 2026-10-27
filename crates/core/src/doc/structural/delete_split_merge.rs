@@ -8,7 +8,9 @@ use crate::index::outline::{HeadingLevel, NodeId};
 use crate::range::ByteRange;
 
 use super::error::StructuralEditError;
-use super::preflight::{atx_title_range, check_revision, document_newline, joining_separator};
+use super::preflight::{
+    atx_title_range, check_revision, document_newline, joining_separator, starts_with_atx_heading,
+};
 
 pub(crate) fn delete_section(
     doc: &mut Document,
@@ -183,7 +185,7 @@ fn split_first_line(s: &str) -> (&str, &str, &str) {
 fn strip_heading_marker(heading_source: &str) -> Option<String> {
     let (first_line, first_terminator, rest) = split_first_line(heading_source);
 
-    if first_line.starts_with('#') {
+    if starts_with_atx_heading(first_line) {
         let title_range = atx_title_range(0, first_line)?;
         let title = &first_line[title_range.as_range()];
         return Some(format!("{title}{first_terminator}"));
