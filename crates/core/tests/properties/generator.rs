@@ -107,6 +107,11 @@ fn title_fragment_strategy() -> impl Strategy<Value = String> {
         Just("[a link](https://example.com/path?q=1)".to_string()),
         Just("plain and <b>raw html</b> mixed".to_string()),
         Just("日本語 heading".to_string()),
+        // A title that merely *starts with* `#` is paragraph text, not an ATX
+        // marker. As a setext title it was misread as ATX by rename and join
+        // (RFC-065 §2.7, §2.8), so the generator must be able to reach it.
+        Just("#x".to_string()),
+        Just("#hashtag word".to_string()),
     ]
 }
 
@@ -456,5 +461,40 @@ mod tests {
             "the plain generator no longer produces non-inert bodies"
         );
         assert_eq!(inert_n, 0, "the inert generator produced a non-inert body");
+    }
+
+    /// RFC-065 §2.8: a title starting with `#` must be reachable, in both ATX
+    /// and setext form, or the rename/join guards go unexercised again.
+    #[test]
+    fn generator_reaches_hash_initial_titles_in_both_heading_styles() {
+        let mut runner = TestRunner::new(Config {
+            cases: 2000,
+            ..Config::default()
+        });
+        let strategy = doc_strategy();
+        let (mut atx, mut setext) = (false, false);
+        for _ in 0..2000 {
+            let doc = strategy.new_tree(&mut runner).unwrap().current();
+            fn walk(s: &GenSection, atx: &mut bool, setext: &mut bool) {
+                if s.title.starts_with('#') {
+                    match s.style {
+                        HeadingStyle::Atx => *atx = true,
+                        HeadingStyle::Setext => *setext = true,
+                    }
+                }
+                s.children.iter().for_each(|c| walk(c, atx, setext));
+            }
+            doc.sections
+                .iter()
+                .for_each(|s| walk(s, &mut atx, &mut setext));
+        }
+        assert!(
+            atx,
+            "never generated an ATX heading whose title starts with `#`"
+        );
+        assert!(
+            setext,
+            "never generated a setext heading whose title starts with `#`"
+        );
     }
 }

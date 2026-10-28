@@ -6,3 +6,4 @@
 # everyone who runs the test benefits from these saved cases.
 cc 4a0f05e103a6ff11fc10c2b5d5dc887012fa5c396946feaeed0a8593aaab4def # shrinks to source = "###### A\r\n### a\r\na\r\n===\r\nA\r\n===\r\n0aa AaA AA aaA\r\n`code span`\r\n---\r\n\r\n##### *emphasis*\r\n6E7ZG7U1\r\n\r\n##### **bold**\r\n  IS87 tR6BGQBV", node_pick = 18346031343190634316, raw_offset = 2280106396241023174, new_title = "cWk8q7qCxShR T", raw_level = 4
 cc c99c46048b9492ae24c89ba1807004ce3583cf4c493d9f39355c5b4196bd91cd # shrinks to source = "##### A\nA\n===\n#### a\n<?\n", node_pick = 3125307958766776919, target_pick = 650185162787171169, placement = 1
+cc 3359e36f7f2f68a6781ee59d69cd68c8e20699e80f42d954d044dbdf5a1f7c76 # shrinks to source = "#### A\n#x\n---\na\n===\n#### A\n### A\n##### a\n\n###### plain and <b>raw html</b> mixed\nr 1W\n\n## 日本語 heading\nx38BFcaMaKqX8 o\n", node_pick = 6848675349506769217

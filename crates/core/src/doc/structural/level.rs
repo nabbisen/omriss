@@ -8,7 +8,9 @@ use crate::range::ByteRange;
 use crate::{Document, Outline};
 
 use super::error::StructuralEditError;
-use super::preflight::{check_revision, document_newline, is_descendant, joining_separator};
+use super::preflight::{
+    check_revision, document_newline, is_descendant, joining_separator, starts_with_atx_heading,
+};
 
 /// Builds a new ATX marker string for `current_level ± delta`.
 /// Returns `None` if the result would be outside H1..H6.
@@ -50,7 +52,7 @@ fn change_heading_level(
             .ok_or(StructuralEditError::StaleNode(node_id))?;
         let level = n.level.ok_or(StructuralEditError::StaleNode(node_id))?;
         let heading_start = n.heading_range.start;
-        if source.as_bytes().get(heading_start) != Some(&b'#') {
+        if !starts_with_atx_heading(&source[heading_start..]) {
             return Err(StructuralEditError::UnsupportedHeadingStyle);
         }
         let new_marker = adjusted_marker(level, delta).ok_or(StructuralEditError::InvalidLevel)?;
