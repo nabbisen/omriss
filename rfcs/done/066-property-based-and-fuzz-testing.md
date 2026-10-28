@@ -181,6 +181,45 @@ they were not.
 The user-visible surprise — a structural operation silently changing the
 outline — is **RFC-071 §2.1**, not a defect here.
 
+### 3.1b What the properties do not cover: rename and join
+
+**Recorded 2026-10-28**, after RFC-065 §2.7–§2.9 were fixed. A task of mine
+claimed P2 would become the standing guard for all three. The dev team tested
+that claim instead of adopting it, and it is true only for §2.9.
+
+| Defect | Guarded by |
+|---|---|
+| §2.7 `joining_separator`'s predicate | **P3**, plus its committed seed |
+| §2.8 the guards around `atx_title_range` | **example-based integration tests only** — no property |
+| §2.9 `promote`/`demote` | **P2** `promote_preserves_count_and_titles`, once the title generator could emit a leading `#` |
+
+The reason is written into the properties themselves: `rename_preserves_count`
+says "rename is exempt from the title clause by the property's own wording",
+and `merge_decreases_count_by_exactly_one` checks only the count delta. Both
+exemptions are correct — changing a title is what those operations are *for* —
+and both are why neither property could see `#Foo` or a deleted `#`. Measured:
+with §2.8's guards reverted and the widened generator in place, each property
+failed **0 of 10** runs.
+
+**The missing property, for 0.18.0.** Rename and join need an invariant that is
+not about titles or counts:
+
+```text
+P4  For any document S and a rename or join of node N,
+    every byte of S outside N's own heading line is unchanged.
+```
+
+That is the clause which catches a title operation reaching into the user's
+text, and it is the shape §2.8 would have failed. Not taken before 0.17.0's tag
+under the scope freeze: the defects are fixed and example-tested, and adding a
+property is test strengthening rather than a fix.
+
+**The general point is worth more than the gap.** An operation whose purpose is
+to change X cannot be guarded by a property that asserts X is unchanged — it
+needs one that pins everything *except* X. Each exemption in a property is a
+place where nothing is watching, and both of these were introduced for good
+reasons and then left unexamined.
+
 ### 3.2 Generator
 
 A Markdown generator biased toward the shapes that break things, not toward
