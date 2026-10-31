@@ -96,11 +96,12 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 072 | [Linux Distribution Artifacts and AUR Publishing](./proposed/072-linux-distribution-artifacts-and-aur-publishing.md) | M13 |
 | 073 | [Complete Localization and Locale Persistence](./proposed/073-complete-localization-and-locale-persistence.md) | M13 |
 | 074 | [Flatpak Packaging and Flathub Publishing](./proposed/074-flatpak-packaging-and-flathub-publishing.md) | M13 |
+| 075 | [Component Crate Extraction and Renderer Portability](./proposed/075-component-crate-extraction-and-renderer-portability.md) | M13 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **075**.
+Next free RFC number: **076**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.

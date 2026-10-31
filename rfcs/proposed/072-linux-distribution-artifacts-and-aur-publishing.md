@@ -118,9 +118,12 @@ into the wrong boxes.
 
 ### 4.4 `LICENSE`
 
-Add the Apache-2.0 text as `LICENSE` at the repository root. `Cargo.toml` has
-declared `license = "Apache-2.0"` since v0.1.0 with no such file, so neither a
-package nor a crates.io consumer can read the terms.
+~~Add the Apache-2.0 text as `LICENSE` at the repository root.~~
+**Already done (corrected 2026-11-01).** `LICENSE` is tracked at the root — 201
+lines of Apache-2.0, added in `6f558c6`. This section was written against an
+earlier tree and was stale by the time it was published; what remains is only
+to *install* it, at `/usr/share/licenses/omriss/LICENSE` for the AUR package
+and at `/app/share/licenses/$FLATPAK_ID/` for Flatpak (RFC-074 §5.4).
 
 ### 4.5 AppStream metadata
 

@@ -101,6 +101,13 @@ that point invalidates the run that was supposed to certify the release.
 - **M13, localization:** RFC-073 — interpolation, plurals, typed open failures
   and locale persistence. Japanese is complete in the catalogs and absent
   exactly where something has gone wrong.
+- **M13, architecture:** RFC-075 — move the Dioxus components out of the
+  application crate. Measured, not assumed: the components already carry no
+  platform coupling, and `omriss-core`, `omriss-ui` and the tree widget all
+  build for `wasm32-unknown-unknown` unchanged. Worth doing whether or not a
+  web product follows, because it turns a boundary held by discipline into one
+  the compiler enforces and brings the components into the default `cargo
+  test`.
 - **M14:** RFC-058, placement-complete Document Map creation controls.
 - **M15:** RFC-060 and RFC-061, accessibility/screen-reader and
   non-technical-user validation.

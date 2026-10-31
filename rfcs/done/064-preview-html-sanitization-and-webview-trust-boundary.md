@@ -29,6 +29,15 @@ none asks what those bytes are allowed to *do* when rendered.
 **Source of this RFC:** AUDIT-0170-001, reproduced independently by the
 architect before acceptance.
 
+> **If omriss is ever hosted on the web, this RFC's threat model does not
+> transfer (added 2026-11-01).** Everything here assumes the document is the
+> user's own file, opened from their own disk, so escaping protects a person
+> from a file they chose to open. A web service renders documents written by
+> *other* users, which makes the preview a stored-XSS boundary between tenants
+> and turns §9a's remote image from a local annoyance into one user learning
+> when another read their document. **RFC-075 §7** states the audit any such
+> host must pass first; it is a gate, not a recommendation.
+
 ## 2. The defect
 
 `render_html` passes `Event::Html` and `Event::InlineHtml` through unchanged
