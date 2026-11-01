@@ -1,6 +1,6 @@
 [package]
 name = "omriss-ui"
-description = "View-state logic, i18n catalogs, and GUI components for Omriss"
+description = "Renderer-independent view state, session bridges and i18n catalogs for Omriss"
 readme = "../../README.md"
 version.workspace       = true
 edition.workspace       = true

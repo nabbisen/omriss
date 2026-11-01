@@ -22,8 +22,11 @@ authors                 = ["nabbisen"]
 repository              = "https://github.com/nabbisen/omriss"
 
 [workspace.dependencies]
-omriss-core         = { version = "0", path = "crates/core" }
-omriss-ui           = { version = "0", path = "crates/ui" }
+# The version is what a published package carries. Keep it pinned to the
+# current minor: under cargo's 0.x rules a bump from 0.17 to 0.18 may break
+# the API, and `"0"` would let a published omriss-ui resolve against it.
+omriss-core         = { version = "0.17", path = "crates/core" }
+omriss-ui           = { version = "0.17", path = "crates/ui" }
 
 # UI
 dioxus              = { version = "0.7", features = ["desktop"] }
