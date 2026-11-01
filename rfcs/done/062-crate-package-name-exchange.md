@@ -309,6 +309,46 @@ override simplicity.
 6. Should the app package `omriss` remain permanently unpublished, or only
    unpublished for the first exchange release?
 
+### 10.1 Answers to questions 4 and 6 — owner decision, 2026-11-01
+
+> **Decided by the project owner on 2026-11-01.** These are final decisions,
+> not recommendations.
+
+Raised again during RFC-075's review, which found the registry in the state
+this RFC's "crates.io expectation risk" predicted:
+
+| Package | crates.io before 0.17.0 |
+|---|---|
+| `omriss` 0.16.0 | published, **described as the engine** — the role this RFC moved to `omriss-core` |
+| `omriss-core` | not published |
+| `omriss-ui` 0.16.0 | published, depending on `omriss ^0` |
+
+**Question 4 — publishing and deprecation steps.** At the 0.17.0 tag, publish
+**`omriss-core` 0.17.0 first, then `omriss-ui` 0.17.0**. The order is not a
+preference: `cargo package -p omriss-ui` fails today with *"no matching package
+named `omriss-core` found"*, because the published `omriss-ui` must resolve its
+dependency from the registry.
+
+That also settles a question nobody had asked. If `omriss-core` were never
+published, **`omriss-ui` could never be published again either** — its page
+would stay frozen at 0.16.0 forever, describing components it does not contain
+and depending on a package name that now means the desktop application.
+
+`omriss` 0.16.0 is **not yanked**. Yanking breaks resolution for anyone who
+already depends on it and buys nothing that the rename does not already
+achieve; the stale entry is a cost of the exchange, accepted knowingly.
+
+**Question 6 — the app package.** `omriss` remains `publish = false`
+**permanently**, not only for the first exchange release. The application ships
+through the Microsoft Store, the AUR and Flathub (RFC-072, RFC-074); crates.io
+adds no distribution value, and publishing an application under a name whose
+published history is a library is precisely the confusion §8 warned about.
+
+**Publishing stays manual for 0.17.0.** A crates.io version cannot be deleted,
+only yanked, so the first publish under the new names is done by hand after the
+release gate passes, not by a workflow. Automating it is a separate decision
+once the names have shipped once.
+
 ## 11. Acceptance Criteria
 
 - Architect review accepts the direct exchange or gives explicit changes.

@@ -13,10 +13,21 @@ product owner. No automated process may bypass this gate.
 - [ ] `CHANGELOG.md` entry written for this version
 - [ ] Version bumped in `Cargo.toml` workspace package
 - [ ] RFC index up to date: `./scripts/check-rfcs.sh`
+- [ ] Internal dependency versions match the release: the `version` of
+      `omriss-core` and `omriss-ui` in `[workspace.dependencies]` is the minor
+      being released, not `"0"`. That field is what a published package
+      carries, and `"0"` lets a published crate resolve against a later,
+      API-breaking 0.x.
 - [ ] Package roles verified before publication:
       `omriss-core` is the publishable library package, and the `omriss` app
-      package remains `publish = false` unless an explicit release review
-      authorises crates.io app distribution.
+      package is **permanently** `publish = false` (RFC-062 §10.1).
+- [ ] **crates.io publish, in this order** (RFC-062 §10.1), by hand after the
+      gate passes — a published version can never be deleted, only yanked:
+      1. `cargo publish -p omriss-core`
+      2. `cargo publish -p omriss-ui` — this *requires* step 1, since it
+         resolves `omriss-core` from the registry, not from the path
+      3. confirm the README badges resolve: crates.io, docs.rs and deps.rs all
+         point at `omriss-core`, and all three 404 until step 1 lands
 
 ---
 
