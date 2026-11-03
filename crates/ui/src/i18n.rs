@@ -75,6 +75,69 @@ where
         .unwrap_or(key)
 }
 
+/// Translates `key` for `locale` and substitutes named placeholders
+/// (RFC-073 §4.1): `{count}` in the catalog value is replaced by the value
+/// paired with `"count"` in `args`.
+///
+/// Placeholders are **named**, never positional, so a translator can move them
+/// and the catalog says what each one is. `t` is unchanged and remains the
+/// lookup for the static keys; only messages that carry a value use this.
+///
+/// Substitution is a single pass over the template, so a value that itself
+/// contains `{name}` is inserted literally and never expanded again. A
+/// placeholder with no matching argument is left in place — a visible
+/// defect, not a silently dropped number. An argument no placeholder names
+/// is ignored. A `{` with no closing `}` is literal text.
+pub fn t_args(locale: Locale, key: &str, args: &[(&str, &str)]) -> String {
+    let template = lookup(locale.catalog(), key)
+        .or_else(|| lookup(Locale::En.catalog(), key))
+        .unwrap_or(key);
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(open) = rest.find('{') {
+        out.push_str(&rest[..open]);
+        let after = &rest[open + 1..];
+        match after.find('}') {
+            Some(close) => {
+                let name = &after[..close];
+                match args.iter().find(|(arg, _)| *arg == name) {
+                    Some((_, value)) => out.push_str(value),
+                    None => {
+                        out.push('{');
+                        out.push_str(name);
+                        out.push('}');
+                    }
+                }
+                rest = &after[close + 1..];
+            }
+            None => {
+                out.push('{');
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// The names of the `{placeholder}`s in a catalog value, in order of first
+/// appearance and without repeats. Same grammar as [`t_args`].
+#[cfg(test)]
+pub(crate) fn placeholders(template: &str) -> Vec<&str> {
+    let mut found: Vec<&str> = Vec::new();
+    let mut rest = template;
+    while let Some(open) = rest.find('{') {
+        let after = &rest[open + 1..];
+        let Some(close) = after.find('}') else { break };
+        let name = &after[..close];
+        if !found.contains(&name) {
+            found.push(name);
+        }
+        rest = &after[close + 1..];
+    }
+    found
+}
+
 #[cfg(test)]
 pub(crate) fn catalogs() -> &'static [(Locale, &'static [(&'static str, &'static str)])] {
     static ALL: [(Locale, &[(&str, &str)]); 2] =

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — localization completeness (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — §4.1 (`t_args` and the placeholder-set parity test) landed on `main` as the first PR of RFC-071's 0.18.0 item, credited here; the rest of this RFC, including §4.3, is outstanding.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-036, RFC-043
