@@ -10,7 +10,12 @@ product owner. No automated process may bypass this gate.
 
 - [ ] All workspace tests pass: `cargo test --workspace`
 - [ ] No open issues labelled `release-blocker`
-- [ ] `CHANGELOG.md` entry written for this version
+- [ ] `CHANGELOG.md` entry written for this version. **Entries accumulate under
+      `## [Unreleased]`, and that heading becomes `## [X.Y.Z] - YYYY-MM-DD` at
+      the moment the tag is cut — the date is the release date and is never
+      written in advance.** 0.17.0's entry was created months early carrying
+      `2026-08-16`, which would have shipped as a false release date had it not
+      been caught.
 - [ ] Version bumped in `Cargo.toml` workspace package
 - [ ] RFC index up to date: `./scripts/check-rfcs.sh`
 - [ ] Internal dependency versions match the release: the `version` of
