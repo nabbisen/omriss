@@ -185,6 +185,26 @@ stripped — strictly more work and strictly more risk. **The recommendation is
 escaping.** Ship it, note it in `known-limitations.md`, and revisit only with a
 concrete user need.
 
+## 9b. Verified on Windows, 2026-11-03
+
+0.17.0's Windows reduced run executed check I against
+`crates/core/tests/fixtures/html_content.md`. Its HTML comment, `<em>` and
+`<div>` block all displayed as **visible text**, so §4.1's escaping is active
+under WebView2, not only under WebKitGTK.
+
+**What it did not exercise.** That fixture carries no `<img onerror=…>` and no
+`javascript:` link, so the window-title detector the dev team used on Linux —
+which proves no *script* executed — was not run on Windows. The conclusion
+still holds, and the reason it holds is worth stating rather than assuming:
+both constructs travel the same escaping path in `preview.rs`, so markup that
+reaches the user as text cannot have reached the engine as markup. The `<em>`
+result is evidence about the escaping, not about one tag.
+
+A future Windows run can close the gap outright by adding a payload file of its
+own. `html_content.md` itself must not be changed for that purpose: it is
+`include_str!`-ed by `source_preservation.rs:35` and asserted by
+`fixture_catalog.rs:250`.
+
 ## 9a. The CSP also has a privacy dimension (recorded 2026-10-21)
 
 Noted while reviewing `PRIVACY.md` for the Store listing. §4.2's scheme check

@@ -31,6 +31,13 @@ Language: English
 >    runtime signal. A chosen language is lost on every restart, so the first step
 >    of §92's startup order has nothing to read.
 >
+> **Windows Japanese startup is verified (2026-11-03).** 0.17.0's Windows
+> reduced run, check H, was performed on a Windows 11 Home 25H2 install with
+> Japanese installed and set as the primary language, and omriss started in
+> Japanese. That exercises Task 013's `GetUserPreferredUILanguages` path on a
+> real Japanese Windows for the first time — it had only ever been reviewed as
+> code and tested through the `#[cfg(not(windows))]` branch on Linux.
+>
 > **Follow-ups 1 and 3 are taken up by RFC-073**, together with the
 > interpolation and typed-error-cause work AUDIT-0170-026 found: counts and
 > every error cause are hardcoded English, so a Japanese user meets English

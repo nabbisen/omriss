@@ -147,7 +147,7 @@ The full 1–21 run remains required for a platform **without** CI coverage
 | **E** | Without restarting, Ctrl+O and open `structured-sample.json`. Both `duplicate` keys show as separate rows. | 13, 14, 21 |
 | **F** | Click **`scale`** (its value is `1e3`), change it to `2500`, Ctrl+S, then Ctrl+Z. The old value returns and stays selected. Then check the file in a text editor: **`version` still reads `1.50` and `offset` still reads `-0`.** Those two are deliberately odd and are the canaries — an editor that reserialized the file instead of patching one value would have normalised them. | 15, 17, 18 |
 | **G** | Close the app, reopen both files. The saved changes are there. | 12 |
-| **I** | Open a Markdown file containing raw HTML (`<table>`, `<b>`) and view the preview. The markup must show as **visible text**, never rendered. Live markup here is release-blocking (RFC-064). | — |
+| **I** | Open `crates/core/tests/fixtures/html_content.md` — a tracked fixture containing an HTML comment, `<em>` and a `<div>` block — and view the preview. The markup must show as **visible text**, never rendered. Live markup here is release-blocking (RFC-064). | — |
 | **H** | Only on a Japanese-language Windows install: omriss starts in Japanese. Otherwise record as not run. | 22 |
 
 Steps 7, 16, 19 and 20 have no human check here: CI covers them on this
@@ -181,15 +181,16 @@ run — `1–12` alone means the structured-format workflow was not exercised, a
 from 0.17.0 that is an incomplete smoke test, not a passing one.
 
 ```
-OS: 
-Version: 
-Artifact: omriss-X.Y.Z.tar.gz
-Fixtures: copies of crates/core/tests/fixtures/{academic-paper.md, structured-sample.json}
-          plus the hand-made raw-HTML file for check I
-Date: 
-Tester: 
-Steps completed: 
-Failures (if any): 
+OS: Windows
+Version: Windows 11 Home 25H2
+Artifact: ~~omriss-X.Y.Z.tar.gz~~ Commit `ec667eb1c6f25c6cab32d0bea4819de72e377a60` used via `cargo run --release -p omriss`.
+Fixtures: ~~copies of crates/core/tests/fixtures/{academic-paper.md, structured-sample.json}~~
+          ~~plus the hand-made raw-HTML file for check I~~
+The checked out project was used.
+Date: 2026-11-03
+Tester: nabbisen (owner)
+Steps completed: A-H
+Failures (if any): (All were reported to architect on each)
 Sign-off: 
 ```
 
