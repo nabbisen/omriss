@@ -108,6 +108,13 @@ that point invalidates the run that was supposed to certify the release.
   web product follows, because it turns a boundary held by discipline into one
   the compiler enforces and brings the components into the default `cargo
   test`.
+- **M13, from the known-limitations audit (2026-11-03):** RFC-076 (editable
+  plain file text — the owner's position is that an editor must let you edit a
+  plain text file), RFC-077 (search covers heading text, reclassified from a
+  limitation to a defect) and RFC-078 (setext H1/H2 level changes, refusing
+  beyond two levels with the real reason). Every entry in
+  `docs/src/known-limitations.md` now names an owning RFC or says "no change
+  planned"; six of twelve named nothing before that audit.
 - **M14:** RFC-058, placement-complete Document Map creation controls.
 - **M15:** RFC-060 and RFC-061, accessibility/screen-reader and
   non-technical-user validation.
