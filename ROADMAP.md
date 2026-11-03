@@ -6,14 +6,14 @@ breakdown live in the design documents:
 - RFC index: [`rfcs/README.md`](rfcs/README.md)
 - Lifecycle policy: [`rfcs/done/000-rfc-lifecycle-policy.md`](rfcs/done/000-rfc-lifecycle-policy.md)
 
-Status snapshot (v0.16.0+): RFCs 000–054, RFC-062, and RFC-063 are implemented;
-M0–M11 themes are complete and M12 is under way. The desktop MVP runs on
+Status snapshot (v0.17.0, released 2026-11-03): RFCs 000–067 are implemented;
+M0–M12 themes are complete. The desktop MVP runs on
 Linux/macOS/Windows (the desktop shell requires platform WebView libraries to
 build — see `PLATFORMS.md`). The outline/tree UI uses `dioxus-swdir-tree`.
 
 **M10 (UI role separation) is complete.** RFC-048 through RFC-051 shipped in
 v0.16.0 with explicitly deferred residual scope; RFC-062 (crate package name
-exchange) is implemented on `main` and awaits a release tag. Each carries its
+exchange) shipped in v0.17.0. Each carries its
 deferral list in its Status field.
 
 **M11 — Format Adapter Foundation is complete.** RFC-052 (policy) and RFC-053
@@ -25,102 +25,103 @@ per value and Markdown behavior unchanged throughout. RFC-063 (a command-line
 file argument) was added mid-sequence so rendering could be verified without
 synthetic input. Each RFC's Status field records what was deliberately left out.
 
-## 0.17.0 is blocked on M12 hardening
+## 0.17.0 — released 2026-11-03
 
-**Verified so far.** CI runs on Linux and Windows (431 tests, both platforms
-green — the first time the app has ever been built on Windows). The Linux smoke
-run completed all 21 checklist steps with no release-blocking failure, including
-external byte verification of a JSON save and a malformed-file recovery.
+JSON editing (RFC-052/053/054), a command-line file argument (RFC-063), and the
+hardening that made them safe to ship: RFC-064 preview escaping, RFC-065
+structural boundary integrity, RFC-066 property-based testing, RFC-067 §3.1's
+structure cache. `omriss-core` and `omriss-ui` 0.17.0 are on crates.io under
+the names RFC-062 settled; the Windows build ships as MSIX through the
+Microsoft Store.
 
-**Then a full-project audit found three release-blocking defects**, each
-reproduced independently before acceptance:
+Four small fixes were taken after the feature work was "done" and before the
+tag, then the scope was frozen. `RELEASE_CHECKLIST.md` carries the reviewer's
+record of what was verified and what was not.
 
-- author-supplied HTML in a Markdown file executes inside omriss's own WebView
-  (RFC-064);
-- typing into a file that ends in a bare heading writes the text into the
-  heading (RFC-065);
-- moving a section in a file with no trailing newline destroys a heading
-  (RFC-065).
+## 0.18.0 — scope
 
-The last two are release-blocking under `RELEASE_CHECKLIST.md`'s own list. All
-three are localised fixes, and none indicates the architecture is wrong. They
-reached an audit rather than a test because every one of the 431 tests is
-example-based, which is what RFC-066 addresses.
+**Theme: close what 0.17.0's own validation found.**
 
-**0.17.0 ship gate:**
+Every item below traces to evidence produced by this release — a smoke run, the
+accessibility run, the property suite, the known-limitations audit, or an owner
+decision taken during it. Nothing is here because it would be nice to have.
+That is the whole scoping rule, and it is what makes the list defensible when
+something else asks to join it.
 
-| RFC | Scope | Why it gates |
+### Core, in dependency order
+
+| # | Work | Why it is in, and why here |
 |---|---|---|
-| [RFC-064](rfcs/done/064-preview-html-sanitization-and-webview-trust-boundary.md) | preview sanitization, link schemes | **done** — CSP deferred to 0.18.0 for cross-platform verification |
-| [RFC-065](rfcs/done/065-structural-operation-boundary-integrity.md) | seven splice-boundary defects | **done** — two were release-blocking by the checklist |
-| [RFC-066](rfcs/done/066-property-based-and-fuzz-testing.md) | three properties, documented generator | **done** — found four defects nobody found by reading |
-| [RFC-067](rfcs/done/067-structure-projection-caching.md) §3.1 | revision-keyed structure cache | **done** — 21.1 ms → 4.7 ms per keystroke; §3.2 deferred, its premise was false |
+| 1 | **RFC-075** component crate extraction | A pure move, cheapest while the tree is quiet right after a release. Everything below then lands in the new crate instead of being moved afterwards |
+| 2 | **RFC-064 H3** — wire the CSP | **Its deferral has expired.** §9 deferred it because "0.17.0's Windows smoke run has not yet been performed"; it has been. The policy is verified on Linux, the failure mode is a blank window, and the third platform §9 worried about is macOS — which the artifact matrix no longer claims. Code it early, verify it on the release's own Windows run |
+| 3 | **RFC-071** structure-change warning | Blocks RFC-076, and closes the user-surprise half of RFC-066's P3 |
+| 4 | **RFC-069** draft lifecycle and session guards | The dirty indicator that stays lit beside "Saved" — seen in every smoke run since Task 011 — and the window-close guard, unbuilt since v0.3.0 |
+| 5 | **RFC-059** keyboard focus | §6.2a (a save stops the keyboard working), §6.2b (Ctrl+F never focuses the field), and RFC-060's F-4 (focus restored nowhere after a dialog closes). The highest-frequency defect family in the product |
+| 6 | **RFC-067 §3.2** format-aware panes | A malformed `.json` is told "Add headings with # to begin organizing"; a JSON row highlights while the pane shows something else |
+| 7 | **RFC-077** search covers heading text | Reclassified from limitation to defect: the application shows a heading and then answers that the text is not there |
+| 8 | **RFC-073 §4.1 + §4.3 only** | `Permission denied (os error 13)` reaching the user violates RFC-060 §5. The typed `OpenFailure` needs interpolation, so those two sections travel together; plurals, the screen-reader labels and locale persistence wait for 0.19.0 |
+| 9 | **RFC-076** editable plain file text | Owner decision: an editor must let a user edit a plain text file. **After RFC-071**, never before |
+| 10 | **RFC-070** + **RFC-066 §3.1b's P4** | The one `#[ignore]`d property, and the rename/join byte invariant that no property currently covers. Both small; both close test debt this release created |
+| 11 | **RFC-068** durable file writes | The only item with no observed defect behind it. It is in because it is the save path, and RFC-074's G2 will need it |
+| 12 | **RFC-072** Linux artifacts and AUR | Its blocker is gone — `Cargo.lock` is committed and the application ID is decided. Two registered AUR packages are sitting empty |
 
-`SECURITY.md` is in place, which RFC-064 required before its finding could be
-discussed publicly.
+### The cut line, declared now
 
-**All four gate RFCs are now implemented.** The remaining gate is the **Windows
-smoke run**, which has not happened. Windows is what the Microsoft Store ships,
-and CI proves the binary compiles, not that it behaves.
+If the release runs long, drop in this order: **RFC-072, then RFC-068, then
+RFC-078** (setext H1/H2, otherwise a stretch item). None of the three has an
+observed user-facing defect behind it, which is exactly why they are the ones
+to lose.
 
-Four small fixes were taken before the tag rather than deferred, each because
-the Windows run had not happened yet and so each was nearly free:
+**RFC-064 H3 is not on that list and must not join it.** If its verification
+fails on Windows, the answer is to leave the CSP unwired and say so in the
+RFC — not to ship it unverified because the release is late.
 
-| | What | Why it could not wait |
-|---|---|---|
-| Open dialog default filter | `.json` was hidden behind a filter dropdown | the release's headline feature appeared to fail at the most obvious first step |
-| Dialog default focus | Delete Section and File Changed on Disk focused their destructive button | `omriss-external-design` §11 already decided dialogs default to the safest action; File Changed on Disk overwrites data omriss cannot undo |
-| `joining_separator`'s ATX predicate | typing into one section could silently rename another (RFC-065 §2.7) | ordinary typing, and the code was new in 0.17.0 |
-| The same predicate around `atx_title_range` | merging a section deleted a `#` the user typed (RFC-065 §2.8) | a structural operation removing a byte of the user's text |
+Declaring the order now is the point. 0.17.0's scope freeze worked because it
+existed before it was needed.
 
-**Scope freeze, decided by the owner on 2026-10-27.** The last of those is the
-last fix taken before the tag. The Windows run happens against the binary that
-results, and anything found after it goes to 0.18.0 unless it is **data loss or
-a failure to launch**.
+### Out of scope, with reasons
 
-The freeze exists because the "nearly free" argument is real but expires: it
-holds only while the Windows run has not happened, and every fix taken after
-that point invalidates the run that was supposed to certify the release.
+| Deferred | Reason |
+|---|---|
+| **RFC-074** Flatpak | Five gates (G1–G5) are unproven and Flathub's review is an external queue. It should follow RFC-072's assets rather than race them |
+| **RFC-055 / RFC-056** TOML, YAML | A third format before the second one is polished repeats 0.17.0's sequence in a worse order |
+| **RFC-057** tabs, **RFC-058** creation controls | Capability work, and this release is not a capability release |
+| **RFC-073** §4.2, §4.4, §4.5 | Plurals, screen-reader labels and locale persistence deserve a themed release, not a squeeze |
+| **RFC-060** remediation beyond F-4/F-5 | §9.2's Document Map tree semantics live in **`dioxus-swdir-tree`**, a different repository on a different release cadence. Scheduling it here would hide that |
+| **RFC-061** | Needs participants, not code |
 
-## After 0.17.0
+### What this release is, named honestly
 
-- **M12 remainder:** RFC-055 (TOML) and RFC-056 (the YAML feasibility spike).
-  RFC-067 §3.1's cache should land before a second structured format, not after.
-- **M13:** RFC-068 (durable writes and path integrity), RFC-069 (draft lifecycle
-  and session guards), RFC-070 (`split_section` input validation), RFC-071
-  (structure-change warning), RFC-057 (multi-document workspace and tabs), and
-  wiring RFC-064's CSP once it can be verified on all three platforms, and
-  RFC-067 §3.2/§3.3/§3.4 (skipping the Markdown outline for non-Markdown
-  documents, splice inversion, and the search hot loop).
-- **M13, distribution:** RFC-072 (Linux artifacts and AUR publishing) and
-  RFC-074 (Flatpak packaging and Flathub publishing). Both are blocked on
-  committing `Cargo.lock` — AUR's `--locked` and Flatpak's offline build fail
-  without it, by unrelated mechanisms. RFC-074 also needs the application ID
-  decided *before* RFC-072 is implemented, or the two channels ship different
-  names for the same files.
-- **M13, localization:** RFC-073 — interpolation, plurals, typed open failures
-  and locale persistence. Japanese is complete in the catalogs and absent
-  exactly where something has gone wrong.
-- **M13, architecture:** RFC-075 — move the Dioxus components out of the
-  application crate. Measured, not assumed: the components already carry no
-  platform coupling, and `omriss-core`, `omriss-ui` and the tree widget all
-  build for `wasm32-unknown-unknown` unchanged. Worth doing whether or not a
-  web product follows, because it turns a boundary held by discipline into one
-  the compiler enforces and brings the components into the default `cargo
-  test`.
-- **M13, from the known-limitations audit (2026-11-03):** RFC-076 (editable
-  plain file text — the owner's position is that an editor must let you edit a
-  plain text file), RFC-077 (search covers heading text, reclassified from a
-  limitation to a defect) and RFC-078 (setext H1/H2 level changes, refusing
-  beyond two levels with the real reason). Every entry in
-  `docs/src/known-limitations.md` now names an owning RFC or says "no change
-  planned"; six of twelve named nothing before that audit.
-- **M14:** RFC-058, placement-complete Document Map creation controls.
-- **M15:** RFC-060 and RFC-061, accessibility/screen-reader and
-  non-technical-user validation.
-- **M10 follow-up:** RFC-059, keyboard focus and pending-draft UX hardening —
-  now also the home for the shortcut-delivery defects found by the Task 011
-  smoke run, which share one root cause with the documented focus limitation.
+**0.18.0 is a polish release.** RFC-076 is its only new capability. Everything
+else makes what already exists behave the way the documentation already claims.
+That is the right shape after a feature release whose own validation produced
+this much — but it should be called what it is, so nobody opens the changelog
+expecting a headline.
 
-The RFC index is authoritative for exact titles, lifecycle state, and next free
-RFC number.
+## After 0.18.0
+
+Only work that 0.18.0 deliberately leaves alone. Anything already in its scope
+table is not repeated here.
+
+- **Distribution:** RFC-074 (Flatpak and Flathub), after RFC-072's assets
+  exist. Its G1–G5 gates and Flathub's review queue are why it does not travel
+  with RFC-072.
+- **Formats:** RFC-055 (TOML) and RFC-056 (the YAML feasibility spike) — M12's
+  remainder, deliberately behind the polish of the format already shipped.
+- **Capability:** RFC-057 (multi-document workspace and tabs) and RFC-058
+  (placement-complete Document Map creation controls). A recent-files
+  reachability RFC would belong here too if the owner takes it up.
+- **Localization:** RFC-073 §4.2, §4.4 and §4.5 — plurals, the screen-reader
+  labels and locale persistence. §4.1 and §4.3 are in 0.18.0 because a raw OS
+  error reaching the user is a conformance failure; the rest is a theme of its
+  own.
+- **Accessibility:** RFC-060's remaining findings and RFC-061. **RFC-060 §9.2
+  crosses a repository boundary** — the Document Map's tree semantics are a
+  feature of `dioxus-swdir-tree`, under the same ownership but on its own
+  release cadence. Scheduling it inside an omriss release would hide that
+  dependency rather than manage it.
+- **Portability:** a web host built on RFC-075's extraction, which RFC-075 §7
+  gates behind a threat-model audit RFC-064's assumptions do not survive.
+
+The RFC index is authoritative for exact titles, lifecycle state, and the next
+free RFC number.
