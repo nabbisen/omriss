@@ -132,6 +132,41 @@ explicit — and it widens the scope from the palette to **every** modal overlay
 it does not cover focus simply vanishing, which is a different symptom with the
 same smell.
 
+### 6.2a Saving costs the keyboard — first Windows observation, 2026-11-03
+
+Observed by the owner during 0.17.0's Windows reduced run, at check C→D:
+
+> Ctrl+S worked to save and the message was shown. However, next shortcut keys
+> did not at all. I clicked the view with mouse. Then shortcut keys worked.
+
+Two things make this more than a restatement of the known limitation.
+
+**The trigger is a save, not a view change.** `docs/src/known-limitations.md`
+titles the page "Keyboard Shortcuts Stop Working **After a View Change**" and
+explains it through zooming. Ctrl+S changes no view. It does re-render — the
+status becomes "Saved" and the dirty markers clear — and that is apparently
+enough to replace the focused element, after which `div.app`'s `onkeydown`
+(`shell/app.rs:284-285`) never sees another key.
+
+A user reading that page would not expect **saving** to cost them the keyboard,
+and saving is the most common action in an editor. The documentation is not
+wrong so much as pointed at the wrong example.
+
+**Windows and Linux differ.** Task 015's check D, on Linux, found that Esc
+*did* work immediately after Ctrl+S. On Windows nothing did. Same code, two
+WebViews — WebKitGTK and WebView2 place focus differently after a re-render,
+and only one of them keeps it inside the handler's subtree. Whatever §6.1 and
+§6.2 decide about focus ownership must therefore be verified on both, because
+the platform that ships through the Microsoft Store is the one that fails.
+
+**Open: whether a keyboard-only recovery exists.** The owner recovered with a
+mouse click. If Tab also recovers, this is a Major annoyance with a documented
+workaround. If a mouse click is the only way out, then by
+`RELEASE_CHECKLIST.md`'s own list — "keyboard navigation traps the user (no
+Esc/Tab escape)" — it is release-blocking, and a keyboard-only user is simply
+stuck after saving. That question is being put to the owner rather than
+guessed; the answer belongs in this section.
+
 ### 6.3 Pending-Draft Undo and Redo
 
 The Writing Area has two potential undo contexts:
