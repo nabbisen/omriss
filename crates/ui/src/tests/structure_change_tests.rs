@@ -325,3 +325,85 @@ fn a_summary_counts_sections_not_the_root() {
     assert_eq!(summary(&["A", "B", "B"]).len(), 3);
     assert!(summary(&[]).is_empty());
 }
+
+// ── The message (RFC-071 §4.2, §4.3) ────────────────────────────────────────
+
+mod message {
+    use super::*;
+    use crate::i18n::Locale;
+
+    fn joined(c: StructureChange, locale: Locale) -> String {
+        c.sentences(locale).join(" ")
+    }
+
+    #[test]
+    fn disappeared_names_the_count_the_cause_and_undo() {
+        let m = joined(StructureChange { lost: 2, gained: 0 }, Locale::En);
+        assert!(m.contains("2 sections are no longer headings"), "{m}");
+        assert!(
+            m.contains("<!--") && m.contains("<?") && m.contains("<script>"),
+            "{m}"
+        );
+        assert!(m.contains("<!DOCTYPE") && m.contains("<![CDATA["), "{m}");
+        assert!(m.contains("Ctrl+Z"), "{m}");
+    }
+
+    #[test]
+    fn appeared_names_the_count_and_undo_but_no_cause() {
+        let m = joined(StructureChange { lost: 0, gained: 3 }, Locale::En);
+        assert!(m.contains("3 new sections were added"), "{m}");
+        assert!(m.contains("Ctrl+Z"), "{m}");
+        assert!(
+            !m.contains("<!--"),
+            "a cause is only given for disappearance: {m}"
+        );
+    }
+
+    #[test]
+    fn both_is_the_generic_shape_and_still_gives_the_cause() {
+        let m = joined(StructureChange { lost: 1, gained: 1 }, Locale::En);
+        assert!(
+            m.starts_with("That change altered this document's structure."),
+            "{m}"
+        );
+        assert!(m.contains("<!--") && m.contains("Ctrl+Z"), "{m}");
+    }
+
+    #[test]
+    fn one_reads_as_singular_not_as_one_sections() {
+        let lost = joined(StructureChange { lost: 1, gained: 0 }, Locale::En);
+        assert!(lost.contains("1 section is no longer a heading"), "{lost}");
+        let gained = joined(StructureChange { lost: 0, gained: 1 }, Locale::En);
+        assert!(gained.contains("1 new section was added"), "{gained}");
+    }
+
+    #[test]
+    fn every_shape_renders_in_both_locales_with_no_placeholder_left_over() {
+        for locale in Locale::ALL {
+            for (lost, gained) in [(1, 0), (4, 0), (0, 1), (0, 5), (2, 3)] {
+                let m = joined(StructureChange { lost, gained }, *locale);
+                assert!(
+                    !m.contains('{') && !m.contains('}'),
+                    "{locale:?} {lost}/{gained}: {m}"
+                );
+                assert!(m.contains("Ctrl+Z"), "{locale:?} {lost}/{gained}: {m}");
+            }
+        }
+    }
+
+    #[test]
+    fn the_japanese_message_carries_the_number_it_is_given() {
+        let m = joined(StructureChange { lost: 7, gained: 0 }, Locale::Ja);
+        assert!(m.contains('7'), "{m}");
+        let m = joined(StructureChange { lost: 0, gained: 9 }, Locale::Ja);
+        assert!(m.contains('9'), "{m}");
+    }
+
+    #[test]
+    fn the_cause_sentence_appears_only_when_headings_disappeared() {
+        let n = |lost, gained| StructureChange { lost, gained }.sentences(Locale::En).len();
+        assert_eq!(n(1, 0), 3);
+        assert_eq!(n(1, 1), 3);
+        assert_eq!(n(0, 1), 2);
+    }
+}

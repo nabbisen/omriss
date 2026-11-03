@@ -17,6 +17,23 @@ hierarchy without touching unrelated section text. Every structural operation
 is recorded in the same undo history as text edits — see
 [Structural Editing](structural-editing.md) for details.
 
+## When an edit changes the document's structure
+
+Section text is Markdown, so text you type can change which *other* sections are
+headings. Writing `<!--` (or an unclosed `<?`, `<script>`, `<!DOCTYPE` or
+`<![CDATA[`) turns every heading after it into comment text until the comment is
+closed; writing `# Foo` creates a new section. Moving a section can do the same
+when its text carries one of those openers.
+
+Nothing is lost — your bytes are exactly as you wrote them — but a section you
+did not touch may stop appearing in the Document Map. When that happens omriss
+shows a notice above the status bar saying how many sections appeared or
+disappeared, what usually causes it, and that **Ctrl+Z** undoes it. The notice
+is informational: the edit has been applied and may be what you meant. Ordinary
+edits, and operations whose whole purpose is to add or remove sections (adding,
+deleting, renaming, joining), never show it. It clears on the next edit and on
+undo or redo, and is only shown for Markdown files.
+
 ## Undo and redo
 
 Undo restores the previous text **byte-exactly**, and redo re-applies the

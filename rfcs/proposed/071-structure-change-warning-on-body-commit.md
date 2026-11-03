@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — editing feedback (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — implemented on `main` for 0.18.0 (`4c1175b` interpolation, `8c94450` detection, and the message commit), awaiting architect review and a release tag before it moves to `done/`.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-004, RFC-049

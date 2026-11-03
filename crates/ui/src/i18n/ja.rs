@@ -262,6 +262,31 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("status.mixed_endings", "混在"),
     ("status.ready", "準備完了"),
     ("status.saved", "保存しました"),
+    (
+        "status.structure_change.appeared.one",
+        "この変更で文書の構造が変わりました \u{2014} 新しいセクションが 1 個追加されました。",
+    ),
+    (
+        "status.structure_change.appeared.other",
+        "この変更で文書の構造が変わりました \u{2014} 新しいセクションが {count} 個追加されました。",
+    ),
+    (
+        "status.structure_change.both",
+        "この変更で文書の構造が変わりました。",
+    ),
+    (
+        "status.structure_change.cause",
+        "閉じられていない <!--、<?、<script>、<!DOCTYPE、<![CDATA[ がそれより前にあると、このようなことが起こります。",
+    ),
+    (
+        "status.structure_change.disappeared.one",
+        "この変更で文書の構造が変わりました \u{2014} 1 個のセクションが見出しではなくなりました。",
+    ),
+    (
+        "status.structure_change.disappeared.other",
+        "この変更で文書の構造が変わりました \u{2014} {count} 個のセクションが見出しではなくなりました。",
+    ),
+    ("status.structure_change.undo", "Ctrl+Z で元に戻せます。"),
     ("status.unsaved", "未保存の変更"),
     (
         "structure_error.internal_invariant_failed",

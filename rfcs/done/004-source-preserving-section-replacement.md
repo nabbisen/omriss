@@ -8,7 +8,7 @@ Language: English
 
 **Project:** omriss — Omriss Editor  
 **Milestone:** M0 — Technical Spike  
-**Status.** Implemented (v0.1.0); whitespace policy amended 2026-09-01 by RFC-065 — see §4  
+**Status.** Implemented (v0.1.0); whitespace policy amended 2026-09-01 by RFC-065 — see §4; the UI warning §4 deferred is delivered by RFC-071 (0.18.0, unreleased)  
 **Document type:** Detailed RFC design  
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer  
 

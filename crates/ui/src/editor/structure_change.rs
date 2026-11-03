@@ -33,6 +33,8 @@ use std::collections::BTreeMap;
 
 use omriss_core::{NodeId, Outline};
 
+use crate::i18n::{Locale, t, t_args};
+
 /// The multiset of non-root section titles in an outline.
 ///
 /// Compared as a multiset rather than by `NodeId`: a node's id is a hash of
@@ -156,6 +158,39 @@ impl StructureChange {
             (true, false) => StructureChangeKind::Disappeared,
             _ => StructureChangeKind::Appeared,
         }
+    }
+}
+
+impl StructureChange {
+    /// The message for the status surface, as sentences to be shown in order
+    /// (RFC-071 §4.2–§4.3): what changed, then — only when headings
+    /// disappeared — the class of cause, then how to undo.
+    ///
+    /// Three shapes, because one generic sentence would be useless. The count
+    /// selects a `.one` / `.other` key, the convention RFC-073 §4.2 adopts for
+    /// plurals, so `t_plural` can replace the selection here without touching a
+    /// catalog. Returned as separate sentences, not one string, because the
+    /// joiner is a typographic decision (Japanese has no inter-sentence space).
+    pub fn sentences(&self, locale: Locale) -> Vec<String> {
+        let counted = |stem: &str, n: usize| {
+            let key = format!("{stem}.{}", if n == 1 { "one" } else { "other" });
+            t_args(locale, &key, &[("count", &n.to_string())])
+        };
+        let mut sentences = Vec::with_capacity(3);
+        sentences.push(match self.kind() {
+            StructureChangeKind::Disappeared => {
+                counted("status.structure_change.disappeared", self.lost)
+            }
+            StructureChangeKind::Appeared => {
+                counted("status.structure_change.appeared", self.gained)
+            }
+            StructureChangeKind::Both => t(locale, "status.structure_change.both").to_string(),
+        });
+        if self.lost > 0 {
+            sentences.push(t(locale, "status.structure_change.cause").to_string());
+        }
+        sentences.push(t(locale, "status.structure_change.undo").to_string());
+        sentences
     }
 }
 

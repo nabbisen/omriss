@@ -6,6 +6,22 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **A notice when an edit changes the document's structure** (RFC-071; RFC-004
+  promised it in v0.1.0). Typing `<!--` and committing, or moving a section
+  whose text carries an unclosed `<!--`, `<?`, `<script>`, `<!DOCTYPE` or
+  `<![CDATA[`, can turn headings elsewhere into inert text; typing `# Foo`
+  adds one. The bytes are never altered, but a section you did not touch could
+  quietly vanish from the Document Map. omriss now shows a notice above the
+  status bar — how many sections appeared or disappeared, the usual cause, and
+  that Ctrl+Z undoes it. It compares the outline with what the operation
+  *intended*, so adding, deleting, renaming, joining and ordinary edits stay
+  silent. English and Japanese. `omriss-core` still accepts every edit.
+- `omriss_ui::i18n::t_args`: catalog messages can carry named `{placeholders}`
+  (RFC-073 §4.1), with a test that every key has the same placeholder set in
+  English and Japanese. `t` is unchanged.
+
 ### Changed
 
 - **The Dioxus components moved into a new crate, `omriss-components`**

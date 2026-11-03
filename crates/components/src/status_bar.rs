@@ -29,7 +29,26 @@ pub fn StatusBar(
     let is_error = is_error_key(&key);
     let is_save_error = key == "error.save_failed";
 
+    // RFC-071: an outline change the last edit did not intend. Non-modal — the
+    // edit succeeded and may be what the user meant. The region is always
+    // rendered and only its content changes, because a live region inserted
+    // already filled is not reliably announced.
+    let structure_notice = session
+        .read()
+        .structure_change()
+        .map(|change| change.sentences(lang))
+        .unwrap_or_default();
+
     rsx! {
+        div {
+            class: "structure-notice",
+            role: "status",
+            "aria-live": "polite",
+            "aria-atomic": "true",
+            for sentence in structure_notice {
+                span { "{sentence}" }
+            }
+        }
         footer { class: "statusbar",
             if is_error {
                 span {

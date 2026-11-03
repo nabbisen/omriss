@@ -188,6 +188,19 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
 .statusbar .dirty { color: var(--danger); }
 .statusbar .file { text-align: right; }
 .statusbar > span:first-child { flex: 1; }
+/* RFC-071: a non-modal notice on its own row directly above the status bar.
+   It is always in the DOM (a live region must exist before its content
+   changes) and has no height while empty, so the status bar is untouched. */
+.structure-notice {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-top: 1px solid var(--panel-edge);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+}
+.structure-notice:empty { padding: 0; border: 0; }
+.structure-notice > span + span { margin-left: 0.5em; }
 .toolbar-actions {
   display: inline-flex;
   align-items: center;

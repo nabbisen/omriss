@@ -261,6 +261,31 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("status.mixed_endings", "Mixed"),
     ("status.ready", "Ready"),
     ("status.saved", "Saved"),
+    (
+        "status.structure_change.appeared.one",
+        "That change altered this document's structure \u{2014} 1 new section was added.",
+    ),
+    (
+        "status.structure_change.appeared.other",
+        "That change altered this document's structure \u{2014} {count} new sections were added.",
+    ),
+    (
+        "status.structure_change.both",
+        "That change altered this document's structure.",
+    ),
+    (
+        "status.structure_change.cause",
+        "An unclosed <!--, <?, <script>, <!DOCTYPE or <![CDATA[ earlier in the text can do this.",
+    ),
+    (
+        "status.structure_change.disappeared.one",
+        "That change altered this document's structure \u{2014} 1 section is no longer a heading.",
+    ),
+    (
+        "status.structure_change.disappeared.other",
+        "That change altered this document's structure \u{2014} {count} sections are no longer headings.",
+    ),
+    ("status.structure_change.undo", "Press Ctrl+Z to undo."),
     ("status.unsaved", "Unsaved changes"),
     (
         "structure_error.internal_invariant_failed",
