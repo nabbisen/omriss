@@ -90,10 +90,12 @@ pub struct EditorSession {
 mod document_map_bridge;
 mod focus_bridge;
 mod outline_bridge;
+mod raw_edit;
 mod structural;
 mod structure_bridge;
 mod structured_edit;
 pub use outline_bridge::OutlineNode;
+pub use raw_edit::RawCommit;
 
 impl EditorSession {
     /// Opens a session over Markdown text (e.g. file contents just read).

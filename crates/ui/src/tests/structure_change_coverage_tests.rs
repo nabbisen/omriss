@@ -12,8 +12,11 @@ use std::path::PathBuf;
 
 /// The `Document` methods that rewrite the source *as a Markdown outline
 /// operation*. Each must be bracketed by `begin_change`/`finish_change`.
+/// `replace_range` joined this list with RFC-076: the raw-text commit calls it
+/// on a Markdown document, where it can change every heading at once.
 const OUTLINE_MUTATORS: &[&str] = &[
     "replace_section_body",
+    "replace_range",
     "promote_section",
     "demote_section",
     "rename_section",
@@ -25,10 +28,11 @@ const OUTLINE_MUTATORS: &[&str] = &[
 
 /// `Document` methods that rewrite the source without a comparison, each with
 /// its reason: `undo`/`redo` clear the warning (they restore or deliberately
-/// repeat an edit), and `replace_range` is the primitive behind non-Markdown
-/// edits (via the adapter's `apply_validated_edit`, which the session calls
-/// only for JSON), whose outline is not their structure (RFC-054 §0.1).
-const EXEMPT: &[&str] = &["undo", "redo", "replace_range"];
+/// repeat an edit). JSON edits reach `replace_range` only through the
+/// adapter's `apply_validated_edit`, which this scan does not see as a
+/// `.replace_range(` call, and a non-Markdown outline is not its structure
+/// (RFC-054 §0.1).
+const EXEMPT: &[&str] = &["undo", "redo"];
 
 fn session_sources() -> Vec<(String, String)> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");

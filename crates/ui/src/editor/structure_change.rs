@@ -23,6 +23,7 @@
 //! | Operation | Intended change | Warn when |
 //! |---|---|---|
 //! | body commit | none | anything differs |
+//! | raw-text commit | none (deliberately — see [`Operation::RawCommit`]) | anything differs |
 //! | move, promote, demote | none | anything differs |
 //! | split / add section | exactly one node gained | anything else differs |
 //! | rename | the old title lost, one node gained | anything else differs |
@@ -81,6 +82,13 @@ pub struct ExpectedChange {
 pub enum Operation {
     /// A body commit.
     BodyCommit,
+    /// A raw-text commit (RFC-076): the user edited the document's source
+    /// directly, so any heading may have changed. That is **not** "no
+    /// expectation" (which would never warn) but the opposite: the comparison
+    /// still expects nothing, so any outline difference is announced. In a raw
+    /// edit a structure change is the normal case, and the notice is the user's
+    /// cue that Ctrl+Z is worth using before they type again.
+    RawCommit,
     /// Moving a section; promote and demote share this expectation.
     Reshape,
     /// Splitting a body, or adding a section.
@@ -98,7 +106,9 @@ pub enum Operation {
 pub fn expected_change(op: Operation, outline: &Outline) -> ExpectedChange {
     let title_of = |id: NodeId| outline.node(id).map(|n| n.title.clone());
     match op {
-        Operation::BodyCommit | Operation::Reshape => ExpectedChange::default(),
+        Operation::BodyCommit | Operation::RawCommit | Operation::Reshape => {
+            ExpectedChange::default()
+        }
         Operation::Add => ExpectedChange {
             removed: Vec::new(),
             added: 1,

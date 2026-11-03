@@ -6,6 +6,7 @@ mod view_state_tests;
 
 mod document_map_tests;
 mod errors_tests;
+mod raw_edit_tests;
 mod session_format_tests;
 mod structure_change_coverage_tests;
 mod structure_change_tests;

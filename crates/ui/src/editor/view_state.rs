@@ -93,6 +93,23 @@ impl ViewState {
         }
     }
 
+    /// Returns to the whole-document outline and forgets every navigation
+    /// history entry (RFC-076 §4.2). Unlike [`retain_alive`], which keeps a
+    /// focus whose node id still exists, this never keeps anything: after the
+    /// whole document was replaced, an id that still resolves is a coincidence
+    /// of ordinal paths, not the section the user was in. If the raw overlay is
+    /// active it stays active; leaving it lands on the outline.
+    pub fn reset_to_outline(&mut self) {
+        self.back.clear();
+        self.forward.clear();
+        if self.mode == ViewMode::RawSource {
+            self.pre_raw = Some(ViewMode::Outline);
+        } else {
+            self.mode = ViewMode::Outline;
+            self.pre_raw = None;
+        }
+    }
+
     /// Whether the raw-source overlay is currently active.
     pub fn is_raw(&self) -> bool {
         self.mode == ViewMode::RawSource
