@@ -6,6 +6,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The Dioxus components moved into a new crate, `omriss-components`**
+  (RFC-075). The 23 component files and `draft_sync` left `crates/app`; the
+  desktop host keeps `main`, the shell wiring, file I/O, settings and the
+  command line. No behaviour changed. The crate is not published and is a
+  default workspace member, so `cargo test` now builds it, and it builds for
+  `wasm32-unknown-unknown`, which makes a non-desktop host possible. `omriss-ui`
+  is unchanged and still depends only on `omriss-core`.
+
 ## [0.17.0] - 2026-11-03
 
 ### Added

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — architecture (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — extraction implemented on `main` (PRs 1–4: `63c02cb`, `febb23c`, no code change for PR 3, and the documentation commit), awaiting architect review; §10.7 (linking §7 from RFC-064) is not done, so the RFC has not moved to `done/`.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-001, RFC-062

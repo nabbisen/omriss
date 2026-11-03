@@ -8,11 +8,13 @@ crates, where renders are triggered, and which components own which data.
 ## Crate Boundaries (RFC-001)
 
 ```
-omriss-core  pure Rust, no UI dependency
+omriss-core        pure Rust, no UI dependency
     ↓
-omriss-ui    pure Rust, no Dioxus dependency
+omriss-ui          pure Rust, no Dioxus dependency
     ↓
-omriss       Dioxus 0.7 desktop shell
+omriss-components  Dioxus components, no platform dependency
+    ↓
+omriss             the desktop host (window, files, settings)
 ```
 
 **omriss-core** owns the canonical document model: the source text buffer,
@@ -26,11 +28,19 @@ sibling navigation helpers, and the file text profile. It depends on
 `omriss-core` but not on Dioxus. Its types are testable with `cargo test`
 on any host.
 
-**omriss** owns the Dioxus component tree, file I/O, keyboard handling,
-app settings (recent files, preferences), and the signal graph. It has no
-business logic; it maps user gestures to `EditorSession` method calls. The
-left Document Map is rendered by `DocumentMapPane` from the format-neutral
+**omriss-components** owns the Dioxus components — the toolbar, Document Map,
+Writing Area, dialogs and status bar — and the one piece of shared draft logic
+they need (`draft_sync`). It depends on `omriss-ui` and Dioxus, and on nothing
+that needs a platform: no file system, no dialogs, no settings, no window. That
+is enforced by the compiler and checked by building it for
+`wasm32-unknown-unknown`. It is not published (RFC-075). The left Document Map
+is rendered by `DocumentMapPane` from the format-neutral
 `EditorSession::document_map_nodes()` view model.
+
+**omriss** is the desktop host. It owns the window and system WebView, file
+I/O and dialogs, keyboard handling, app settings (recent files, preferences),
+and the signal graph that connects the components to an `EditorSession`. It has
+no business logic; it maps user gestures to `EditorSession` method calls.
 
 ## Testing approach
 

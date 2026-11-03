@@ -244,6 +244,11 @@ cargo test -p omriss-core
 # UI only
 cargo test -p omriss-ui
 
+# Components: builds and tests everywhere; the boundary check below is the
+# one that proves it has no platform dependency (RFC-075)
+cargo test -p omriss-components
+cargo build -p omriss-components --target wasm32-unknown-unknown
+
 # Property tests only (RFC-066)
 cargo test -p omriss-core --test properties
 

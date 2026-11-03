@@ -44,7 +44,8 @@ plain-text formats such as JSON and TOML. See
 | --- | --- |
 | `crates/core` (`omriss-core`) | Document engine: canonical text, outline index over `pulldown-cmark`, section-body edits, undo/redo. No GUI dependencies. |
 | `crates/ui` (`omriss-ui`) | Renderer-independent GUI logic: editor session, focus navigation with back/forward history, i18n catalogs. |
-| `crates/app` (`omriss`) | Desktop shell: Dioxus components on the system WebView, file dialogs via `rfd`. |
+| `crates/components` (`omriss-components`) | Dioxus components built on `omriss-ui`: the panes, dialogs and toolbar. No platform code, so it also builds for `wasm32-unknown-unknown`. Not published. |
+| `crates/app` (`omriss`) | The desktop host: window and system WebView, file dialogs via `rfd`, settings, and the wiring that connects the components to the session. |
 
 Design documents live in [`rfcs/`](rfcs/) (see the
 [RFC index](rfcs/README.md) and the lifecycle policy in
@@ -53,10 +54,10 @@ The user guide sources live in [`docs/`](docs/) as an mdBook.
 
 ## Building
 
-Requires Rust 1.88+ (edition 2024). Core and UI logic build everywhere:
+Requires Rust 1.88+ (edition 2024). Core, UI logic and the components build everywhere:
 
 ```sh
-cargo build            # builds omriss-core and omriss-ui (default members)
+cargo build            # builds omriss-core, omriss-ui and omriss-components (default members)
 cargo test             # runs the full unit + golden integration suite
 ```
 

@@ -98,8 +98,10 @@ Settings are stored in platform-appropriate locations (RFC-036):
 ## Policy for Platform-Specific Code
 
 All platform-specific behavior must be isolated in the `omriss` app package.
-`omriss-core` and `omriss-ui` must compile and test on any host without
-GUI libraries (RFC-001, RFC-010 boundary rule).
+`omriss-core`, `omriss-ui` and `omriss-components` must compile and test on any
+host without GUI libraries (RFC-001, RFC-010 boundary rule, RFC-075).
+`omriss-components` is held to a stricter check: it must also build for
+`wasm32-unknown-unknown`, which fails if a platform dependency creeps in.
 
 Platform-specific workarounds should be documented inline with a reference
 to the upstream issue where applicable.
