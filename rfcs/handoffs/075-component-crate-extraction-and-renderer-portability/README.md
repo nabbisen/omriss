@@ -1,6 +1,6 @@
 # Handoff: RFC-075 — Component Crate Extraction and Renderer Portability
 
-Related RFC: `../../proposed/075-component-crate-extraction-and-renderer-portability.md`
+Related RFC: `../../done/075-component-crate-extraction-and-renderer-portability.md`
 
 Lifecycle status: inherited from RFC-075.
 

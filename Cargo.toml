@@ -30,7 +30,10 @@ repository              = "https://github.com/nabbisen/omriss"
 # the API, and `"0"` would let a published omriss-ui resolve against it.
 omriss-core         = { version = "0.17", path = "crates/core" }
 omriss-ui           = { version = "0.17", path = "crates/ui" }
-omriss-components   = { version = "0.17", path = "crates/components" }
+# No `version`: this crate is `publish = false` and only the (also unpublished)
+# application depends on it, so there is nothing for a version to describe —
+# and nothing for a release to remember to bump.
+omriss-components   = { path = "crates/components" }
 
 # UI
 # No `desktop` feature here: it belongs to the host. A workspace dependency can

@@ -2,7 +2,11 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — architecture (0.18.0)
-**Status.** Proposed — extraction implemented on `main` (PRs 1–4: `63c02cb`, `febb23c`, no code change for PR 3, and the documentation commit), awaiting architect review; §10.7 (linking §7 from RFC-064) is not done, so the RFC has not moved to `done/`.
+**Status.** Implemented (main, unreleased) — landed as RFC-075's PRs 1, 2 and
+4 on 2026-11-03; PR 3 was deliberately empty (§9.3's question, answered in the
+review by construction: `input/keyboard.rs` stays in the host). The crate is
+`omriss-components`, `publish = false`. Two things the RFC did not predict are
+recorded in §9.4. — extraction implemented on `main` (PRs 1–4: `63c02cb`, `febb23c`, no code change for PR 3, and the documentation commit), awaiting architect review; §10.7 (linking §7 from RFC-064) is not done, so the RFC has not moved to `done/`.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-001, RFC-062
@@ -302,17 +306,42 @@ RFC is what would add a fourth name to that family.
    command and its output.
 2. `cargo test --workspace` passes with the same count as before the move, or
    the difference is explained test by test.
-3. `cargo test` (default members, no `--workspace`) now **includes the
+3. `cargo test` (default members, no `--workspace`) now **compiles the
    components**, which it cannot today: `crates/app` is outside
    `default-members` because it needs the platform WebView (RFC-001). The new
-   crate does not, so this is a genuine coverage gain and the way to show the
-   boundary is real.
+   crate does not.
+
+   **Corrected 2026-11-03, after the implementation measured it:** an earlier
+   draft called this "a genuine coverage gain". It is a *compile* gain, not a
+   test gain — `omriss-components` contains **zero tests**, by design
+   (`TESTING.md` defines no component-level harness), and a move adds none. The
+   default-members count is 494 before and 494 after. What is actually gained
+   is that `cargo build`, `cargo test` and `clippy` on a machine with no WebKit
+   now cover all 23 components, where before they were reachable only with the
+   platform libraries installed. Worth having; not worth overstating.
 4. `cargo build -p omriss-components --target wasm32-unknown-unknown` succeeds. This
    is the acceptance test for the whole RFC: if it fails, a platform dependency
    survived the split, and the boundary is not where this RFC says it is.
 5. The desktop application behaves identically. No smoke re-run is required by
    the move itself, but the next scheduled run must pass unchanged.
 6. `scripts/check-rfcs.sh`, `cargo clippy -- -D warnings`, `cargo fmt --check`.
+
+### 9.4 Two things this RFC did not predict
+
+**The workspace `dioxus` entry had to change.** It pinned
+`dioxus = { version = "0.7", features = ["desktop"] }`, and a workspace
+dependency can only *add* features — so every crate taking
+`{ workspace = true }`, the new one included, would have pulled in
+`dioxus-desktop` and the wasm build would have failed. `desktop` moved to
+`crates/app`'s own dependency line. The host's feature set is unchanged. This
+is build configuration, not code, and it is the only change outside "moves and
+import paths" that the extraction required.
+
+**Seven functions became `pub`.** They were `pub(crate)` because caller and
+callee shared a crate; the host now calls them across a crate boundary.
+Visibility is the only non-import change in the moved files, and the boundary
+forces it — which is, in a small way, the boundary doing its job: the crate's
+public surface is now exactly what the host actually uses.
 
 ### 9.3 One thing to decide during implementation
 
