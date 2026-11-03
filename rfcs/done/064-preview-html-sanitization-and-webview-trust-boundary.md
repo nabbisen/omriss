@@ -299,23 +299,59 @@ destinations in the preview**, proposed in §9d.
 and its doc comment recording both violations verbatim. It is the record of a
 route that was tried and measured, which is worth more than a deleted file.
 
-## 9d. H4 — the remote-image policy belongs in `preview.rs` — **owner decision**
+## 9d. H4 — remote images are not fetched until the reader asks (0.19.0)
 
-§4.2 allows `http`, `https`, `mailto` and scheme-less destinations for links
-*and* images alike. H4 would narrow it for **images only**: a remote image
-destination is dropped, exactly as `javascript:` already is.
+**Amended 2026-11-04**, after the owner asked whether the first version of this
+section matched the project's design principles. It did not, and the test is
+worth recording because the failure is a common one.
 
-- **Same user-visible cost as the CSP route** — a `![x](https://…)` no longer
-  renders — with none of §9c's failure modes.
-- **Cross-platform by construction**, and tested where every other preview rule
-  is tested.
-- **Links are untouched.** Clicking a link is a deliberate act; loading an
-  image is not, and that asymmetry is the whole of §9a.
+### The version that was rejected, and why
 
-**This removes a working feature and therefore needs the owner's decision**, not
-the architect's. If taken, it needs a `CHANGELOG.md` entry under *Changed*, a
-`known-limitations.md` entry owned by this RFC, and `PRIVACY.md` §4 rewritten —
-that section currently tells readers a preview may fetch remote images.
+The first proposal was simply to drop remote image destinations in
+`preview.rs`, beside H2's scheme allowlist. It is safe, robust, cross-platform
+and a unit test. It also fails on two counts:
+
+**It misleads.** A user opens *their own* notes containing
+`![diagram](https://…)` and sees nothing — no image, no gap, no reason. They
+would conclude the file is wrong, or the URL is broken, or omriss is broken,
+and the application would have declined to do something and said nothing about
+it. A `known-limitations.md` entry does not repair that: it asks the reader to
+find documentation that explains a blank space.
+
+**It is blunt where the problem is narrow.** §9a's threat is *a document
+someone else sent you* learning your IP address and the moment you opened it.
+The ordinary case is your own document with your own images, where there is no
+threat at all. Dropping every remote image punishes the ordinary case to stop
+the rare one, because omriss cannot tell them apart — and "cannot distinguish,
+therefore refuse everything" is the crude answer, not the considered one.
+
+### The design
+
+What every mail client settled on for this exact threat:
+
+1. **A remote image renders as a visible placeholder** carrying its URL, so the
+   absence is a statement the reader can act on rather than a gap they must
+   diagnose.
+2. **A per-document control — *Load remote images* — off by default.** One
+   action and the document renders as written.
+3. **Links are untouched.** Following a link is a deliberate act; loading an
+   image is not, and that asymmetry is the whole of §9a.
+
+Nothing reaches the network until the reader asks, which is the property §9a
+needs; and a previewer that can never show the images in a Markdown document
+has stopped being a previewer, which is the capability the first version threw
+away.
+
+### Scheduling
+
+This is a design slice — placeholder output in `preview.rs` and a real
+affordance in the UI — not an allowlist edit, and 0.18.0 is at capacity.
+**Scheduled to 0.19.0.** §9a has been open since 0.17.0 shipped and needs a
+hostile document to matter; that does not justify rushing a design the project
+would have to apologise for.
+
+0.18.0's item 2 is therefore empty. That is the honest consequence of §9c's
+withdrawal, not a slot to backfill.
 
 ## 9a. The CSP also has a privacy dimension (recorded 2026-10-21)
 

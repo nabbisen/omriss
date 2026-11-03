@@ -52,7 +52,7 @@ That rule is the scope's only defence when something else asks to join.
 | # | Work | Why it is in, and why here |
 |---|---|---|
 | 1 | **RFC-075** component crate extraction | A pure move, cheapest while the tree is quiet right after a release. Everything below then lands in the new crate rather than being moved after it |
-| 2 | ~~**RFC-064 H3** — wire the CSP~~ → **H4**, pending an owner decision | **Attempted 2026-11-04 and withdrawn** (RFC-064 §9c): the policy leaves the window rendering, pixel-identical, and accepting no input — `connect-src` governs the XHR dioxus sends every UI event through — and `document::eval` is `eval`, so without a third `unsafe-*` every focus behaviour Task 019 and RFC-060 established breaks silently. The gap it was for, §9a's tracking pixel, is closed instead by **H4** in `preview.rs`, where it is a unit test rather than a per-platform GUI run. H4 removes a working feature, so it waits on the owner (§9d) |
+| 2 | ~~**RFC-064 H3** — wire the CSP~~ — **withdrawn, and not replaced** | Attempted 2026-11-04 and withdrawn (RFC-064 §9c): the policy leaves the window rendering, pixel-identical, and accepting no input, and `document::eval` is `eval`, so a third `unsafe-*` would be needed to keep every focus behaviour Task 019 and RFC-060 established. **This slot is empty on purpose.** The gap it was for is §9a's tracking pixel, now RFC-064 §9d's H4 and scheduled to 0.19.0 — the quick version of H4 was rejected for misleading a reader whose own image silently vanished |
 | 3 | **RFC-071** structure-change warning | Blocks RFC-076, and closes the user-surprise half of RFC-066's P3 |
 | 4 | **RFC-076** editable plain file text | **Moved up deliberately.** It replaces an entire document in one commit — the most dangerous thing in the backlog — so it takes the *most* exercise before the release ends, not the least. Its only hard dependency is RFC-071 |
 | 5 | **RFC-069** draft lifecycle and session guards | The dirty indicator that stays lit beside "Saved", seen in every smoke run since Task 011, and the window-close guard unbuilt since v0.3.0 |
@@ -150,6 +150,12 @@ table is not repeated here.
   dependency rather than manage it.
 - **Portability:** a web host built on RFC-075's extraction, which RFC-075 §7
   gates behind a threat-model audit RFC-064's assumptions do not survive.
+- **Privacy:** RFC-064 §9d's **H4** — remote images in the preview render as a
+  placeholder until the reader asks for them, rather than being fetched
+  silently. 0.19.0. The one-line version of this (drop them outright) was
+  rejected on 2026-11-04: it would have left a user whose own document
+  contained an image staring at nothing, with no statement that anything had
+  been withheld.
 
 The RFC index is authoritative for exact titles, lifecycle state, and the next
 free RFC number.
