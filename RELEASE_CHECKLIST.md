@@ -42,18 +42,22 @@ product owner. No automated process may bypass this gate.
 
 ## Artifact Matrix (RFC-037)
 
-| OS | Artifact | Status |
-|----|----------|--------|
-| Any | `omriss-X.Y.Z.tar.gz` (Cargo source) | ✓ produced by release process |
-| Linux | Binary tarball (future) | planned |
-| macOS | App bundle zip/dmg (future) | planned |
-| Windows | Zip/MSI (future) | planned |
+What a release actually produces, as of 0.17.0. Rows say what happens, not
+what was once intended — the previous version of this table promised an
+`omriss-X.Y.Z.tar.gz` that no part of the release process has ever built.
 
-For source releases, include checksums:
+| Target | Artifact | How |
+|---|---|---|
+| Windows | `omriss-X.Y.Z.msix` → Microsoft Store | **automatic** — `release.yml` on a bare-semver tag, after `cargo test --workspace` passes |
+| Any | crates.io: `omriss-core`, then `omriss-ui` | **by hand** at the tag, in that order (RFC-062 §10.1) |
+| Any | source archive of the tag | GitHub serves one for every tag; the release process does not build it |
+| Linux | binary tarball, AUR `omriss` and `omriss-bin` | planned — RFC-072 |
+| Linux | Flatpak via Flathub | planned — RFC-074 |
+| macOS | app bundle | **not planned.** No Mac has been available to build or test on, and RFC-038 forbids claiming a platform that has not been run |
 
-```sh
-sha256sum omriss-X.Y.Z.tar.gz > omriss-X.Y.Z.tar.gz.sha256
-```
+Checksums apply to a downloadable binary, which today means the MSIX. The
+Store distributes it; a published checksum matters once RFC-072's tarball
+exists, and that RFC specifies it.
 
 ---
 
