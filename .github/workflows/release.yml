@@ -133,25 +133,54 @@ jobs:
     # Store secrets on it rather than at repository level.
     environment: microsoft-store
     steps:
+      # Fail with the name of what is missing. 0.17.0's publish ran with every
+      # secret unset: the values expanded to nothing, `--tenantId` swallowed
+      # the next flag as its value, and the job died complaining that
+      # "--sellerId" is not a GUID. An unset credential must say so.
+      - name: Store credentials must be present
+        shell: bash
+        env:
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          SELLER_ID: ${{ secrets.SELLER_ID }}
+          AZURE_AD_APPLICATION_CLIENT_ID: ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
+          AZURE_AD_APPLICATION_SECRET: ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+          STORE_PRODUCT_ID: ${{ secrets.STORE_PRODUCT_ID }}
+        run: |
+          set -u
+          missing=()
+          for name in AZURE_AD_TENANT_ID SELLER_ID AZURE_AD_APPLICATION_CLIENT_ID \
+                      AZURE_AD_APPLICATION_SECRET STORE_PRODUCT_ID; do
+            [ -n "${!name:-}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Not set on the 'microsoft-store' environment: ${missing[*]}"
+            echo "The MSIX from the package job is still uploaded as an artifact;"
+            echo "set the secrets and re-run this job, or submit it by hand."
+            exit 1
+          fi
+          echo "All five Store credentials are present."
+
       - uses: actions/download-artifact@v4
         with:
           name: omriss-msix
 
-      # TODO: pin to a commit SHA rather than a moving tag before first use.
-      # This action runs with the Store credentials in scope.
+      # Pinned to a commit SHA: this action runs with the Store credentials in
+      # scope, and a moving tag would let it change under us. 15abd1c is v1.1.
       - name: Configure Microsoft Store CLI
-        uses: microsoft/microsoft-store-apppublisher@v1.1
+        uses: microsoft/microsoft-store-apppublisher@15abd1c50fcc164b19cb240fb04ef3c49bf715a2
 
+      # Every secret is quoted: an empty one must become an empty argument,
+      # never a flag that eats the next flag.
       - name: Reconfigure store credentials
         run: >
           msstore reconfigure
-          --tenantId ${{ secrets.AZURE_AD_TENANT_ID }}
-          --sellerId ${{ secrets.SELLER_ID }}
-          --clientId ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
-          --clientSecret ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+          --tenantId "${{ secrets.AZURE_AD_TENANT_ID }}"
+          --sellerId "${{ secrets.SELLER_ID }}"
+          --clientId "${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}"
+          --clientSecret "${{ secrets.AZURE_AD_APPLICATION_SECRET }}"
 
       - name: Publish package
         run: >
           msstore publish
           '${{ github.workspace }}/omriss-${{ needs.verify.outputs.version }}.msix'
-          -id ${{ secrets.STORE_PRODUCT_ID }}
+          -id "${{ secrets.STORE_PRODUCT_ID }}"

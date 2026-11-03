@@ -26,6 +26,12 @@ product owner. No automated process may bypass this gate.
 - [ ] Package roles verified before publication:
       `omriss-core` is the publishable library package, and the `omriss` app
       package is **permanently** `publish = false` (RFC-062 §10.1).
+- [ ] **The publish path can actually authenticate.** `gh secret list --env
+      microsoft-store` lists all five Store secrets, and `~/.cargo/credentials.toml`
+      or `CARGO_REGISTRY_TOKEN` exists. 0.17.0 was tagged with every Store
+      secret unset: `verify` and `package` passed, the MSIX was built, and
+      `publish` failed on a credential that was never there. A gate that
+      checks the build but not the thing that ships it is only half a gate.
 - [ ] **crates.io publish, in this order** (RFC-062 §10.1), by hand after the
       gate passes — a published version can never be deleted, only yanked:
       1. `cargo publish -p omriss-core`
