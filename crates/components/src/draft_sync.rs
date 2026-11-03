@@ -81,6 +81,29 @@ pub fn commit_or_block(
     true
 }
 
+/// [`commit_or_block`], then — on success — [`sync`] the draft to what was
+/// actually committed (RFC-069 §2.1).
+///
+/// The resync is the point. A commit stores the body the *session* decided on —
+/// a non-last section's body gets a newline appended — while the draft signal
+/// still holds what the user typed. Without the resync `is_pending` stays true
+/// forever, so the dirty dot stays lit after a byte-correct save, and every
+/// later navigation, preview toggle or search re-commits an identical body: a
+/// no-op that still bumps the revision and pushes an undo record, so the next
+/// Ctrl+Z appears to do nothing. Every caller that commits and then carries on
+/// must therefore go through this, not through `commit_or_block` alone.
+pub fn commit_and_resync(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+) -> bool {
+    if !commit_or_block(session, draft, status) {
+        return false;
+    }
+    sync(session, draft);
+    true
+}
+
 /// Syncs `draft` to the focused node's current committed content —
 /// Markdown's section body, or (RFC-054 J7b) a JSON node's editable text
 /// (a value) or full raw text (a container).
@@ -98,3 +121,6 @@ pub fn sync(session: &Signal<EditorSession>, draft: &mut Signal<String>) {
     drop(s);
     draft.set(text.unwrap_or_default());
 }
+
+#[cfg(test)]
+mod tests;

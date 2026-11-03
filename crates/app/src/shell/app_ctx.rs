@@ -74,7 +74,9 @@ pub(crate) fn has_pending_draft(ctx: AppCtx) -> bool {
     draft_sync::is_pending(&ctx.session, &ctx.draft)
 }
 
-/// Commits any pending draft into `omriss` before a save or navigation.
+/// Commits any pending draft into `omriss` before a save or navigation, and
+/// resyncs the draft to what was committed (RFC-069 §2.1). Returns `false` — and
+/// sets `status` — if the commit was refused, so the caller can stop.
 pub(crate) fn commit_pending(mut ctx: AppCtx) -> bool {
-    draft_sync::commit_or_block(&mut ctx.session, &mut ctx.draft, &mut ctx.status)
+    draft_sync::commit_and_resync(&mut ctx.session, &mut ctx.draft, &mut ctx.status)
 }
