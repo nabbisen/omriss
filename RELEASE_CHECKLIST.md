@@ -207,9 +207,15 @@ Fixtures: ~~copies of crates/core/tests/fixtures/{academic-paper.md, structured-
 The checked out project was used.
 Date: 2026-11-03
 Tester: nabbisen (owner)
-Steps completed: A-H
-Failures (if any): (All were reported to architect on each)
-Sign-off: 
+Steps completed: A-H in the table's order, which is A, B, C, D, E, F, G, I, H
+                 — all nine checks, including I (raw HTML) and H (Japanese UI,
+                 run on a Japanese-language Windows install rather than
+                 recorded as not run).
+Failures (if any): none release-blocking. Two findings from check D, both
+                 recorded against RFC-059 §6.2a and §6.2b and dispositioned to
+                 0.18.0: shortcuts stop working after a save, and Ctrl+F opens
+                 the search panel without focusing its field.
+Sign-off: nabbisen (owner), 2026-11-03
 ```
 
 ---
@@ -259,9 +265,17 @@ their public distribution.
 
 **Sign-off:**
 ```
-Product owner: _____________________  Date: ___________
+Product owner: nabbisen               Date: 2026-11-03
 Technical reviewer: architect         Date: 2026-11-03
 ```
+
+The product owner authorised publication on 2026-11-03 and instructed the
+architect to record the line; the words above were typed by the architect, not
+by the owner. Noted because the two signatures exist so that one actor cannot
+self-certify, and a reader deserves to know which part of that was satisfied by
+instruction rather than by hand. The authorisation itself is the owner's: the
+tag, both crates.io publishes and the GitHub release were each separately
+authorised by them.
 
 ### Technical reviewer's record — 0.17.0
 
