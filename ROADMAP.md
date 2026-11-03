@@ -106,6 +106,14 @@ table is not repeated here.
 - **Distribution:** RFC-074 (Flatpak and Flathub), after RFC-072's assets
   exist. Its G1–G5 gates and Flathub's review queue are why it does not travel
   with RFC-072.
+- **Microsoft Store publishing automation**, deferred by owner decision on
+  2026-11-03 after 0.17.0's `publish` job failed on credentials that were
+  never configured. Azure Entra and Partner Center need more preparation than
+  a release can absorb mid-flight. Until it is taken up, `release.yml` builds
+  and uploads the MSIX and **skips** publishing unless the repository variable
+  `STORE_PUBLISH` is `true`; submission is a manual step on the checklist.
+  Worth noting for whoever picks it up: 0.17.0's MSIX is a complete, verified
+  artifact, and the failure was never in the packaging.
 - **Formats:** RFC-055 (TOML) and RFC-056 (the YAML feasibility spike) — M12's
   remainder, deliberately behind the polish of the format already shipped.
 - **Capability:** RFC-057 (multi-document workspace and tabs) and RFC-058

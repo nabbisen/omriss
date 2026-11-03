@@ -129,6 +129,18 @@ jobs:
   publish:
     needs: [verify, package]
     runs-on: windows-latest
+    # Deferred by owner decision, 2026-11-03: setting up Azure Entra and
+    # Partner Center for automated publishing needs more preparation than
+    # 0.17.0's release could absorb. Until then this job is skipped, not
+    # failed — a release pipeline that is red on every tag teaches everyone
+    # to stop reading it, and the MSIX the `package` job uploads is still a
+    # complete, verified artifact to submit by hand.
+    #
+    # To turn it back on: set the repository variable STORE_PUBLISH to
+    # "true" and put the five secrets on the `microsoft-store` environment.
+    # `vars` is used rather than `secrets` because only `vars` is available
+    # in a job-level `if`.
+    if: ${{ vars.STORE_PUBLISH == 'true' }}
     # Configure this environment with required reviewers, and put all five
     # Store secrets on it rather than at repository level.
     environment: microsoft-store

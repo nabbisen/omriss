@@ -26,9 +26,12 @@ product owner. No automated process may bypass this gate.
 - [ ] Package roles verified before publication:
       `omriss-core` is the publishable library package, and the `omriss` app
       package is **permanently** `publish = false` (RFC-062 §10.1).
-- [ ] **The publish path can actually authenticate.** `gh secret list --env
-      microsoft-store` lists all five Store secrets, and `~/.cargo/credentials.toml`
-      or `CARGO_REGISTRY_TOKEN` exists. 0.17.0 was tagged with every Store
+- [ ] **The publish path can actually authenticate.** `~/.cargo/credentials.toml`
+      or `CARGO_REGISTRY_TOKEN` exists. For the Store: either `STORE_PUBLISH`
+      is unset — in which case the MSIX is downloaded from the run and
+      submitted by hand, and **that step is not done until someone does it** —
+      or it is `true` and `gh secret list --env microsoft-store` lists all
+      five secrets. 0.17.0 was tagged with every Store
       secret unset: `verify` and `package` passed, the MSIX was built, and
       `publish` failed on a credential that was never there. A gate that
       checks the build but not the thing that ships it is only half a gate.
@@ -59,7 +62,7 @@ what was once intended — the previous version of this table promised an
 
 | Target | Artifact | How |
 |---|---|---|
-| Windows | `omriss-X.Y.Z.msix` → Microsoft Store | **automatic** — `release.yml` on a bare-semver tag, after `cargo test --workspace` passes |
+| Windows | `omriss-X.Y.Z.msix` | **built automatically** by `release.yml` on a bare-semver tag, after `cargo test --workspace` passes, and uploaded as a run artifact. **Submitted to the Store by hand** — automated publishing is deferred (owner decision, 2026-11-03); the `publish` job is skipped unless the repository variable `STORE_PUBLISH` is `true` |
 | Any | crates.io: `omriss-core`, then `omriss-ui` | **by hand** at the tag, in that order (RFC-062 §10.1) |
 | Any | source archive of the tag | GitHub serves one for every tag; the release process does not build it |
 | Linux | binary tarball, AUR `omriss` and `omriss-bin` | planned — RFC-072 |
