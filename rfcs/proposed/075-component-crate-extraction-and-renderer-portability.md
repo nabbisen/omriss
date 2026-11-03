@@ -106,7 +106,7 @@ boundary, and moving it is a move, not a redesign.
 ```text
 omriss-core        no UI, no renderer          pulldown-cmark only
 omriss-ui          no renderer                 omriss-core only
-<new crate>        Dioxus components           omriss-ui + dioxus + tree widget
+omriss-components  Dioxus components           omriss-ui + dioxus + tree widget
 omriss             the desktop host            + dioxus-desktop, rfd, dirs, tao/wry
 ```
 
@@ -120,22 +120,49 @@ into all of them.
 The layer boundary is the asset. The new crate sits below the host and above
 the renderer-independent layer, and `omriss-ui` keeps its single dependency.
 
-### 4.2 The new crate's name — **owner decision**
+### 4.2 The new crate is named `omriss-components`
 
-Crate names are public identity, and RFC-062 established that this project
-treats them as a decision rather than a detail. Two candidates:
+> **Decided by the project owner on 2026-11-03: `omriss-components`, with
+> `publish = false` (§4.3).** These are final decisions, not recommendations.
 
-| Name | Argument | Against |
-|---|---|---|
-| **`omriss-dioxus`** | says *which renderer* it binds, which is the one fact a consumer needs. Makes the version coupling legible in the name — Dioxus 0.7 → 0.8 is a breaking change for this crate and for nothing else in the workspace. Leaves `omriss-tui` and friends unambiguous | could be misread as "Dioxus support inside omriss" |
-| `omriss-components` | reads naturally beside `omriss-ui` | "ui" versus "components" is not self-evident to someone who has not read this RFC — the reader must guess which crate holds the widgets |
+**The decisive fact is §4.3's.** An unpublished crate's name is cheap to change
+— a `git mv` and three manifest lines — so the criterion is not "safest
+forever" but "clearest to someone opening the repository today". An earlier
+draft of this section recommended `omriss-dioxus` on a permanence argument that
+an unpublished crate does not support.
 
-**Architect's recommendation: `omriss-dioxus`**, because the second principle —
-names that cannot be misunderstood — is better served by a name that states the
-binding than by one that states a category. Renaming `omriss-ui` to free up a
-better name is not available: it is published, with ten versions.
+`components` is not an empty category word here. It is Dioxus and React
+vocabulary for precisely what the crate holds, so a Rust developer who reads it
+expects RSX and finds RSX. `crates/components` also sits correctly beside
+`crates/core`, `crates/ui` and `crates/app`, the generic directory scheme
+RFC-062's question 3 settled.
 
-### 4.3 The new crate is **not published**, for now
+It survives the likely change, too. Replacing one renderer with another is far
+likelier than running two at once — and §5 refuses the multi-renderer
+abstraction that would justify a framework suffix. After such a swap
+`omriss-components` is still true; `omriss-dioxus` would be a lie.
+
+**The `ui` versus `components` question is answered in the description, not the
+name:**
+
+```toml
+description = "Dioxus components for Omriss, built on omriss-ui's renderer-independent view state"
+```
+
+That is the first line anyone reads beside a crate name, and this project has
+direct evidence that the field is load-bearing: `omriss-ui`'s description
+claimed GUI components it never had, on a public registry, for a year.
+
+**Rejected, with reasons, so they are not re-proposed:**
+
+| Rejected | Why |
+|---|---|
+| `omriss-gui` | `ui` and `gui` are three letters apart and would name two different layers. That is exactly the pair a tired reader picks wrong |
+| `omriss-widgets` | understates and slightly misleads: the crate holds dialogs, panes and the shell's composition, not reusable controls |
+| `omriss-ui-dioxus` | the most precise option, and the right one **if the crate were published**. Unpublished, it is precision aimed at an audience that does not exist |
+| `omriss-dioxus` | bakes a third-party framework into a permanent identity for a benefit that only exists on a public registry |
+
+### 4.3 The new crate is **not published** — owner decision, 2026-11-03
 
 `publish = false`, until a second consumer actually exists.
 
@@ -158,8 +185,8 @@ command; it is every future breaking change paid for twice.
 
 | From | To | Note |
 |---|---|---|
-| `crates/app/src/components/**` (24 files) | the new crate | unchanged content |
-| `crates/app/src/shell/draft_sync.rs` | the new crate | §3; it is not shell |
+| `crates/app/src/components/**` (24 files) | `crates/components/` | unchanged content |
+| `crates/app/src/shell/draft_sync.rs` | `crates/components/` | §3; it is not shell |
 | `crates/app/src/input/keyboard.rs` | **stays** — decided by whether it is renderer-independent; see §9.3 | |
 
 **The move must be byte-identical.** No renames, no "while we are here"
@@ -280,7 +307,7 @@ RFC is what would add a fourth name to that family.
    `default-members` because it needs the platform WebView (RFC-001). The new
    crate does not, so this is a genuine coverage gain and the way to show the
    boundary is real.
-4. `cargo build -p <new crate> --target wasm32-unknown-unknown` succeeds. This
+4. `cargo build -p omriss-components --target wasm32-unknown-unknown` succeeds. This
    is the acceptance test for the whole RFC: if it fails, a platform dependency
    survived the split, and the boundary is not where this RFC says it is.
 5. The desktop application behaves identically. No smoke re-run is required by
@@ -300,19 +327,20 @@ than moving it because it is nearby.
 2. `omriss-ui` still has exactly one dependency.
 3. No component imports `crate::` anything.
 4. The move is byte-identical and the suite is unchanged (§9.1, §9.2).
-5. The new crate is `publish = false` with the reason recorded in its manifest,
+5. `omriss-components` is `publish = false` with the reason recorded in its manifest,
    unless the owner decides otherwise (§4.3).
 6. The name is the owner's decision (§4.2), recorded here in RFC-052 §14.4's
    form before implementation begins.
 7. §7's threat-model statement is linked from RFC-064, so a future web host
    cannot reach the extraction without meeting the audit.
 
-## 11. Open decisions for the owner
+## 11. Decisions — all resolved, 2026-11-03
 
-1. **The crate name** — §4.2. Recommendation: `omriss-dioxus`.
-2. **Published or not** — §4.3. Recommendation: `publish = false` until a
-   second consumer exists.
-3. **Whether to do this at all if the web product is not pursued** —
-   recommendation: yes. The compiler-enforced boundary, the components entering
-   the default `cargo test`, and the smaller host crate are worth it on their
-   own, and the work is mostly `git mv`.
+1. **The crate name** — `omriss-components` (§4.2).
+2. **Published or not** — `publish = false` (§4.3).
+3. **Whether to do this at all if the web product is not pursued** — yes. It is
+   item 1 of 0.18.0's scope, taken for the compiler-enforced boundary, the
+   components entering the default `cargo test`, and the smaller host crate,
+   not for a web product that may never be built.
+
+Nothing in this RFC is waiting on a decision.
