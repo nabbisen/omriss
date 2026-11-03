@@ -19,7 +19,7 @@ use omriss_core::{FocusedContent, ValueKind};
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{EditorSession, StructureErrorKindCatalogKey};
 
-use crate::shell::draft_sync::json_edit_error_key;
+use omriss_components::draft_sync::json_edit_error_key;
 
 #[component]
 pub fn StructuredFocusView(

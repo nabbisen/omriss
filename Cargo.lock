@@ -3268,12 +3268,24 @@ dependencies = [
  "dioxus-swdir-tree",
  "dirs",
  "keyboard-types",
+ "omriss-components",
  "omriss-core",
  "omriss-ui",
  "rfd 0.15.4",
  "serde",
  "toml",
  "windows",
+]
+
+[[package]]
+name = "omriss-components"
+version = "0.17.0"
+dependencies = [
+ "dioxus",
+ "dioxus-swdir-tree",
+ "keyboard-types",
+ "omriss-core",
+ "omriss-ui",
 ]
 
 [[package]]

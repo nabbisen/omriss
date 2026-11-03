@@ -21,7 +21,7 @@ use omriss_ui::{EditorSession, StructureErrorKindCatalogKey};
 /// number is not valid yet.") is shown inline by
 /// `focused_content_pane/structured.rs`'s editor, live, as the user
 /// types — the signal this generic fallback rarely needs to improve on.
-pub(crate) fn json_edit_error_key(kind: omriss_core::StructureErrorKind) -> &'static str {
+pub fn json_edit_error_key(kind: omriss_core::StructureErrorKind) -> &'static str {
     use omriss_core::StructureErrorKind;
     match kind {
         StructureErrorKind::InvalidSyntax => "focused_content.json.error.invalid_raw_value",
@@ -39,7 +39,7 @@ pub(crate) fn json_edit_error_key(kind: omriss_core::StructureErrorKind) -> &'st
 
 /// True when `draft` differs from the focused node's currently committed
 /// content — Markdown's section body, or a JSON node's editable/raw text.
-pub(crate) fn is_pending(session: &Signal<EditorSession>, draft: &Signal<String>) -> bool {
+pub fn is_pending(session: &Signal<EditorSession>, draft: &Signal<String>) -> bool {
     let s = session.read();
     if s.format() == DocumentFormat::Markdown {
         let d = draft.read();
@@ -52,7 +52,7 @@ pub(crate) fn is_pending(session: &Signal<EditorSession>, draft: &Signal<String>
 /// Commits `draft` into the session if it differs from the committed
 /// content; returns `false` (and sets `status`) if the commit fails, so
 /// the caller can block whatever navigation it was about to do.
-pub(crate) fn commit_or_block(
+pub fn commit_or_block(
     session: &mut Signal<EditorSession>,
     draft: &mut Signal<String>,
     status: &mut Signal<String>,
@@ -84,7 +84,7 @@ pub(crate) fn commit_or_block(
 /// Syncs `draft` to the focused node's current committed content —
 /// Markdown's section body, or (RFC-054 J7b) a JSON node's editable text
 /// (a value) or full raw text (a container).
-pub(crate) fn sync(session: &Signal<EditorSession>, draft: &mut Signal<String>) {
+pub fn sync(session: &Signal<EditorSession>, draft: &mut Signal<String>) {
     let s = session.read();
     let text = if s.format() == DocumentFormat::Markdown {
         s.current_snapshot().map(|snap| snap.body)

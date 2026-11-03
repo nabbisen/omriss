@@ -3,14 +3,17 @@ resolver = "3"
 members = [
     "crates/core",
     "crates/ui",
+    "crates/components",
     "crates/app",
 ]
 # The `omriss` app package links against the platform WebView stack (wry/tao); building it
-# requires native system libraries (e.g. webkit2gtk on Linux). Core and UI logic
-# build and test everywhere, so they are the default members (RFC-001).
+# requires native system libraries (e.g. webkit2gtk on Linux). Core, UI logic and
+# the components build and test everywhere, so they are the default members
+# (RFC-001, RFC-075).
 default-members = [
     "crates/core",
     "crates/ui",
+    "crates/components",
 ]
 
 [workspace.package]
@@ -27,9 +30,13 @@ repository              = "https://github.com/nabbisen/omriss"
 # the API, and `"0"` would let a published omriss-ui resolve against it.
 omriss-core         = { version = "0.17", path = "crates/core" }
 omriss-ui           = { version = "0.17", path = "crates/ui" }
+omriss-components   = { version = "0.17", path = "crates/components" }
 
 # UI
-dioxus              = { version = "0.7", features = ["desktop"] }
+# No `desktop` feature here: it belongs to the host. A workspace dependency can
+# only add features, so declaring it here would force dioxus-desktop into
+# omriss-components and break its wasm build (RFC-075). `omriss` adds it itself.
+dioxus              = { version = "0.7" }
 dioxus-swdir-tree   = { version = "0.9", default-features = false }
 rfd                 = "0.15"
 keyboard-types      = "0.7"

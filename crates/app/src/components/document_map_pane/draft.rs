@@ -1,12 +1,12 @@
 //! Shared draft-commit helpers for the Document Map panel and its row
-//! menus — thin wrappers over `shell::draft_sync` (RFC-054 J7b), the one
+//! menus — thin wrappers over `draft_sync` (RFC-054 J7b), the one
 //! format-aware implementation, since this module only has bare signal
 //! props, not a full `AppCtx`.
 
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
-use crate::shell::draft_sync;
+use omriss_components::draft_sync;
 
 pub(super) fn commit_draft_if_dirty(
     session: &mut Signal<EditorSession>,

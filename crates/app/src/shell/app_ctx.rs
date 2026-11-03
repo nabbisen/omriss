@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
 use crate::components::SectionTitleAction;
-use crate::shell::draft_sync;
+use omriss_components::draft_sync;
 
 // ── Modal state ──────────────────────────────────────────────────────────────
 

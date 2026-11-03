@@ -1,0 +1,26 @@
+[package]
+name = "omriss-components"
+description = "Dioxus components for Omriss, built on omriss-ui's renderer-independent view state"
+readme = "../../README.md"
+# Not published, on purpose (RFC-075 §4.3, owner decision 2026-11-03): publishing
+# is a promise, and an API only becomes a contract once a second consumer exists.
+# The split delivers its whole benefit -- a compiler-enforced boundary and a
+# web-buildable component set -- unpublished. Revisit when that consumer exists.
+publish = false
+version.workspace       = true
+edition.workspace       = true
+rust-version.workspace  = true
+license.workspace       = true
+authors.workspace       = true
+repository.workspace    = true
+
+# Boundary rule (RFC-075): this crate must never depend on dioxus-desktop, tao,
+# wry, rfd, dirs, or anything else that needs a platform. Every dependency here
+# must build for wasm32-unknown-unknown; that is how the rule is enforced.
+[dependencies]
+omriss-core         = { workspace = true }
+omriss-ui           = { workspace = true }
+
+dioxus              = { workspace = true }
+dioxus-swdir-tree   = { workspace = true }
+keyboard-types      = { workspace = true }

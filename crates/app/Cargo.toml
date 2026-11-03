@@ -21,8 +21,9 @@ repository.workspace    = true
 [dependencies]
 omriss-core         = { workspace = true }
 omriss-ui           = { workspace = true }
+omriss-components   = { workspace = true }
 
-dioxus              = { workspace = true }
+dioxus              = { workspace = true, features = ["desktop"] }
 dioxus-swdir-tree   = { workspace = true }
 rfd                 = { workspace = true }
 keyboard-types      = { workspace = true }
