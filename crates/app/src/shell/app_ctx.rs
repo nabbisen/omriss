@@ -7,7 +7,7 @@ use std::time::SystemTime;
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
-use crate::components::SectionTitleAction;
+use omriss_components::SectionTitleAction;
 use omriss_components::draft_sync;
 
 // ── Modal state ──────────────────────────────────────────────────────────────

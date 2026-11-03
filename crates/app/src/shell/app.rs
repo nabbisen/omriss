@@ -9,13 +9,6 @@ use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{EditorSession, ViewMode};
 
-use crate::components::{
-    CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
-    ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
-    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, Toolbar,
-    UnsavedChoice, UnsavedDialog, WelcomeScreen, focus_active_modal, focus_active_palette,
-    trap_modal_tab,
-};
 use crate::file::file_dialog;
 use crate::input::keyboard;
 use crate::shell::actions::{
@@ -25,6 +18,13 @@ use crate::shell::actions::{
 use crate::shell::app_ctx::{AppCtx, Modal};
 use crate::shell::dispatch::{dispatch_command, dispatch_palette, open_search_if_available};
 use crate::storage::settings::AppSettings;
+use omriss_components::{
+    CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
+    ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
+    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, Toolbar,
+    UnsavedChoice, UnsavedDialog, WelcomeScreen, focus_active_modal, focus_active_palette,
+    trap_modal_tab,
+};
 
 const STYLE: &str = include_str!("../../assets/style.css");
 

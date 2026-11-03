@@ -90,13 +90,13 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
 }))
 "#;
 
-pub(crate) fn focus_active_modal() {
+pub fn focus_active_modal() {
     spawn(async move {
         let _ = document::eval(MODAL_FOCUS_INITIAL);
     });
 }
 
-pub(crate) fn trap_modal_tab(evt: &Event<KeyboardData>) -> bool {
+pub fn trap_modal_tab(evt: &Event<KeyboardData>) -> bool {
     let script = match evt.key() {
         Key::Tab if evt.modifiers().shift() => MODAL_FOCUS_PREVIOUS,
         Key::Tab => MODAL_FOCUS_NEXT,

@@ -6,7 +6,7 @@
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
-use omriss_components::draft_sync;
+use crate::draft_sync;
 
 pub(super) fn commit_draft_if_dirty(
     session: &mut Signal<EditorSession>,

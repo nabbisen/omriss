@@ -6,10 +6,10 @@
 use dioxus::prelude::*;
 use omriss_ui::ViewMode;
 
-use crate::components::{CommandId, focus_active_palette};
 use crate::input::keyboard::AppCommand;
 use crate::shell::actions::{handle_new_guarded, handle_open_guarded, handle_save};
 use crate::shell::app_ctx::{AppCtx, commit_pending, has_pending_draft, sync_draft};
+use omriss_components::{CommandId, focus_active_palette};
 
 pub(crate) fn open_search_if_available(ctx: AppCtx, mut search_open: Signal<bool>) {
     if !ctx.session.read().document_open() {

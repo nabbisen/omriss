@@ -42,7 +42,7 @@ fn move_palette_focus(script: &'static str) {
     });
 }
 
-pub(crate) fn focus_active_palette() {
+pub fn focus_active_palette() {
     spawn(async move {
         let _ = document::eval(
             "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.palette-input')?.focus()))",

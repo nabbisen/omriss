@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
-use omriss_components::draft_sync;
+use crate::draft_sync;
 
 #[component]
 pub fn Toolbar(

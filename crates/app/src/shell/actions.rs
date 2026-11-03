@@ -7,12 +7,12 @@ use dioxus::prelude::*;
 use omriss_core::DocumentFormat;
 use omriss_ui::EditorSession;
 
-use crate::components::{
-    ConfirmDeleteChoice, ExtModifiedChoice, SectionTitleAction, SectionTitleChoice, UnsavedChoice,
-};
 use crate::file::file_dialog::{self, OpenOutcome, SaveOutcome};
 use crate::shell::app_ctx::{AppCtx, Modal, commit_pending, has_pending_draft, sync_draft};
 use crate::storage::settings::AppSettings;
+use omriss_components::{
+    ConfirmDeleteChoice, ExtModifiedChoice, SectionTitleAction, SectionTitleChoice, UnsavedChoice,
+};
 
 // ── File operations ──────────────────────────────────────────────────────────
 
