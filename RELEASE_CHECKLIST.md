@@ -128,6 +128,16 @@ the native file dialog, and switching files inside one running process.
 The full 1–21 run remains required for a platform **without** CI coverage
 (macOS today) and for the first release on any new platform.
 
+**Before you start.**
+
+| | |
+|---|---|
+| Fixtures | `crates/core/tests/fixtures/academic-paper.md` and `crates/core/tests/fixtures/structured-sample.json` |
+| **Work on copies** | Checks C and F write to the file. Copy both fixtures somewhere scratch and open the copies. The tracked fixtures are the baseline every later run compares against, and `structured_fixture_smoke` fails if the JSON one is tidied |
+| Check I needs a file you make | A small `.md` containing raw HTML — `<b>bold</b>`, a `<table>`, and ideally `<img src=x onerror="document.title='XSS'">`. If the window title stays "Omriss", no script ran |
+| Check H | Only on a Japanese-language Windows install. Otherwise record "not run" — not "passed" |
+| Settings | Point the app at a throwaway config directory if you can, so the run does not read or write your real recent-files list |
+
 | Check | What to do | Replaces |
 |---|---|---|
 | **A** | Launch. The toolbar and the Welcome screen appear. The Document Map stays empty until a file is open (RFC-048 layout). | 1 |
@@ -174,7 +184,8 @@ from 0.17.0 that is an incomplete smoke test, not a passing one.
 OS: 
 Version: 
 Artifact: omriss-X.Y.Z.tar.gz
-Fixtures: academic-paper.md, structured-sample.json
+Fixtures: copies of crates/core/tests/fixtures/{academic-paper.md, structured-sample.json}
+          plus the hand-made raw-HTML file for check I
 Date: 
 Tester: 
 Steps completed: 
