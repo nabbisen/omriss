@@ -53,9 +53,21 @@ owe the user about where they were"**.
 ### 4.1 A raw commit is a whole-document replacement
 
 One `EditRecord`, one revision bump, byte-exact undo (RFC-066's P1 applies
-unchanged). The commit path is `Document::replace_all(new_source,
-base_revision)` with the same strict-equality revision check as every other
-structural command — a raw editor that has been open while the document changed
+unchanged).
+
+**Corrected 2026-11-04: use `replace_range`, and add nothing to
+`omriss-core`.** This section named `Document::replace_all`, which does not
+exist. `Document::replace_range(range, text, base_revision)` already checks the
+revision by strict equality, routes through `apply_replacement` so history and
+revision update as one unit, and is format-neutral by design — RFC-054 J1 built
+it that way so a mutation need not be heading-shaped. A whole-document
+replacement is `replace_range` over `0..source.len()`.
+
+So **`omriss-core` does not change at all** for the most dangerous feature in
+the backlog, because someone generalised the primitive a release earlier.
+
+The commit therefore carries the same strict-equality revision check as every
+other structural command — a raw editor that has been open while the document changed
 underneath must be refused, not merged.
 
 ### 4.2 Focus returns to the outline. It is not remapped.
