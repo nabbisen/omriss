@@ -168,9 +168,15 @@ implemented in this release. The shortcuts themselves are correctly bound; they
 are simply not reached.
 
 **Workaround:** Click once anywhere in the window, or press Tab, to put focus
-back inside it — shortcuts then work normally. Every affected action also has an
-on-screen control: use the "Document" breadcrumb to zoom out, the toolbar button
-for plain file text, and click into the search field before typing.
+back inside it — shortcuts then work normally.
+
+**The search panel is the exception.** Ctrl+F opens it, but the field does not
+take focus, and Tab does not solve it: Tab starts again from the toolbar's
+Open button, so you would have to tab through the whole window to reach the
+field. Click the search field before typing.
+
+Every affected action also has an on-screen control: use the "Document"
+breadcrumb to zoom out, and the toolbar button for plain file text.
 
 ### Closing the Window Does Not Warn About Unsaved Changes
 

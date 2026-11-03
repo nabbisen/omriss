@@ -174,6 +174,48 @@ discover Tab after pressing Ctrl+S. §6.1 and §6.2's focus owner has to survive
 a re-render, and must be verified on **both** WebViews (§6.2a's platform
 note).
 
+### 6.2b Ctrl+F opens a panel whose field is never focused — Windows run, 2026-11-03
+
+Also from check D:
+
+> Ctrl+F showed the search pane. However, it was not focused. Tab did not
+> recover because Tab brought focus on "Open" menu.
+
+Task 015 saw the same on Linux, where focus sat on "Show plain file text"
+instead. The cause is now exact, and it is not the §6.2a mechanism.
+
+`search_panel.rs:50` sets `autofocus: true` on the search field. **Task 019
+established that the WebView does not honour `autofocus` on its own** — that is
+why `modal_focus.rs` had to look the attribute up explicitly and call `focus()`
+on it. The project therefore has three focus mechanisms and only two of them
+exist:
+
+| Overlay | Root class | Programmatic focus |
+|---|---|---|
+| Dialogs | `.modal-overlay[aria-modal="true"]` | `focus_active_modal()`, `app.rs:188` |
+| Quick Actions | `.palette-overlay` | `focus_active_palette()` |
+| **Search** | `.search-overlay` | **none** |
+
+So the search field's `autofocus` is decorative, and has been since the panel
+was written.
+
+**Why Tab does not help here, specifically.** Tab from `<body>` goes to the
+first focusable element in document order, which is the toolbar's Open button.
+The search field is far later in the DOM, so the recovery that works everywhere
+else merely puts the user at the start of the toolbar. §6.2a's "Tab recovers"
+is true of the window, not of this panel.
+
+**The fix already exists twice in the tree.** Giving `.search-overlay` the
+treatment `.modal-overlay` and `.palette-overlay` already have is the shape;
+what needs deciding in this RFC is whether a third copy is right or whether the
+three should become one mechanism keyed on the overlay, which is the kind of
+question §7 exists to answer.
+
+**Not release-blocking for 0.17.0.** The limitation and its workaround are
+documented, and nothing traps the user. It is held to 0.18.0 by the scope
+freeze for the reason the freeze was written: the Windows run is finished, and
+a code change now would require running it again.
+
 ### 6.3 Pending-Draft Undo and Redo
 
 The Writing Area has two potential undo contexts:
