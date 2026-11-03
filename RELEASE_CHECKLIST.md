@@ -145,7 +145,7 @@ The full 1–21 run remains required for a platform **without** CI coverage
 | **C** | Click a card, type a word in the body, Ctrl+S. Status shows "Saved". | 4, 5, 6 |
 | **D** | Try Esc, Ctrl+\`, and Ctrl+F, then type into the search field. Note which work. This checks `known-limitations.md`, so record what happened rather than pass/fail. | 8–11 |
 | **E** | Without restarting, Ctrl+O and open `structured-sample.json`. Both `duplicate` keys show as separate rows. | 13, 14, 21 |
-| **F** | Click a number, change it, Ctrl+S, then Ctrl+Z. The old value returns and stays selected. | 15, 17, 18 |
+| **F** | Click **`scale`** (its value is `1e3`), change it to `2500`, Ctrl+S, then Ctrl+Z. The old value returns and stays selected. Then check the file in a text editor: **`version` still reads `1.50` and `offset` still reads `-0`.** Those two are deliberately odd and are the canaries — an editor that reserialized the file instead of patching one value would have normalised them. | 15, 17, 18 |
 | **G** | Close the app, reopen both files. The saved changes are there. | 12 |
 | **I** | Open a Markdown file containing raw HTML (`<table>`, `<b>`) and view the preview. The markup must show as **visible text**, never rendered. Live markup here is release-blocking (RFC-064). | — |
 | **H** | Only on a Japanese-language Windows install: omriss starts in Japanese. Otherwise record as not run. | 22 |
