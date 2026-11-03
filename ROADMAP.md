@@ -42,52 +42,72 @@ record of what was verified and what was not.
 
 **Theme: close what 0.17.0's own validation found.**
 
-Every item below traces to evidence produced by this release — a smoke run, the
+Every item traces to evidence this release produced — a smoke run, the
 accessibility run, the property suite, the known-limitations audit, or an owner
 decision taken during it. Nothing is here because it would be nice to have.
-That is the whole scoping rule, and it is what makes the list defensible when
-something else asks to join it.
+That rule is the scope's only defence when something else asks to join.
 
-### Core, in dependency order
+### Core
 
 | # | Work | Why it is in, and why here |
 |---|---|---|
-| 1 | **RFC-075** component crate extraction | A pure move, cheapest while the tree is quiet right after a release. Everything below then lands in the new crate instead of being moved afterwards |
-| 2 | **RFC-064 H3** — wire the CSP | **Its deferral has expired.** §9 deferred it because "0.17.0's Windows smoke run has not yet been performed"; it has been. The policy is verified on Linux, the failure mode is a blank window, and the third platform §9 worried about is macOS — which the artifact matrix no longer claims. Code it early, verify it on the release's own Windows run |
+| 1 | **RFC-075** component crate extraction | A pure move, cheapest while the tree is quiet right after a release. Everything below then lands in the new crate rather than being moved after it |
+| 2 | **RFC-064 H3** — wire the CSP | **Its deferral expired on its own terms.** §9 deferred it because "0.17.0's Windows smoke run has not yet been performed"; it has been, and the third platform §9 worried about is macOS, which the artifact matrix no longer claims. Small code, early, so §"Where the owner is needed" can verify it mid-release |
 | 3 | **RFC-071** structure-change warning | Blocks RFC-076, and closes the user-surprise half of RFC-066's P3 |
-| 4 | **RFC-069** draft lifecycle and session guards | The dirty indicator that stays lit beside "Saved" — seen in every smoke run since Task 011 — and the window-close guard, unbuilt since v0.3.0 |
-| 5 | **RFC-059** keyboard focus | §6.2a (a save stops the keyboard working), §6.2b (Ctrl+F never focuses the field), and RFC-060's F-4 (focus restored nowhere after a dialog closes). The highest-frequency defect family in the product |
-| 6 | **RFC-067 §3.2** format-aware panes | A malformed `.json` is told "Add headings with # to begin organizing"; a JSON row highlights while the pane shows something else |
-| 7 | **RFC-077** search covers heading text | Reclassified from limitation to defect: the application shows a heading and then answers that the text is not there |
-| 8 | **RFC-073 §4.1 + §4.3 only** | `Permission denied (os error 13)` reaching the user violates RFC-060 §5. The typed `OpenFailure` needs interpolation, so those two sections travel together; plurals, the screen-reader labels and locale persistence wait for 0.19.0 |
-| 9 | **RFC-076** editable plain file text | Owner decision: an editor must let a user edit a plain text file. **After RFC-071**, never before |
-| 10 | **RFC-070** + **RFC-066 §3.1b's P4** | The one `#[ignore]`d property, and the rename/join byte invariant that no property currently covers. Both small; both close test debt this release created |
-| 11 | **RFC-068** durable file writes | The only item with no observed defect behind it. It is in because it is the save path, and RFC-074's G2 will need it |
-| 12 | **RFC-072** Linux artifacts and AUR | Its blocker is gone — `Cargo.lock` is committed and the application ID is decided. Two registered AUR packages are sitting empty |
+| 4 | **RFC-076** editable plain file text | **Moved up deliberately.** It replaces an entire document in one commit — the most dangerous thing in the backlog — so it takes the *most* exercise before the release ends, not the least. Its only hard dependency is RFC-071 |
+| 5 | **RFC-069** draft lifecycle and session guards | The dirty indicator that stays lit beside "Saved", seen in every smoke run since Task 011, and the window-close guard unbuilt since v0.3.0 |
+| 6 | **RFC-059** keyboard focus | §6.2a (a save stops the keyboard working), §6.2b (Ctrl+F never focuses its field), RFC-060's F-4 (focus restored nowhere after a dialog closes). The highest-frequency defect family in the product |
+| 7 | **RFC-067 §3.2** format-aware panes | A malformed `.json` is told "Add headings with # to begin organizing"; a JSON row highlights while the pane shows something else |
+| 8 | **RFC-077** search covers heading text | The application shows a heading, then answers that the text is not there |
+| 9 | **RFC-073 §4.1 + §4.3** | `Permission denied (os error 13)` reaching the user violates RFC-060 §5. The typed `OpenFailure` needs interpolation, so those two travel together. **Lifecycle: RFC-073 then moves to `done/` with §4.2, §4.4 and §4.5 recorded as deferred in its Status**, the way RFC-067 handled §3.2 — otherwise it is a proposed RFC that is half built, which the folder-is-state rule has no answer for |
+| 10 | **RFC-060 P-1 and P-2** | A screen reader entering the editor announces the document as **"Dioxus app"**, and two landmarks have no name at all. Both are small, both tell the user something untrue, and neither has the cross-repository problem that keeps F-1 out |
+| 11 | **RFC-070** + **RFC-066 §3.1b's P4** | The one `#[ignore]`d property, and the rename/join byte invariant no property covers. Both small; both close test debt this release created |
 
-### The cut line, declared now
+### Stretch — taken only if the core lands early
 
-If the release runs long, drop in this order: **RFC-072, then RFC-068, then
-RFC-078** (setext H1/H2, otherwise a stretch item). None of the three has an
-observed user-facing defect behind it, which is exactly why they are the ones
-to lose.
+**RFC-072** (Linux artifacts and AUR), **RFC-068** (durable file writes),
+**RFC-078** (setext H1/H2 level changes).
 
-**RFC-064 H3 is not on that list and must not join it.** If its verification
-fails on Windows, the answer is to leave the CSP unwired and say so in the
-RFC — not to ship it unverified because the release is late.
+These are not core with an asterisk. Eleven items is at capacity for one
+maintainer and one implementer, and a plan that lists fourteen while privately
+expecting to drop three is not a plan — it is an overrun with a cover story.
+None of the three has an observed user-facing defect behind it, which is what
+makes them the right three to hold back.
 
-Declaring the order now is the point. 0.17.0's scope freeze worked because it
-existed before it was needed.
+If the core finishes early, take them in that order: RFC-072 first, because two
+registered AUR packages are sitting empty and its blocker is gone.
+
+### Where the owner is needed, and when
+
+0.17.0's pace was set by owner availability, not by code. Two points need it,
+and they must not be the same point:
+
+1. **Mid-release: a Windows check of the CSP alone.** Item 2's failure mode is
+   a blank window. Discovering that during the final run would force a code
+   change after the freeze, which is the one thing the freeze exists to stop.
+2. **End: the reduced run (A–I)** against the release candidate.
+
+### The scope freeze, and its one exception
+
+The freeze applies from the start this time, not from the moment someone
+notices the release is late. 0.17.0's freeze worked because it existed before
+it was needed.
+
+**One exception, stated now so it is not negotiated later:** if the CSP fails
+verification, *unwiring* it is permitted at any point. Removing something
+unverified is not the same act as adding something unverified, and only the
+second is what the freeze forbids. Shipping the CSP unverified is never the
+answer to a late release.
 
 ### Out of scope, with reasons
 
 | Deferred | Reason |
 |---|---|
-| **RFC-074** Flatpak | Five gates (G1–G5) are unproven and Flathub's review is an external queue. It should follow RFC-072's assets rather than race them |
-| **RFC-055 / RFC-056** TOML, YAML | A third format before the second one is polished repeats 0.17.0's sequence in a worse order |
-| **RFC-057** tabs, **RFC-058** creation controls | Capability work, and this release is not a capability release |
-| **RFC-073** §4.2, §4.4, §4.5 | Plurals, screen-reader labels and locale persistence deserve a themed release, not a squeeze |
-| **RFC-060** remediation beyond F-4/F-5 | §9.2's Document Map tree semantics live in **`dioxus-swdir-tree`**, a different repository on a different release cadence. Scheduling it here would hide that |
+| **RFC-074** Flatpak | Five gates (G1–G5) unproven and Flathub's review is an external queue. It follows RFC-072's assets rather than racing them |
+| **RFC-055 / RFC-056** TOML, YAML | A third format before the second is polished repeats 0.17.0's sequence in a worse order |
+| **RFC-057** tabs, **RFC-058** creation controls | Capability work, and this is not a capability release |
+| **RFC-073** §4.2, §4.4, §4.5 | Plurals, screen-reader labels and locale persistence deserve a theme, not a squeeze |
+| **RFC-060 F-1**, P-3, P-4 | F-1's Document Map tree semantics live in **`dioxus-swdir-tree`**, a different repository on its own cadence; scheduling it here would hide that dependency rather than manage it. P-3 and P-4 need a design pass the release has no room for |
 | **RFC-061** | Needs participants, not code |
 
 ### What this release is, named honestly
