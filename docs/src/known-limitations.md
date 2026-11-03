@@ -145,20 +145,24 @@ is tracked as an RFC-059 keyboard follow-up.
 **Workaround:** Use the search field and arrow keys to choose a command, then
 press Enter. Use Escape or Ctrl+P to dismiss Quick Actions.
 
-### Keyboard Shortcuts Stop Working After a View Change (WebView constraint)
+### Keyboard Shortcuts Stop Working After a View Change or a Save (WebView constraint)
 
 Keyboard shortcuts are delivered to the application window. When an action
-changes the view — zooming into a section, for example — the element that had
-keyboard focus is replaced, and focus falls back to the document body, outside
-the window's shortcut handler. Shortcuts pressed from that state do nothing
-until focus returns.
+replaces the element that had keyboard focus, focus falls back to the document
+body, outside the window's shortcut handler. Shortcuts pressed from that state
+do nothing until focus returns.
 
-The most visible case is **Esc to zoom out**: after zooming in with Enter, Esc
-often does not zoom back out, because focus was lost during the zoom itself.
-Ctrl+` for plain file text, and typing straight into the Search panel after
-Ctrl+F, can be affected the same way.
+**Saving does this too**, which is the case you are most likely to meet: after
+Ctrl+S the file is written and the status says "Saved", but the next shortcut
+may do nothing. Leaving a section with Esc can have the same effect. The
+document is saved correctly — only the keyboard stops responding.
 
-**Why:** Restoring focus after a view change needs programmatic
+Zooming shows it as well: after zooming in with Enter, Esc often does not zoom
+back out, because focus was lost during the zoom itself. Ctrl+` for plain file
+text, and typing straight into the Search panel after Ctrl+F, can be affected
+the same way.
+
+**Why:** Restoring focus after the view re-renders needs programmatic
 `element.focus()` calls in the Dioxus WebView environment, which are not
 implemented in this release. The shortcuts themselves are correctly bound; they
 are simply not reached.

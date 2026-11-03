@@ -141,7 +141,10 @@ Observed by the owner during 0.17.0's Windows reduced run, at check C→D:
 
 Two things make this more than a restatement of the known limitation.
 
-**The trigger is a save, not a view change.** `docs/src/known-limitations.md`
+**The trigger is a save as well as a view change** — corrected 2026-11-03,
+after the owner reported that Esc out of a card produced the same state. The
+save case is the one that is new; the Esc case is what the page already
+describes. `docs/src/known-limitations.md`
 titles the page "Keyboard Shortcuts Stop Working **After a View Change**" and
 explains it through zooming. Ctrl+S changes no view. It does re-render — the
 status becomes "Saved" and the dirty markers clear — and that is apparently
@@ -159,13 +162,17 @@ and only one of them keeps it inside the handler's subtree. Whatever §6.1 and
 §6.2 decide about focus ownership must therefore be verified on both, because
 the platform that ships through the Microsoft Store is the one that fails.
 
-**Open: whether a keyboard-only recovery exists.** The owner recovered with a
-mouse click. If Tab also recovers, this is a Major annoyance with a documented
-workaround. If a mouse click is the only way out, then by
-`RELEASE_CHECKLIST.md`'s own list — "keyboard navigation traps the user (no
-Esc/Tab escape)" — it is release-blocking, and a keyboard-only user is simply
-stuck after saving. That question is being put to the owner rather than
-guessed; the answer belongs in this section.
+**Resolved: Tab recovers.** Confirmed by the owner on Windows, 2026-11-03.
+`RELEASE_CHECKLIST.md`'s release-blocking clause — "keyboard navigation traps
+the user (no Esc/Tab escape)" — therefore does **not** fire: there is a
+keyboard-only way out, and it is the one the limitations page already
+documents. **Not release-blocking for 0.17.0; Major, and this section owns the
+fix.**
+
+What the fix must achieve is unchanged by that: a user should not have to
+discover Tab after pressing Ctrl+S. §6.1 and §6.2's focus owner has to survive
+a re-render, and must be verified on **both** WebViews (§6.2a's platform
+note).
 
 ### 6.3 Pending-Draft Undo and Redo
 
