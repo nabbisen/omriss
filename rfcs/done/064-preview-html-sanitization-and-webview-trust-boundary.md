@@ -239,6 +239,84 @@ own. `html_content.md` itself must not be changed for that purpose: it is
 `include_str!`-ed by `source_preservation.rs:35` and asserted by
 `fixture_catalog.rs:250`.
 
+## 9c. H3 is abandoned — the CSP route is a liability, not a control (2026-11-04)
+
+H3 was attempted under 0.18.0's scope and **stopped**, correctly, under the
+handoff's §7. What the attempt measured changes the decision rather than
+delaying it.
+
+### What it found
+
+Two failure modes beyond the two anyone had named — and neither is visible by
+looking at the window.
+
+**The application renders and accepts no input.** `connect-src` governs
+`XMLHttpRequest`, and dioxus-desktop sends *every UI event* by a synchronous
+XHR to `<base>/__events`. The policy allowed the edit-streaming websocket, so
+the window draws — pixel-identical to before, byte-identical screenshots — and
+then silently ignores every click and keystroke. Violation observed:
+`connect-src dioxus://index.html//__events`.
+
+**`document::eval` is `eval`.** `dioxus-desktop/src/query.rs:79-80` runs
+`new AsyncFunction("dioxus", script)`, which CSP classifies as `eval`. omriss
+calls it at **eleven sites in five files**. Without `'unsafe-eval'`, measured by
+A/B on the delete-confirmation dialog: focus lands on **nothing** instead of
+Cancel — silently undoing Task 019's safest-default and every focus behaviour
+RFC-060 measured.
+
+### Why this is not a "fix the policy and try again"
+
+A working policy would need `script-src 'unsafe-inline' 'unsafe-eval'` and
+`connect-src 'self' ws://127.0.0.1:*`. Three things then hold at once:
+
+1. **`script-src` constrains nothing.** Inline and eval both conceded is the
+   whole of what that directive had to offer.
+2. **The policy encodes framework internals that differ per platform.**
+   `protocol.rs` uses `dioxus://index.html/` on Linux and macOS and
+   `http://dioxus.index.html/` on Windows. An allowance correct on one is wrong
+   on another, and `__events` is an implementation detail of one dioxus
+   version.
+3. **The failure mode is silent, catastrophic and invisible to CI.** A dead
+   window looks identical to a live one. There is no automated GUI test that
+   could catch it, so a dioxus upgrade would reintroduce it and we would learn
+   from a user who cannot type.
+
+A control that constrains nothing in its headline directive, depends on
+undocumented per-platform framework internals, and fails by disabling the
+application without a symptom is not defence in depth. **H3 is withdrawn.**
+
+The finding this RFC exists for stays closed by **H1** (escaping) and **H2**
+(the scheme allowlist), exactly as §9 said: *H1 alone closes this finding*.
+
+### What replaces it
+
+§9a's tracking pixel is the one concrete gap the CSP would have closed, and it
+does not need a CSP. The same control belongs in `preview.rs` beside H2, where
+it is a unit test rather than a per-platform GUI run: **H4 — drop remote image
+destinations in the preview**, proposed in §9d.
+
+`crates/app/src/shell/csp.rs` stays in the tree, unwired, with its six tests
+and its doc comment recording both violations verbatim. It is the record of a
+route that was tried and measured, which is worth more than a deleted file.
+
+## 9d. H4 — the remote-image policy belongs in `preview.rs` — **owner decision**
+
+§4.2 allows `http`, `https`, `mailto` and scheme-less destinations for links
+*and* images alike. H4 would narrow it for **images only**: a remote image
+destination is dropped, exactly as `javascript:` already is.
+
+- **Same user-visible cost as the CSP route** — a `![x](https://…)` no longer
+  renders — with none of §9c's failure modes.
+- **Cross-platform by construction**, and tested where every other preview rule
+  is tested.
+- **Links are untouched.** Clicking a link is a deliberate act; loading an
+  image is not, and that asymmetry is the whole of §9a.
+
+**This removes a working feature and therefore needs the owner's decision**, not
+the architect's. If taken, it needs a `CHANGELOG.md` entry under *Changed*, a
+`known-limitations.md` entry owned by this RFC, and `PRIVACY.md` §4 rewritten —
+that section currently tells readers a preview may fetch remote images.
+
 ## 9a. The CSP also has a privacy dimension (recorded 2026-10-21)
 
 Noted while reviewing `PRIVACY.md` for the Store listing. §4.2's scheme check
