@@ -1,23 +1,46 @@
 //! RFC-064 §4.3: Content-Security-Policy for the app's WebView.
 //!
-//! **Not yet wired into `main.rs`.** As specified, this policy blocks
-//! dioxus-desktop 0.7's own edit-streaming WebSocket (`connect-src 'none'`
-//! vs. `edits.rs`'s `ws://127.0.0.1:{port}` channel that every UI update
-//! streams through) and its inline interop `<script type="module">` bridge
-//! (`protocol.rs`'s `module_loader`, whose content is templated per launch
-//! with a fresh key/port, ruling out a hash-based allowlist) — applying it
-//! leaves the window permanently blank. See the RFC-064 review request's
-//! escalation for the evidence and the options under consideration. Kept
-//! here, tested, so the literal RFC text and the eventual real fix have a
-//! home; `#[allow(dead_code)]` until `main.rs` can apply it.
+//! **Not wired into `main.rs`, deliberately, and not yet wireable.** The
+//! policy below is RFC-064 §4.3's current text. Wiring it was attempted for H3
+//! (0.18.0) and cannot be done as specified; the evidence is in the H3 review
+//! request (`.git-exclude/review-request/064-h3-wire-csp/`). Two independent
+//! blockers, found by running the application, not by reading the policy:
+//!
+//! 1. **`connect-src` blocks the framework's UI events.** dioxus-desktop sends
+//!    every click and input to Rust by a synchronous `XMLHttpRequest` to
+//!    `<base>/__events` — `dioxus://index.html/` on Linux and macOS,
+//!    `http://dioxus.index.html/` on Windows (`protocol.rs`, `native.ts`). With
+//!    `connect-src ws://127.0.0.1:*` that request is a violation and is dropped:
+//!    the window renders (edits stream over the loopback websocket, which is
+//!    allowed) and then ignores all input. Observed violation:
+//!    `connect-src dioxus://index.html//__events`. Adding `'self'` to
+//!    `connect-src` fixes this on Linux (verified); on Windows it is unverified.
+//! 2. **`script-src` blocks `document::eval`.** dioxus-desktop runs it through
+//!    `new AsyncFunction(...)`, which CSP treats as `eval` and permits only with
+//!    `'unsafe-eval'`. omriss calls `document::eval` at ten sites (modal and
+//!    row-menu focus, the palette, the preview, the shell's key handling). With
+//!    the policy applied, a dialog opens with nothing focused — Task 019's
+//!    "Cancel is focused" is lost — and the other eval-driven behaviour fails
+//!    the same way. Observed violation: `script-src eval`.
+//!
+//! `'unsafe-eval'` is never conceded (RFC-064 §4.3, H3 handoff §5.1), so (2)
+//! cannot be fixed by editing this policy: it needs either an owner/architect
+//! decision to concede it, or the ten call sites to stop using `eval`.
+//!
+//! The constant and its tests stay so the policy has a tested home. The tests
+//! pin which directives may carry `'unsafe-inline'` and refuse every other
+//! `'unsafe-*'`, so a loosening cannot arrive unannounced when it is wired.
 
-/// Verbatim policy from RFC-064 §4.3. `connect-src 'none'` is load-bearing:
-/// omriss makes no network requests by design, so this costs nothing and turns
-/// exfiltration into a console error even if the escaping and scheme checks in
-/// `omriss_core::doc::preview` are ever bypassed.
+/// RFC-064 §4.3's policy as last corrected (2026-11-03). Narrowing any
+/// directive risks a blank or unstyled window, which no build log shows — a
+/// violation appears only in the WebView console. See the module doc: as
+/// written, it also leaves the application unable to receive input.
 #[allow(dead_code)]
-pub const CONTENT_SECURITY_POLICY: &str =
-    "default-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'";
+pub const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; \
+     script-src 'self' 'unsafe-inline'; \
+     style-src 'self' 'unsafe-inline'; \
+     img-src 'self' data:; \
+     connect-src ws://127.0.0.1:*";
 
 /// The `<meta>` tag to pass to `Config::with_custom_head`.
 #[allow(dead_code)]
@@ -26,33 +49,4 @@ pub fn content_security_policy_meta_tag() -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn meta_tag_carries_every_required_directive() {
-        let tag = content_security_policy_meta_tag();
-        for directive in [
-            "default-src 'self'",
-            "script-src 'self'",
-            "img-src 'self' data:",
-            "connect-src 'none'",
-        ] {
-            assert!(tag.contains(directive), "missing {directive:?} in {tag:?}");
-        }
-    }
-
-    #[test]
-    fn never_loosens_to_unsafe_inline() {
-        // RFC-064 §8: a styling conflict is escalated, never papered over
-        // with `'unsafe-inline'`.
-        assert!(!CONTENT_SECURITY_POLICY.contains("unsafe-inline"));
-    }
-
-    #[test]
-    fn is_a_well_formed_meta_tag() {
-        let tag = content_security_policy_meta_tag();
-        assert!(tag.starts_with(r#"<meta http-equiv="Content-Security-Policy" content=""#));
-        assert!(tag.ends_with(r#"">"#));
-    }
-}
+mod tests;

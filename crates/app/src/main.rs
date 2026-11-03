@@ -26,12 +26,10 @@ fn main() {
     let window = WindowBuilder::new()
         .with_title("Omriss")
         .with_inner_size(dioxus::desktop::LogicalSize::new(1080.0, 720.0));
-    // RFC-064 §4.3's CSP is not yet wired here: as specified it blocks
-    // dioxus-desktop 0.7's own edit-streaming WebSocket and inline interop
-    // script, leaving the window permanently blank. See the RFC-064 review
-    // request's escalation for the evidence and the options under
-    // consideration. `shell::csp` holds the literal policy and its tests
-    // in the meantime.
+    // RFC-064 §4.3's CSP is deliberately not wired here: as specified it
+    // blocks the framework's UI events (`connect-src`) and `document::eval`
+    // (`script-src` without `'unsafe-eval'`). See `shell::csp` for the
+    // evidence and what wiring it would take.
     dioxus::LaunchBuilder::desktop()
         .with_cfg(Config::new().with_window(window).with_menu(None))
         .with_context(detect_locale())
