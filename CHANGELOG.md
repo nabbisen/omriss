@@ -6,7 +6,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.17.0] - 2026-08-16
+## [0.17.0] - 2026-11-03
 
 ### Added
 
@@ -198,6 +198,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
   target's own body instead of nesting under it. `MoveTarget` now has
   only `Before`/`After`. The desktop app never used either variant.
   Real child-placement semantics are re-proposed by RFC-058.
+- **RFC-066 property-based tests.** Three properties now run over a generator
+  biased toward the shapes that break things — replace-then-undo is byte-exact;
+  a structural operation preserves the node count and the title multiset; and a
+  body written into a section reads back exactly. They found four defects in
+  their first outing that nobody had found by reading the code, and three more
+  since, including every case in the `#word` family above.
 - **RFC-067 §3.1 revision-keyed structure cache.** A JSON document's
   structure used to be rebuilt from source on every read — four to five
   full re-parses per keystroke while typing in the focused-content editor,
@@ -236,6 +242,39 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Structural edits no longer damage neighbouring headings (RFC-065).** Seven
+  defects in how a section edit joins the text around it, two of them
+  release-blocking by `RELEASE_CHECKLIST.md`'s own list: typing into a document
+  that ended in a bare heading destroyed that heading; moving a section in a
+  file with no trailing newline welded it to its neighbour; promoting a
+  top-level section teleported it to the end of the file; joining a section
+  rewrote its heading as flattened plain text; a heading inserted into a CRLF
+  document hardcoded LF; and deleting a section welded the sections on either
+  side of it together. Every byte outside the section you edit is preserved.
+- **An editor no longer mistakes `#word` for a heading marker (RFC-065
+  §2.7–§2.9).** CommonMark requires an ATX heading's `#` run to be followed by
+  a space, a tab, or the end of the line, so `#x`, `#1` and `#hashtag` are
+  ordinary text. Three operations assumed otherwise when such text was the
+  title line of a setext heading — one underlined with `===` or `---`:
+  - typing into the section above it silently **renamed** it;
+  - renaming it produced `#Foo` instead of `Foo`, and joining it **deleted the
+    `#`** from your text;
+  - promoting or demoting it **overwrote the title**, turning
+    `#hashtag word` into `#ashtag word` — one character removed from the middle
+    of a word, leaving a plausible-looking title you never typed.
+
+  No bytes were lost in the first case and the file always remained valid, but
+  a section you did not touch could change. All three are fixed, and the
+  property suite now generates headings of this shape so they cannot return.
+- **The Open dialog no longer hides JSON files.** The Markdown filter was
+  registered first and so was the dialog's default, which meant pressing Ctrl+O
+  to open a `.json` file showed a chooser in which that file did not appear.
+  The default is now "All supported".
+- **Delete Section and File Changed on Disk no longer open on their destructive
+  button.** Both focused Delete and Overwrite respectively, so pressing Enter
+  on arrival destroyed something — in the second case, changes another program
+  had made to the file on disk, which omriss cannot undo. Both now open on
+  Cancel, as the design always specified.
 - **Windows now starts in the OS UI language.** `detect_locale()` only ever
   read `LC_ALL`/`LC_MESSAGES`/`LANG`, POSIX variables Windows does not set,
   so a Japanese Windows install silently started in English — RFC-043's

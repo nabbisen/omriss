@@ -251,5 +251,23 @@ their public distribution.
 **Sign-off:**
 ```
 Product owner: _____________________  Date: ___________
-Technical reviewer: _________________  Date: ___________
+Technical reviewer: architect         Date: 2026-11-03
 ```
+
+### Technical reviewer's record — 0.17.0
+
+What was verified, so the signature means something specific:
+
+| | |
+|---|---|
+| Gates, re-run at `6c0d59f` | `cargo test --workspace` 528 passed / 0 failed / 1 ignored; `cargo fmt --all --check` clean; `cargo clippy --workspace --all-targets -- -D warnings` clean; `scripts/check-rfcs.sh` passed; `mdbook build docs` clean |
+| Version consistency | `Cargo.toml` 0.17.0, `AppxManifest.xml` `Version="0.17.0.0"`; `release.yml`'s verify job gates the tag against both |
+| Platform runs | Linux reduced run A–I (dev team, Task 015/016); **Windows reduced run A–I by the owner on Windows 11 Home 25H2 with Japanese as the primary language**, so check H ran rather than being recorded as not run. macOS not run — and the artifact matrix no longer claims it |
+| Findings from those runs | two, both from check D, both documented limitations with keyboard-reachable recovery, both dispositioned to RFC-059 §6.2a/§6.2b. No release-blocking condition from `RELEASE_CHECKLIST.md`'s own list was observed on either platform |
+| Data-integrity work | RFC-065's seven boundary defects plus §2.7–§2.9, each reproduced by the architect before acceptance and each covered by a test that fails against the old code. The `#` predicate family is closed by construction: every `'#'`, `b'#'` and `0x23` in `crates/core/src` is classified in RFC-065 §2.9 |
+| The one ignored test | `split_section`'s property, `#[ignore]`d with RFC-070 named as its owner, per RFC-066's criterion 6 |
+
+**Not verified, and not claimed:** macOS, the packaged MSIX as installed from
+the Store (the Windows run used `cargo run --release`), and script execution in
+the preview under WebView2 (RFC-064 §9b explains why the escaping evidence
+still carries).
