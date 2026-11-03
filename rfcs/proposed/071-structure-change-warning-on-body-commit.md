@@ -110,9 +110,15 @@ A non-modal status message, not a dialog. The edit succeeded, the file is
 correct, and the user may well have meant it:
 
 ```text
-Your text changed this document's structure — 2 sections are no longer
+That change altered this document's structure — 2 sections are no longer
 headings. Ctrl+Z to undo.
 ```
+
+**"That change", not "Your text" — corrected 2026-11-04 during
+implementation.** §2.1's move case involves no typing at all: the user asked
+for a reordering and a heading elsewhere stopped being a heading. A message
+that blames their text would be wrong in exactly the case that is hardest to
+understand.
 
 Three shapes, distinguished because the causes are different and a single
 generic message would be useless:
@@ -133,6 +139,23 @@ The disappearance case is worth one extra sentence, because it is otherwise very
 hard to diagnose: an unclosed `<!--`, `<?`, `<script>`, `<!DOCTYPE`, or
 `<![CDATA[` earlier in the body. Detecting *which* is not required; naming the
 class is.
+
+### 4.4 Redo does not re-warn — accepted limitation
+
+Undo clears the notice, which §4.2 always intended. **Redo clears it too**, so
+redoing a warned edit restores the altered structure and says nothing.
+
+This is an inconsistency: the document ends in the state that produced a
+warning, and shows none. It is accepted for 0.18.0 for two reasons — the user
+initiated the redo knowingly, and the Document Map visibly shows the missing
+section either way — and because the alternative is not cheap. A redo replays
+an `EditRecord`, and re-deriving the warning would mean storing with each
+record which operation it was and what that operation intended. Nothing else in
+the system needs that, and adding history metadata to improve a message is the
+wrong trade.
+
+Recorded rather than left implicit. If a user ever reports it, it becomes an
+entry in `known-limitations.md` and this section is the owner.
 
 ## 5. Non-goals
 
