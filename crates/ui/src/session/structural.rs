@@ -2,6 +2,8 @@
 
 use omriss_core::EditResult;
 
+use crate::editor::structure_change::Operation;
+
 impl super::EditorSession {
     // ── Structural editing façade (RFC-023..026) ─────────────────────────────
 
@@ -57,7 +59,9 @@ impl super::EditorSession {
     pub fn promote_focused(&mut self) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
+        let pending = self.begin_change(Operation::Reshape);
         let result = self.document.promote_section(id, rev)?;
+        self.finish_change(pending);
         let stale = self.prune_dead_history();
         if stale {
             self.view.show_outline();
@@ -69,7 +73,9 @@ impl super::EditorSession {
     pub fn demote_focused(&mut self) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
+        let pending = self.begin_change(Operation::Reshape);
         let result = self.document.demote_section(id, rev)?;
+        self.finish_change(pending);
         self.prune_dead_history();
         Ok(result)
     }
@@ -81,7 +87,9 @@ impl super::EditorSession {
     ) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
+        let pending = self.begin_change(Operation::Reshape);
         let result = self.document.move_section(id, target, rev)?;
+        self.finish_change(pending);
         self.prune_dead_history();
         Ok(result)
     }
@@ -95,8 +103,12 @@ impl super::EditorSession {
     ) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
-        self.document
-            .split_section(id, offset_in_body, new_title, new_level, rev)
+        let pending = self.begin_change(Operation::Add);
+        let result = self
+            .document
+            .split_section(id, offset_in_body, new_title, new_level, rev)?;
+        self.finish_change(pending);
+        Ok(result)
     }
 
     /// Appends a new child section at the very end of the focused section —
@@ -119,8 +131,12 @@ impl super::EditorSession {
         // heading line. Their difference places the new heading at the bottom.
         let offset = node.full_range.end - node.body_range.start;
         let rev = self.document.revision();
-        self.document
-            .split_section(id, offset, new_title, new_level, rev)
+        let pending = self.begin_change(Operation::Add);
+        let result = self
+            .document
+            .split_section(id, offset, new_title, new_level, rev)?;
+        self.finish_change(pending);
+        Ok(result)
     }
 
     /// Appends a new sibling section immediately after the focused section and
@@ -140,8 +156,12 @@ impl super::EditorSession {
             .ok_or(omriss_core::StructuralEditError::CannotDeleteRoot)?;
         let offset = node.full_range.end - node.body_range.start;
         let rev = self.document.revision();
-        self.document
-            .split_section(id, offset, new_title, level, rev)
+        let pending = self.begin_change(Operation::Add);
+        let result = self
+            .document
+            .split_section(id, offset, new_title, level, rev)?;
+        self.finish_change(pending);
+        Ok(result)
     }
 
     /// Renames the focused section heading without changing body or children.
@@ -151,7 +171,10 @@ impl super::EditorSession {
     ) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
-        self.document.rename_section(id, new_title, rev)
+        let pending = self.begin_change(Operation::Rename(id));
+        let result = self.document.rename_section(id, new_title, rev)?;
+        self.finish_change(pending);
+        Ok(result)
     }
 
     /// Appends a new top-level H1 section at the end of the document —
@@ -173,8 +196,16 @@ impl super::EditorSession {
         // every existing top-level section and its subtree.
         let offset = root.full_range.end - root.body_range.start;
         let rev = self.document.revision();
-        self.document
-            .split_section(root_id, offset, title, omriss_core::HeadingLevel::H1, rev)
+        let pending = self.begin_change(Operation::Add);
+        let result = self.document.split_section(
+            root_id,
+            offset,
+            title,
+            omriss_core::HeadingLevel::H1,
+            rev,
+        )?;
+        self.finish_change(pending);
+        Ok(result)
     }
 
     /// Deletes the focused section and its subtree (RFC-025).
@@ -182,7 +213,9 @@ impl super::EditorSession {
     pub fn delete_focused(&mut self) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
+        let pending = self.begin_change(Operation::Delete(id));
         let result = self.document.delete_section(id, rev)?;
+        self.finish_change(pending);
         self.view.show_outline();
         self.prune_dead_history();
         Ok(result)
@@ -192,7 +225,9 @@ impl super::EditorSession {
     pub fn merge_focused_up(&mut self) -> Result<EditResult, omriss_core::StructuralEditError> {
         let id = self.focused_section_id()?;
         let rev = self.document.revision();
+        let pending = self.begin_change(Operation::Merge(id));
         let result = self.document.merge_with_prev_sibling(id, rev)?;
+        self.finish_change(pending);
         self.prune_dead_history();
         Ok(result)
     }

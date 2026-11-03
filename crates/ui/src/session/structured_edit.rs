@@ -102,6 +102,8 @@ impl super::EditorSession {
         let applied = JsonAdapter
             .apply_validated_edit(&mut self.document, edit)
             .map_err(|e| e.kind)?;
+        // A non-Markdown document has no heading outline to protect (RFC-071).
+        self.structure_change = None;
         Ok(applied.result)
     }
 }

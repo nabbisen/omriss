@@ -39,6 +39,7 @@ mod tests;
 pub use editor::navigation::SiblingInfo;
 pub use editor::search::SearchMatch;
 pub use editor::stats::DocumentStats;
+pub use editor::structure_change::{StructureChange, StructureChangeKind};
 pub use editor::view_state::{ViewMode, ViewState};
 pub use file::file_profile::{FileTextProfile, NewlinePolicy};
 pub use interface::commands::{COMMANDS, CommandSpec, filter_commands};

@@ -17,6 +17,9 @@ use omriss_core::{
 
 use self::structure_bridge::StructureCache;
 
+use crate::editor::structure_change::{
+    ExpectedChange, Operation, OutlineSummary, StructureChange, detect, expected_change,
+};
 use crate::editor::view_state::{ViewMode, ViewState};
 use crate::file::file_profile::FileTextProfile;
 
@@ -78,6 +81,10 @@ pub struct EditorSession {
     /// cache's *contents*, not a handle to the same cell, so two sessions
     /// never see each other's cached structure.
     structure_cache: RefCell<Option<StructureCache>>,
+    /// An outline change the last mutation did not intend (RFC-071), or `None`.
+    /// Set or cleared by every operation that rewrites the source; see
+    /// [`EditorSession::structure_change`].
+    structure_change: Option<StructureChange>,
 }
 
 mod document_map_bridge;
@@ -133,6 +140,7 @@ impl EditorSession {
             document_open: true,
             format,
             structure_cache: RefCell::new(None),
+            structure_change: None,
         })
     }
 
@@ -322,13 +330,48 @@ impl EditorSession {
         new_body: String,
     ) -> Result<EditResult, EditError> {
         let new_body = self.body_for_focused_editor_commit(base, new_body)?;
+        let pending = self.begin_change(Operation::BodyCommit);
         let result = self.document.replace_section_body(ReplaceSectionBody {
             node_id: base.node_id,
             base_revision: base.revision,
             new_body,
         })?;
+        self.finish_change(pending);
         self.prune_dead_history();
         Ok(result)
+    }
+
+    /// An outline change the most recent edit did not intend (RFC-071), or
+    /// `None` — the common case.
+    ///
+    /// Set by a body commit or structural operation whose actual outline
+    /// differs from what that operation means to leave, cleared by the next
+    /// one that does not, and by undo and redo. Only Markdown documents are
+    /// checked: the outline of any other format is not its structure.
+    pub fn structure_change(&self) -> Option<StructureChange> {
+        self.structure_change
+    }
+
+    /// Snapshots the outline and what `op` intends, before it runs. `None` for
+    /// a non-Markdown document, which has no heading outline to protect.
+    fn begin_change(&self, op: Operation) -> Option<(OutlineSummary, ExpectedChange)> {
+        (self.format == DocumentFormat::Markdown).then(|| {
+            let outline = self.document.outline();
+            (OutlineSummary::of(outline), expected_change(op, outline))
+        })
+    }
+
+    /// Compares the outline after a successful operation with what it
+    /// intended and records any surprise. Call only on the success path: a
+    /// failed operation changed nothing and must not disturb the last result.
+    fn finish_change(&mut self, pending: Option<(OutlineSummary, ExpectedChange)>) {
+        self.structure_change = pending.and_then(|(before, expected)| {
+            detect(
+                &before,
+                &OutlineSummary::of(self.document.outline()),
+                &expected,
+            )
+        });
     }
 
     fn body_for_focused_editor_commit(
@@ -353,6 +396,8 @@ impl EditorSession {
     /// Undoes the most recent edit (RFC-044) and prunes dead focus targets.
     pub fn undo(&mut self) -> Result<EditResult, EditError> {
         let result = self.document.undo()?;
+        // Undo restores the outline the user had; there is nothing to warn about.
+        self.structure_change = None;
         self.prune_dead_history();
         Ok(result)
     }
@@ -360,6 +405,8 @@ impl EditorSession {
     /// Re-applies the most recently undone edit.
     pub fn redo(&mut self) -> Result<EditResult, EditError> {
         let result = self.document.redo()?;
+        // Redo re-applies an edit the user already chose to repeat.
+        self.structure_change = None;
         self.prune_dead_history();
         Ok(result)
     }
