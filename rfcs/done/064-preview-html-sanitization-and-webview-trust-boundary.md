@@ -143,6 +143,40 @@ default-src 'self'; script-src 'self' 'unsafe-inline';
 img-src 'self' data:; connect-src ws://127.0.0.1:*
 ```
 
+**Corrected again, 2026-11-03: `style-src 'self' 'unsafe-inline'` is missing
+and must be added.**
+
+```text
+default-src 'self'; script-src 'self' 'unsafe-inline';
+style-src 'self' 'unsafe-inline';
+img-src 'self' data:; connect-src ws://127.0.0.1:*
+```
+
+The first correction fixed the two blockers the evidence showed — the loopback
+websocket and the framework's templated module script — and did not enumerate
+*everything inline* the page emits. `shell/app.rs:281` renders
+`style { {STYLE} }`, the whole of `assets/style.css` as an inline `<style>`
+element. Under `default-src 'self'` with no `style-src`, that is blocked, and
+the application comes up **unstyled**. Same failure class as the blank window,
+found the same way: by reading what the page actually contains rather than what
+the policy was written against.
+
+§8 says a styling conflict is escalated, never papered over with
+`'unsafe-inline'`. It is escalated here, and the architect's answer is to allow
+it, for a reason that only became true after the first correction: **once
+`script-src` concedes `'unsafe-inline'` — and it must, because the framework
+templates its loader per launch and a hash cannot be computed — a nonce on our
+own `<style>` would be theatre.** An attacker who can inject script does not
+need to inject style. Serving the CSS as an asset instead would be the clean
+alternative and is worth doing on its own merits one day; it is not a
+prerequisite for the protections this policy actually delivers.
+
+Those protections, stated plainly so nobody mistakes what is left:
+`img-src 'self' data:` stops remote images, which is the §9a tracking pixel;
+`connect-src` confines the page to the loopback websocket; `default-src 'self'`
+stops frames, objects and fonts from elsewhere. Inline script and style are
+conceded to the framework, and the policy is still worth wiring.
+
 `connect-src` remains the load-bearing clause. Narrowed to the loopback
 websocket scheme and host, it still turns an injected `fetch('https://…')` into
 a console error — which is the exfiltration path that matters — while permitting
