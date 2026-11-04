@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — editing completeness (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — implemented on `main` for 0.18.0 in four PRs (draft resync, commit path, view, documentation), awaiting architect review and a release tag before it moves to `done/`.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-004, RFC-017, RFC-032, RFC-053

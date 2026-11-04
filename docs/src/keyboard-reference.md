@@ -67,7 +67,7 @@ See [Structural Editing](structural-editing.md) for details.
 |------|--------|
 | Ctrl+F | Open / close the search panel (commits pending edit before opening) |
 | Ctrl+P | Open / close Quick Actions |
-| Ctrl+\` | Toggle the read-only plain file text view (commits pending edit before opening) |
+| Ctrl+\` | Toggle the plain file text view (opens read-only; commits a pending edit before opening and before closing) |
 | Ctrl+Shift+P | Toggle the Markdown preview pane (RFC-045) |
 
 **Search panel** — open it from the header Search button or with **Ctrl+F**.

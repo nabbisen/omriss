@@ -17,6 +17,30 @@ hierarchy without touching unrelated section text. Every structural operation
 is recorded in the same undo history as text edits — see
 [Structural Editing](structural-editing.md) for details.
 
+## Editing the plain file text
+
+**Ctrl+\`** (or the **Show plain file text** button) opens the whole file as
+text. It opens **read-only**: you can look at the bytes without being one
+keystroke from changing them. Choose **Edit** to type in it; **Stop editing**
+returns to the read-only view.
+
+Your changes apply as **one edit** — one undo step — when you save, leave the
+view, choose **Stop editing**, or click away from the text. Until then the
+status bar shows the file as having unsaved changes, and nothing in the document
+has changed. **Ctrl+Z** takes the whole edit back byte-exactly. Only what you
+actually changed is replaced, and a file you open, view and save without typing
+is written byte-identical (line endings included).
+
+Afterwards focus returns to the **whole-document outline**. omriss does not
+guess which section you were in: a rewrite can remove or rename the heading you
+were editing, and being dropped into *a* section without being able to tell
+whether it is the same one would mislead you. If the edit changed which
+sections are headings, the structure notice above appears, with the counts.
+
+A pending section text edit is committed before the view opens, and a pending
+file-text edit is committed before it closes. If the document changed under an
+open editor, the edit is refused and the text is reloaded rather than merged.
+
 ## When an edit changes the document's structure
 
 Section text is Markdown, so text you type can change which *other* sections are

@@ -8,6 +8,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **The plain file text view is editable** (RFC-076). omriss is an editor, and
+  its known-limitations page had said since v0.3.0 that you could not type in
+  the plain file text. The view still opens read-only; **Edit** makes it a text
+  area. Your changes apply as one undo step when you save, leave the view or
+  click away, replacing only the bytes you changed — a file you view and save
+  untouched stays byte-identical, line endings included. Focus then returns to
+  the whole-document outline (omriss never guesses which section you were in),
+  and the structure notice reports any headings you added or removed. Entering
+  and leaving the view commit or block on a pending edit like every other
+  navigation; a stale edit is refused, not merged. `omriss-core` is unchanged.
 - **A notice when an edit changes the document's structure** (RFC-071; RFC-004
   promised it in v0.1.0). Typing `<!--` and committing, or moving a section
   whose text carries an unclosed `<!--`, `<?`, `<script>`, `<!DOCTYPE` or
@@ -31,6 +41,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
   default workspace member, so `cargo test` now builds it, and it builds for
   `wasm32-unknown-unknown`, which makes a non-desktop host possible. `omriss-ui`
   is unchanged and still depends only on `omriss-core`.
+
+### Fixed
+
+- After Ctrl+S (or any other action that commits a pending section edit)
+  the unsaved-edit marker could stay lit although nothing was pending, and a
+  later navigation pushed no undo record (RFC-069 §2.1).
 
 ## [0.17.0] - 2026-11-03
 

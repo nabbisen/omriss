@@ -1,28 +1,7 @@
 # Known Limitations
 
 This page documents the intentional limitations and deferred features in the
-current version of omriss. Limitations that affect data safety are listed
-first.
-
----
-
-## Data Safety Limitations
-
-### Plain File Text Editing Is Read-Only
-
-The plain file text view (Ctrl+\`) shows the full document source but
-does not currently support editing. Changes must be made through the Writing
-Area or an external text editor.
-
-**Why:** Editing raw source requires re-indexing the entire document after
-every commit, and handling the case where heading titles are changed during
-a raw edit requires additional focus-remapping logic. This is deferred to a
-future release.
-
-**Owner:** RFC-076 — being made editable for 0.18.0.
-
-**Workaround:** Open the file in a standard text editor (Vim, VS Code, etc.),
-make your changes, then re-open the file in omriss.
+current version of omriss.
 
 ---
 
