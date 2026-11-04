@@ -313,6 +313,8 @@ pub fn App() -> Element {
                         RawSourceView {
                             session,
                             locale,
+                            draft,
+                            status,
                         }
                     } else {
                         match mode {

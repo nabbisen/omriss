@@ -85,6 +85,13 @@ pub struct EditorSession {
     /// Set or cleared by every operation that rewrites the source; see
     /// [`EditorSession::structure_change`].
     structure_change: Option<StructureChange>,
+    /// Whether the raw view is in edit mode (RFC-076 §4.5): the view always
+    /// opens read-only, and only an explicit choice makes it editable. Only
+    /// meaningful while the raw view is active; see [`EditorSession::raw_editing`].
+    raw_editing: bool,
+    /// The revision the raw draft was composed against, for the strict-equality
+    /// check every other edit also makes.
+    raw_base: Option<DocumentRevision>,
 }
 
 mod document_map_bridge;
@@ -143,6 +150,8 @@ impl EditorSession {
             format,
             structure_cache: RefCell::new(None),
             structure_change: None,
+            raw_editing: false,
+            raw_base: None,
         })
     }
 
@@ -219,11 +228,15 @@ impl EditorSession {
     /// Enters the read-only raw-source overlay; returns to structured view via
     /// `leave_raw()`. Does not push a navigation history entry.
     pub fn show_raw(&mut self) {
+        // The raw view always opens read-only: someone who opens it to look is
+        // not one keystroke from changing the file (RFC-076 §4.5).
+        self.raw_editing = false;
         self.view.show_raw();
     }
 
     /// Leaves the raw-source overlay, returning to the mode that was active.
     pub fn leave_raw(&mut self) {
+        self.raw_editing = false;
         self.view.leave_raw();
     }
 

@@ -8,7 +8,9 @@ use omriss_ui::ViewMode;
 
 use crate::input::keyboard::AppCommand;
 use crate::shell::actions::{handle_new_guarded, handle_open_guarded, handle_save};
-use crate::shell::app_ctx::{AppCtx, commit_pending, has_pending_draft, sync_draft};
+use crate::shell::app_ctx::{
+    AppCtx, commit_pending, has_pending_draft, leave_raw_guarded, sync_draft,
+};
 use omriss_components::{CommandId, focus_active_palette};
 
 pub(crate) fn open_search_if_available(ctx: AppCtx, mut search_open: Signal<bool>) {
@@ -47,7 +49,7 @@ pub(crate) fn dispatch_command(
         AppCommand::SaveAs => handle_save(ctx, true),
         AppCommand::ToggleRaw => {
             if session.read().is_raw() {
-                session.write().leave_raw();
+                leave_raw_guarded(ctx);
             } else if commit_pending(ctx) {
                 session.write().show_raw();
             }
@@ -116,7 +118,7 @@ pub(crate) fn dispatch_command(
             } else if *palette_open.read() {
                 palette_open.set(false);
             } else if session.read().is_raw() {
-                session.write().leave_raw();
+                leave_raw_guarded(ctx);
             } else if matches!(mode, ViewMode::Focus(_)) {
                 if !commit_pending(ctx) {
                     return;
@@ -175,7 +177,7 @@ pub(crate) fn dispatch_palette(
         "file.save_as" => handle_save(ctx, true),
         "view.raw" => {
             if session.read().is_raw() {
-                session.write().leave_raw();
+                leave_raw_guarded(ctx);
             } else if commit_pending(ctx) {
                 session.write().show_raw();
             }

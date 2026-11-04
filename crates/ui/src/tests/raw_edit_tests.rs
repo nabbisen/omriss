@@ -349,3 +349,65 @@ fn the_edit_is_minimal_not_the_whole_document() {
     assert_eq!(&source[edit.range], "body");
     assert_eq!(edit.replacement, "BODY");
 }
+
+// ── Edit mode is explicit (§4.5) ────────────────────────────────────────────
+
+#[test]
+fn the_raw_view_always_opens_read_only() {
+    let mut s = open(TWO);
+    s.show_raw();
+    assert!(
+        !s.raw_editing(),
+        "opening to look is not one keystroke from editing"
+    );
+    s.begin_raw_edit();
+    assert!(s.raw_editing());
+    s.leave_raw();
+    assert!(!s.raw_editing());
+    s.show_raw();
+    assert!(
+        !s.raw_editing(),
+        "a previous visit's edit mode does not carry over"
+    );
+}
+
+#[test]
+fn edit_mode_cannot_be_entered_outside_the_raw_view() {
+    let mut s = open(TWO);
+    assert_eq!(s.begin_raw_edit(), "");
+    assert!(!s.raw_editing());
+}
+
+#[test]
+fn leaving_the_raw_view_by_navigation_also_ends_edit_mode() {
+    let mut s = open(TWO);
+    s.show_raw();
+    s.begin_raw_edit();
+    let one = id_of(&s, "One");
+    s.focus(one).unwrap(); // a Document Map click leaves the raw view
+    assert!(!s.raw_editing());
+    s.show_raw();
+    assert!(!s.raw_editing());
+}
+
+#[test]
+fn a_raw_draft_composed_before_the_document_moved_on_is_refused() {
+    let mut s = open(TWO);
+    s.show_raw();
+    let text = s.begin_raw_edit();
+    let draft = text.replace("body", "mine");
+    // Something else changes the document after the draft was loaded.
+    let other = s.raw_text().replace("more", "theirs");
+    commit(&mut s, &other);
+
+    let err = s.commit_raw_draft(&draft).unwrap_err();
+    assert!(matches!(err, EditError::RevisionMismatch { .. }), "{err:?}");
+    assert!(s.source().contains("theirs") && !s.source().contains("mine"));
+
+    // Reloading the draft records the new revision and the commit then works.
+    let fresh = s.reload_raw_draft().replace("body", "mine");
+    assert!(matches!(
+        s.commit_raw_draft(&fresh).unwrap(),
+        RawCommit::Applied(_)
+    ));
+}

@@ -80,3 +80,16 @@ pub(crate) fn has_pending_draft(ctx: AppCtx) -> bool {
 pub(crate) fn commit_pending(mut ctx: AppCtx) -> bool {
     draft_sync::commit_and_resync(&mut ctx.session, &mut ctx.draft, &mut ctx.status)
 }
+
+/// Leaves the raw view (RFC-076 §3.3). A raw draft that has not been committed
+/// is committed first, or the leave is refused: the raw draft and the section
+/// draft that comes back into view must never both be live. Returns `false` —
+/// and sets `status` — when the commit was refused, so the caller stays put.
+pub(crate) fn leave_raw_guarded(mut ctx: AppCtx) -> bool {
+    if !commit_pending(ctx) {
+        return false;
+    }
+    ctx.session.write().leave_raw();
+    sync_draft(ctx);
+    true
+}

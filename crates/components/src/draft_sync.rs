@@ -41,6 +41,12 @@ pub fn json_edit_error_key(kind: omriss_core::StructureErrorKind) -> &'static st
 /// content — Markdown's section body, or a JSON node's editable/raw text.
 pub fn is_pending(session: &Signal<EditorSession>, draft: &Signal<String>) -> bool {
     let s = session.read();
+    // In raw edit mode the one live draft is the raw text (RFC-076 §3.3): the
+    // section draft is committed before the raw view opens, so the two can
+    // never both be pending.
+    if s.raw_editing() {
+        return s.raw_draft_differs(&draft.read());
+    }
     if s.format() == DocumentFormat::Markdown {
         let d = draft.read();
         s.current_snapshot().is_some_and(|snap| *d != snap.body)
@@ -57,6 +63,20 @@ pub fn commit_or_block(
     draft: &mut Signal<String>,
     status: &mut Signal<String>,
 ) -> bool {
+    if session.read().raw_editing() {
+        let d = draft.read().clone();
+        if !session.read().raw_draft_differs(&d) {
+            return true;
+        }
+        let result = session.write().commit_raw_draft(&d);
+        return match result {
+            Ok(_) => true,
+            Err(_) => {
+                status.set("error.stale_edit".into());
+                false
+            }
+        };
+    }
     if session.read().format() != DocumentFormat::Markdown {
         let d = draft.read().clone();
         if !session.read().structured_draft_differs(&d) {
@@ -108,6 +128,14 @@ pub fn commit_and_resync(
 /// Markdown's section body, or (RFC-054 J7b) a JSON node's editable text
 /// (a value) or full raw text (a container).
 pub fn sync(session: &Signal<EditorSession>, draft: &mut Signal<String>) {
+    if session.read().raw_editing() {
+        // Reset the raw draft to the document and record the revision it is
+        // now composed against.
+        let mut session = *session;
+        let text = session.write().reload_raw_draft();
+        draft.set(text);
+        return;
+    }
     let s = session.read();
     let text = if s.format() == DocumentFormat::Markdown {
         s.current_snapshot().map(|snap| snap.body)

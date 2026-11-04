@@ -418,6 +418,19 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
   padding: 12px 14px;
   margin: 0;
 }
+.raw-toolbar .raw-edit-toggle { font-size: 12px; padding: 3px 10px; }
+textarea.raw-editor {
+  flex: 1; min-height: 260px; resize: none;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font: 12px/1.65 ui-monospace, "Cascadia Mono", "BIZ UDGothic", monospace;
+  white-space: pre;
+  overflow: auto;
+}
+textarea.raw-editor:focus { outline: none; border-color: var(--accent); }
 .raw-code {
   display: block;
   font: 12px/1.65 ui-monospace, "Cascadia Mono", "BIZ UDGothic", monospace;

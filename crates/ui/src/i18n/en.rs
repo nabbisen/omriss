@@ -238,10 +238,17 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("palette.placeholder", "Search actions\u{2026}"),
     ("palette.title", "Quick Actions"),
     ("raw.back", "Back to editor"),
+    ("raw.edit", "Edit"),
+    (
+        "raw.editing_notice",
+        "Editing the file text. Changes apply when you save, leave this view, or click away. Ctrl+Z undoes them.",
+    ),
+    ("raw.editor_label", "Edit the file text"),
     (
         "raw.readonly_notice",
-        "Read-only file text view — editing the file text is not yet supported.",
+        "Read-only. Choose Edit to change the file text.",
     ),
+    ("raw.stop_editing", "Stop editing"),
     ("raw.title", "Plain File Text"),
     ("search.close", "Close"),
     ("search.no_results", "No results."),

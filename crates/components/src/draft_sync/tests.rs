@@ -64,6 +64,13 @@ fn focused_on_one(typed: &str) -> (Signal<EditorSession>, Signal<String>, Signal
     (session, draft, Signal::new(String::new()))
 }
 
+/// The same, with the draft left exactly as the section holds it.
+fn focused_clean() -> (Signal<EditorSession>, Signal<String>, Signal<String>) {
+    let (session, mut draft, status) = focused_on_one("");
+    sync(&session, &mut draft);
+    (session, draft, status)
+}
+
 #[test]
 fn after_a_commit_the_draft_is_no_longer_pending() {
     in_runtime(|| {
@@ -177,4 +184,130 @@ fn a_refused_commit_blocks_and_leaves_the_users_draft_alone() {
 #[should_panic(expected = "harness sanity")]
 fn the_harness_propagates_a_panic_from_inside_the_runtime() {
     in_runtime(|| panic!("harness sanity"));
+}
+
+// ── RFC-076 §3.3: two drafts are never live at once ─────────────────────────
+
+/// Enters the raw view and its edit mode the way the app does: commit what is
+/// pending (and resync), open the view, choose Edit.
+fn enter_raw_edit(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+) {
+    assert!(
+        commit_and_resync(session, draft, status),
+        "entering commits first"
+    );
+    session.write().show_raw();
+    let text = session.write().begin_raw_edit();
+    draft.set(text);
+}
+
+#[test]
+fn entering_the_raw_view_commits_the_section_draft_instead_of_carrying_it() {
+    in_runtime(|| {
+        let (mut session, mut draft, mut status) = focused_on_one("typed");
+        enter_raw_edit(&mut session, &mut draft, &mut status);
+
+        assert!(
+            session.read().source().contains("typed\n"),
+            "the section draft was committed, not dropped"
+        );
+        assert_eq!(
+            *draft.read(),
+            session.read().raw_text(),
+            "the one draft is the raw text"
+        );
+        assert!(!is_pending(&session, &draft), "and it starts clean");
+    });
+}
+
+#[test]
+fn a_raw_edit_is_pending_until_it_is_committed_and_then_focus_is_the_outline() {
+    in_runtime(|| {
+        let (mut session, mut draft, mut status) = focused_clean();
+        enter_raw_edit(&mut session, &mut draft, &mut status);
+        let original = session.read().source().to_string();
+
+        let edited = draft.read().replace("more", "rewritten");
+        draft.set(edited);
+        assert!(is_pending(&session, &draft));
+
+        assert!(commit_and_resync(&mut session, &mut draft, &mut status));
+
+        assert!(!is_pending(&session, &draft));
+        assert_eq!(
+            *draft.read(),
+            session.read().raw_text(),
+            "resynced to the document"
+        );
+        assert!(session.read().source().contains("rewritten"));
+        session.write().leave_raw();
+        assert!(
+            session.read().current_snapshot().is_none(),
+            "the outline, not a guess"
+        );
+
+        session.write().undo().unwrap();
+        assert_eq!(session.read().source(), original, "one Ctrl+Z returns it");
+    });
+}
+
+#[test]
+fn leaving_the_raw_view_with_an_uncommitted_raw_draft_commits_it() {
+    in_runtime(|| {
+        let (mut session, mut draft, mut status) = focused_clean();
+        enter_raw_edit(&mut session, &mut draft, &mut status);
+        let edited = draft.read().replace("body", "BODY");
+        draft.set(edited);
+
+        // `leave_raw_guarded` in the app: commit_and_resync, then leave, then sync.
+        assert!(commit_and_resync(&mut session, &mut draft, &mut status));
+        session.write().leave_raw();
+        sync(&session, &mut draft);
+
+        assert!(
+            session.read().source().contains("BODY"),
+            "nothing was discarded"
+        );
+        assert!(!session.read().raw_editing());
+        assert!(
+            !is_pending(&session, &draft),
+            "no stale raw text left in the draft"
+        );
+    });
+}
+
+#[test]
+fn a_refused_raw_commit_blocks_leaving_and_keeps_the_draft() {
+    in_runtime(|| {
+        let (mut session, mut draft, mut status) = focused_clean();
+        enter_raw_edit(&mut session, &mut draft, &mut status);
+        let typed = draft.read().replace("body", "MINE");
+        draft.set(typed.clone());
+        // The document moves on under the draft.
+        let other = session.read().raw_text().replace("more", "theirs");
+        let rev = session.read().revision();
+        session.write().commit_raw_text(&other, rev).unwrap();
+
+        assert!(!commit_and_resync(&mut session, &mut draft, &mut status));
+        assert_eq!(*draft.read(), typed, "the user's text is not overwritten");
+        assert!(
+            session.read().raw_editing(),
+            "still editing: the leave was blocked"
+        );
+        assert_eq!(*status.read(), "error.stale_edit");
+    });
+}
+
+#[test]
+fn read_only_raw_view_has_no_pending_draft() {
+    in_runtime(|| {
+        let (mut session, mut draft, mut status) = focused_on_one("typed");
+        assert!(commit_and_resync(&mut session, &mut draft, &mut status));
+        session.write().show_raw(); // read-only: Edit not chosen
+        assert!(!session.read().raw_editing());
+        assert!(!is_pending(&session, &draft));
+    });
 }

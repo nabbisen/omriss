@@ -116,6 +116,17 @@ pub fn DocumentMapPane(
             item_tree
                 .write()
                 .on_selected(focused_sw, SelectionMode::Replace);
+        } else if format == DocumentFormat::Markdown {
+            // Whole-document outline: nothing is focused, so nothing may look
+            // focused. After a plain-text commit (RFC-076 §4.2) focus is reset
+            // to the outline, and the previous row would otherwise stay
+            // highlighted -- implying a focus the application does not hold.
+            // The root is never rendered as a row, so selecting it shows no
+            // row as selected. Markdown only: for other formats a row
+            // selection is not a focus and is left to the user.
+            item_tree
+                .write()
+                .on_selected(root_sw_id, SelectionMode::Replace);
         }
 
         map_root_sig.set(Some(root_node));
@@ -425,10 +436,9 @@ pub fn DocumentMapPane(
                 class: "document-map-show-raw",
                 onclick: move |ev| {
                     ev.stop_propagation();
-                    if is_raw {
-                        session.write().leave_raw();
-                        return;
-                    }
+                    // Either direction commits what is pending first: entering
+                    // commits the section draft, leaving commits a raw draft
+                    // (RFC-076 §3.3), so two drafts are never live at once.
                     if !commit_draft_if_dirty(
                         &mut session.clone(),
                         &mut draft.clone(),
@@ -436,6 +446,12 @@ pub fn DocumentMapPane(
                     ) {
                         return;
                     }
+                    if is_raw {
+                        session.write().leave_raw();
+                        sync_draft(&session, &mut draft.clone());
+                        return;
+                    }
+                    sync_draft(&session, &mut draft.clone());
                     session.write().show_raw();
                 },
                 if is_raw {

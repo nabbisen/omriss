@@ -242,10 +242,17 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("palette.placeholder", "アクションを検索…"),
     ("palette.title", "クイックアクション"),
     ("raw.back", "エディタに戻る"),
+    ("raw.edit", "編集"),
+    (
+        "raw.editing_notice",
+        "ファイルテキストを編集しています。保存するか、このビューを離れるか、別の場所をクリックすると変更が反映されます。Ctrl+Z で元に戻せます。",
+    ),
+    ("raw.editor_label", "ファイルテキストを編集"),
     (
         "raw.readonly_notice",
-        "読み取り専用のファイルテキストビュー — ファイルテキストの編集はまだサポートされていません。",
+        "読み取り専用です。ファイルテキストを変更するには「編集」を選んでください。",
     ),
+    ("raw.stop_editing", "編集を終える"),
     ("raw.title", "プレーンファイルテキスト"),
     ("search.close", "閉じる"),
     ("search.no_results", "結果なし。"),

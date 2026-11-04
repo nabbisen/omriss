@@ -36,6 +36,45 @@ impl super::EditorSession {
         self.document.revision()
     }
 
+    /// Whether the raw view is currently in edit mode. False whenever the raw
+    /// view is not showing, so a stale flag can never make a later visit
+    /// editable.
+    pub fn raw_editing(&self) -> bool {
+        self.raw_editing && self.view.is_raw()
+    }
+
+    /// Makes the raw view editable and returns the text its draft starts from.
+    /// Does nothing (and returns an empty string) outside the raw view.
+    pub fn begin_raw_edit(&mut self) -> String {
+        if !self.view.is_raw() {
+            return String::new();
+        }
+        self.raw_editing = true;
+        self.reload_raw_draft()
+    }
+
+    /// Returns the raw view to read-only. The caller commits any pending draft
+    /// first; this discards nothing and writes nothing.
+    pub fn end_raw_edit(&mut self) {
+        self.raw_editing = false;
+    }
+
+    /// The text a raw draft should now hold, recording the revision it is
+    /// composed against. Call whenever the draft is reset to the document: on
+    /// entering edit mode, after a commit, after undo or redo.
+    pub fn reload_raw_draft(&mut self) -> String {
+        self.raw_base = Some(self.document.revision());
+        self.raw_text()
+    }
+
+    /// Commits the raw draft against the revision [`reload_raw_draft`] recorded.
+    ///
+    /// [`reload_raw_draft`]: Self::reload_raw_draft
+    pub fn commit_raw_draft(&mut self, draft: &str) -> Result<RawCommit, EditError> {
+        let base = self.raw_base.unwrap_or_else(|| self.document.revision());
+        self.commit_raw_text(draft, base)
+    }
+
     /// Whether `draft` would change the document if committed.
     pub fn raw_draft_differs(&self, draft: &str) -> bool {
         raw_edit(self.document.source(), draft).is_some()
