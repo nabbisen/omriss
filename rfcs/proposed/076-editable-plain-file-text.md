@@ -63,6 +63,27 @@ revision update as one unit, and is format-neutral by design — RFC-054 J1 buil
 it that way so a mutation need not be heading-shaped. A whole-document
 replacement is `replace_range` over `0..source.len()`.
 
+**Corrected again 2026-11-04, during implementation: replace the differing
+span, not the whole source.** A text area normalises CRLF to LF, so the draft a
+user edits is always LF. Replacing `0..source.len()` with that draft would
+rewrite **every line ending in the file** — a silent, whole-document
+normalisation of a CRLF document that the user never asked for and would not
+see until they diffed it. That is precisely the class of corruption this
+project exists to prevent, and this section specified it.
+
+The commit therefore replaces only the span that differs — common prefix and
+suffix measured in the text-area view, mapped back to source offsets, with the
+replacement written in the document's own newline style. It is the same
+primitive, the same single `EditRecord` and the same revision check; a
+whole-document replacement is simply the case where the differing span is
+everything. Verified: editing one word in a CRLF document leaves a 3-byte span
+and every other `\r\n` intact, and editing the LF line of a mixed-ending
+document leaves the CRLF lines alone.
+
+One edge found by the property suite and fixed: inserting `\n` immediately
+after a lone `\r` would fuse into a single CRLF, showing one newline where the
+draft has two.
+
 So **`omriss-core` does not change at all** for the most dangerous feature in
 the backlog, because someone generalised the primitive a release earlier.
 
