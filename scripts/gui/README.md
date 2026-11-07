@@ -133,6 +133,20 @@ and are runnable on their own.
 ROLE, name starts with NAME — so a script never reads one node and presses
 another.
 
+## Headless runs — tried, and deliberately not adopted
+
+GTK 3's own `broadwayd` runs omriss with no display server and no window on
+screen, and it works further than expected (2026-11-07): the full WebView
+content reaches the accessibility tree, and AT-SPI presses round-trip through
+the event channel. **Text entry does not work.** There is no X server for
+`xdotool`, WebKit exposes no `EditableText` interface, and delivering keys means
+speaking broadwayd's client protocol by hand.
+
+That is more machinery than the benefit justifies, and a half-capable backend
+would make every scenario author track which helpers work where. The X11 path
+above covers everything. Do not reopen this without a reason the X11 path
+cannot meet.
+
 ## How the rules map onto the harness
 
 `.git-exclude/rules/project-instructions-gui-common.md` states the rules; this
