@@ -355,7 +355,7 @@ that it must be discovered now and not during a Flathub review.
 
 **Proof required:** the accessible tree inside the Flatpak is equivalent to the
 native one — same landmarks, same named controls, the editor entry still
-`editable,focusable`. Run `atspi_probe.py` against the sandboxed process.
+`editable,focusable`. Run `scripts/gui/atspi_probe.py` against the sandboxed process.
 
 Note that conditions 1 and 2 come from another project's report, not from our
 own observation or from upstream documentation of the *accessibility* effect

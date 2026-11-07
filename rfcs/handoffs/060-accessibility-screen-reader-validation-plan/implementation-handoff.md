@@ -57,14 +57,16 @@ string. Recorded in RFC-073 §4.4.
 
 ## 4. The instrument
 
-`atspi_probe.py` registers as a read-only AT-SPI client and prints role,
-accessible name and the interesting states for every node.
+`scripts/gui/atspi_probe.py` registers as a read-only AT-SPI client and prints
+role, accessible name and the interesting states for every node.
 
 ```sh
-python3 -I rfcs/handoffs/060-accessibility-screen-reader-validation-plan/atspi_probe.py omriss
+python3 -I scripts/gui/atspi_probe.py omriss
 ```
 
-It is a QA tool, not shipped code: improve it freely, in place.
+It is a QA tool, not shipped code: improve it freely, **in place** — under
+`scripts/gui/`, with the rest of the GUI harness (`scripts/gui/README.md`). It
+lived in this directory until 2026-11-07.
 
 Launch the application as in Task 015/016 — `GDK_BACKEND=x11 DISPLAY=:1`, an
 isolated `XDG_CONFIG_HOME`, **copies** of the fixtures, tracked fixture hashes

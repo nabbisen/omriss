@@ -10,7 +10,9 @@ Files:
   already established, the instrument, and the constraints on a run
 - `acceptance-qa-checklist.md` — the measurement scenarios, the required record,
   and the severity rules
-- `atspi_probe.py` — the instrument: a read-only AT-SPI tree dump
+- the instruments — `atspi_probe.py`, `atspi_act.py`, `atspi_events.py` and
+  `atspi_text.py` — moved on 2026-11-07 to **`scripts/gui/`**, because every GUI
+  task uses them, not only this one. See `scripts/gui/README.md`
 - `baseline-accessible-tree.txt` — the architect's first probe, 2026-10-22.
   Reference, **not** a validation run
 
