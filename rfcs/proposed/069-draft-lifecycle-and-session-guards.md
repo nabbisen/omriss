@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — session-state hardening (0.18.0)
-**Status.** Proposed — §2.1 landed on `main` as the first PR of RFC-076's 0.18.0 item (`draft_sync::commit_and_resync`, called from `commit_pending`, which covers seven call sites the RFC's list of three missed); §2.2–§2.5 are outstanding.
+**Status.** Proposed — §2.2 is blocked on a framework capability that does not exist (§2.2). §2.1 landed on `main` as the first PR of RFC-076's 0.18.0 item (`draft_sync::commit_and_resync`, called from `commit_pending`, which covers seven call sites the RFC's list of three missed); §2.2–§2.5 are outstanding.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-016, RFC-044, RFC-054
@@ -57,6 +57,27 @@ in `crates/app/`.
 Already disclosed in RFC-016's header and in `known-limitations.md`. This RFC is
 where it gets built.
 
+**Blocked upstream — recorded 2026-11-07.** The framework cannot veto a close.
+In dioxus-desktop 0.7.9 the event loop (`launch.rs`) runs the application's
+handlers in `app.tick`, then calls `handle_close_requested` unconditionally,
+and that function does one of exactly two things: `WindowHides` hides the
+window, `WindowCloses` destroys it. `use_wry_event_handler`'s handler returns
+`()`, so it cannot cancel what follows. The latest release, 0.7.10, has the same
+two variants.
+
+The workarounds are worse than the gap. Hiding the window and re-showing it
+with a prompt makes it vanish and reappear — on niri the tiled column collapses
+and re-expands — and if the re-show ever fails, the application sits invisible
+holding the user's unsaved work, which is worse than the honest failure we have
+now. Patching the framework locally is maintenance the project should not take
+on for one variant.
+
+The clean fix is one variant upstream. `WindowCloseBehaviour` is
+`#[non_exhaustive]`, which anticipates exactly this: a variant under which
+`handle_close_requested` does nothing, so an application can open its own
+Save / Discard / Cancel prompt and close the window itself. Until it exists,
+the limitation stays documented and **§2.2 leaves 0.18.0's scope.**
+
 ### 2.3 Dirtiness is decided by a hash
 
 `ui/session.rs:41-46` answers "is the document dirty?" with a 64-bit
@@ -101,6 +122,11 @@ signals in response **during render**.
 Writing signals from a render body is the pattern most likely to produce a
 render loop later. It also conflates `struct.split.pending` and
 `struct.add_inside.pending` onto one action.
+
+**The conflation is a dead branch — checked 2026-11-07.** Nothing produces
+`struct.split.pending`: the five sentinels the root matches have producers for
+add-top, add-inside, add-after, rename and delete, and none for split. Fixing it
+means deleting the branch, not separating two live actions.
 
 ## 3. Design
 
