@@ -76,9 +76,18 @@ and split has none. Do not invent a `Split` variant to preserve it.
 4. The window-close guard (§2.2) is out of scope. Do not work around the
    framework; RFC-069 §2.2 explains why a workaround is worse than the gap.
 
-## 5. GUI verification
+## 5. Evidence plan
 
-Use `scripts/gui/`, and run `bash scripts/gui/selftest.sh` first. The relevant
-behaviour to drive: each of the five Document Map actions still opens its modal
-(row menu → Rename, Delete; the creation strip → Top, Inside, After), and
-cancelling each leaves the document unchanged by its sha256.
+Each question at the cheapest level that can prove it, per the GUI rules'
+Test Optimization Rules.
+
+| Question | Level | Evidence |
+|---|---|---|
+| Is dirtiness exact — undo back to the saved text reads clean, two equal-length texts are told apart? | 1 — unit tests in `omriss-ui` | the PR 1 table |
+| Is there exactly one commit path? | 1 — source-scanning test | the guard, and its deliberate break |
+| Does each of the five Document Map actions still open its modal through the typed request, and is the request cleared? | 2 — a Dioxus runtime test, like `draft_sync`'s | test results |
+| Does the real window still behave — each modal appears, and Cancel leaves the file unchanged? | 3 — `scripts/gui/`, run `selftest.sh` first | AT-SPI tree shows the dialog; the file's sha256 before and after |
+
+**Captures that remain: none.** Every question is answered by a test result,
+the accessible tree or a digest. Take a screenshot only if one of those
+disagrees with what you see.
