@@ -25,6 +25,7 @@ use omriss_core::DocumentFormat;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{DocumentMapNode, EditorSession, ViewMode, node_id_from_raw};
 
+use crate::structure_request::StructureRequest;
 use create_buttons::SelectedSectionCreateButtons;
 use draft::{commit_draft_if_dirty, sync_draft};
 use menu_focus::focus_open_row_menu;
@@ -37,6 +38,7 @@ pub fn DocumentMapPane(
     locale: Signal<Locale>,
     draft: Signal<String>,
     status: Signal<String>,
+    mut request: Signal<Option<StructureRequest>>,
 ) -> Element {
     let lang = *locale.read();
 
@@ -212,7 +214,7 @@ pub fn DocumentMapPane(
                             ) {
                                 return;
                             }
-                            status.clone().set("struct.add_top.pending".into());
+                            request.set(Some(StructureRequest::AddTopLevel));
                         },
                         "+ "
                         {t(lang, "document_map.add_top_level")}
@@ -225,6 +227,7 @@ pub fn DocumentMapPane(
                         locale,
                         draft,
                         status,
+                        request,
                     }
                 }
             }
@@ -421,6 +424,7 @@ pub fn DocumentMapPane(
                                             locale,
                                             draft,
                                             status,
+                                            request,
                                             menu_open_for,
                                         }
                                     }

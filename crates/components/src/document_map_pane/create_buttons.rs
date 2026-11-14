@@ -4,6 +4,8 @@ use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{DocumentMapNode, EditorSession, node_id_from_raw};
 
+use crate::structure_request::StructureRequest;
+
 use super::draft::{commit_draft_if_dirty, sync_draft};
 use super::node_tree::capability_title;
 
@@ -14,6 +16,7 @@ pub(super) fn SelectedSectionCreateButtons(
     locale: Signal<Locale>,
     draft: Signal<String>,
     status: Signal<String>,
+    mut request: Signal<Option<StructureRequest>>,
 ) -> Element {
     let lang = *locale.read();
     let caps = node.capabilities.clone();
@@ -41,7 +44,7 @@ pub(super) fn SelectedSectionCreateButtons(
                     }
                     let _ = session.write().focus(node_id);
                     sync_draft(&session, &mut draft.clone());
-                    status.clone().set("struct.add_inside.pending".into());
+                    request.set(Some(StructureRequest::AddInside));
                 },
                 "+ "
                 {t(lang, "document_map.action.add_inside_short")}
@@ -68,7 +71,7 @@ pub(super) fn SelectedSectionCreateButtons(
                     }
                     let _ = session.write().focus(node_id);
                     sync_draft(&session, &mut draft.clone());
-                    status.clone().set("struct.add_after.pending".into());
+                    request.set(Some(StructureRequest::AddAfter));
                 },
                 "+ "
                 {t(lang, "document_map.action.add_after_short")}

@@ -22,9 +22,9 @@ use omriss_components::draft_sync;
 use omriss_components::{
     CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
-    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, Toolbar,
-    UnsavedChoice, UnsavedDialog, WelcomeScreen, focus_active_modal, focus_active_palette,
-    trap_modal_tab,
+    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar,
+    StructureDialog, StructureRequest, Toolbar, UnsavedChoice, UnsavedDialog, WelcomeScreen,
+    focus_active_modal, focus_active_palette, trap_modal_tab, use_structure_requests,
 };
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -49,6 +49,7 @@ pub fn App() -> Element {
     let search_open = use_signal(|| false);
     let palette_open = use_signal(|| false);
     let preview_open = use_signal(|| false);
+    let structure_request: Signal<Option<StructureRequest>> = use_signal(|| None);
 
     let ctx = AppCtx {
         session,
@@ -190,87 +191,36 @@ pub fn App() -> Element {
         }
     });
 
-    // ── structural sentinel intercept (RFC-025) ───────────────────────────────
-    // DocumentMapPane writes a sentinel into `status` to request a modal;
-    // detect and replace it here on each render pass.
-    {
-        let st = status.read().clone();
-        if st == "struct.delete.pending" {
-            let mut modal = modal;
-            let mut status = status;
-            let snap = session.read().current_snapshot();
-            if let Some(s) = snap {
-                let title = s.title.clone();
-                let child_count = s.children.len();
+    // ── Document Map structure requests (RFC-069 §2.5) ────────────────────────
+    // The Document Map posts a typed `StructureRequest`; it is resolved to a
+    // dialog in an effect, never during render, and `status` stays display-only.
+    let on_structure_dialog = use_callback(move |dialog: StructureDialog| {
+        let mut modal = modal;
+        match dialog {
+            StructureDialog::ConfirmDelete { title, child_count } => {
                 modal.set(Modal::ConfirmDelete { title, child_count });
             }
-            status.set("status.ready".into());
-        } else if st == "struct.add_top.pending" {
-            let mut modal = modal;
-            let mut status = status;
-            modal.set(Modal::SectionTitle {
-                action: SectionTitleAction::AddTopLevel,
-                initial_title: String::new(),
-            });
-            status.set("status.ready".into());
-            spawn(async move {
-                let _ = document::eval(
-                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
-                );
-            });
-        } else if matches!(
-            st.as_str(),
-            "struct.add_inside.pending" | "struct.split.pending"
-        ) {
-            let mut modal = modal;
-            let mut status = status;
-            modal.set(Modal::SectionTitle {
-                action: SectionTitleAction::AddInside,
-                initial_title: String::new(),
-            });
-            status.set("status.ready".into());
-            spawn(async move {
-                let _ = document::eval(
-                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
-                );
-            });
-        } else if st == "struct.add_after.pending" {
-            let mut modal = modal;
-            let mut status = status;
-            modal.set(Modal::SectionTitle {
-                action: SectionTitleAction::AddAfter,
-                initial_title: String::new(),
-            });
-            status.set("status.ready".into());
-            spawn(async move {
-                let _ = document::eval(
-                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
-                );
-            });
-        } else if st == "struct.rename.pending" {
-            let mut modal = modal;
-            let mut status = status;
-            let initial_title = session
-                .read()
-                .current_snapshot()
-                .map(|s| s.title)
-                .unwrap_or_default();
-            modal.set(Modal::SectionTitle {
-                action: SectionTitleAction::Rename,
+            StructureDialog::SectionTitle {
+                action,
                 initial_title,
-            });
-            status.set("status.ready".into());
-            // Focus the dialog input after the DOM fully settles.
-            // The + button's session.write().focus() triggers DocumentMapPane's
-            // use_effect → item_tree write → another render+patch inside the
-            // first rAF. A second rAF is guaranteed to fire after that patch.
-            spawn(async move {
-                let _ = document::eval(
-                    "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
-                );
-            });
+            } => {
+                modal.set(Modal::SectionTitle {
+                    action,
+                    initial_title,
+                });
+                // Focus the dialog input after the DOM fully settles. The
+                // button's `session.write().focus()` triggers DocumentMapPane's
+                // use_effect -> item_tree write -> another render+patch inside
+                // the first rAF; a second rAF fires after that patch.
+                spawn(async move {
+                    let _ = document::eval(
+                        "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
+                    );
+                });
+            }
         }
-    }
+    });
+    use_structure_requests(session, structure_request, status, on_structure_dialog);
 
     let is_welcome = !session.read().document_open();
     let is_raw = session.read().is_raw();
@@ -309,7 +259,7 @@ pub fn App() -> Element {
             } else {
                 div { class: "body",
                     // RFC-049: Document Map is the single structure-organization surface.
-                    DocumentMapPane { session, locale, draft, status }
+                    DocumentMapPane { session, locale, draft, status, request: structure_request }
                     if is_raw {
                         RawSourceView {
                             session,

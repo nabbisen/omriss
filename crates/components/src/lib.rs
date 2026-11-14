@@ -25,6 +25,7 @@ mod raw_source;
 mod search_panel;
 mod split_dialog;
 mod status_bar;
+mod structure_request;
 mod toolbar;
 mod unsaved_dialog;
 mod welcome;
@@ -44,6 +45,9 @@ pub use raw_source::RawSourceView;
 pub use search_panel::SearchPanel;
 pub use split_dialog::{SectionTitleAction, SectionTitleChoice, SectionTitleDialog};
 pub use status_bar::StatusBar;
+pub use structure_request::{
+    StructureDialog, StructureRequest, dialog_for, use_structure_requests,
+};
 pub use toolbar::Toolbar;
 pub use unsaved_dialog::{UnsavedChoice, UnsavedDialog};
 pub use welcome::WelcomeScreen;

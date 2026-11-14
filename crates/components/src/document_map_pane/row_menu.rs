@@ -4,6 +4,8 @@ use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{DocumentMapNode, EditorSession, node_id_from_raw};
 
+use crate::structure_request::StructureRequest;
+
 use super::draft::{commit_draft_if_dirty, sync_draft};
 use super::menu_focus::{
     ROW_MENU_FOCUS_FIRST_ITEM, ROW_MENU_FOCUS_LAST_ITEM, ROW_MENU_FOCUS_NEXT,
@@ -18,6 +20,7 @@ pub(super) fn NodeRowMenu(
     locale: Signal<Locale>,
     draft: Signal<String>,
     status: Signal<String>,
+    mut request: Signal<Option<StructureRequest>>,
     mut menu_open_for: Signal<Option<u64>>,
 ) -> Element {
     let lang = *locale.read();
@@ -174,7 +177,7 @@ pub(super) fn NodeRowMenu(
                         }
                         let _ = session.write().focus(node_id);
                         sync_draft(&session, &mut draft.clone());
-                        status.clone().set("struct.rename.pending".into());
+                        request.set(Some(StructureRequest::Rename));
                         menu_open_for.set(None);
                     },
                     {t(lang, "document_map.action.rename")}
@@ -224,7 +227,7 @@ pub(super) fn NodeRowMenu(
                         }
                         let _ = session.write().focus(node_id);
                         sync_draft(&session, &mut draft.clone());
-                        status.clone().set("struct.delete.pending".into());
+                        request.set(Some(StructureRequest::Delete));
                         menu_open_for.set(None);
                     },
                     {t(lang, "document_map.action.delete")}
