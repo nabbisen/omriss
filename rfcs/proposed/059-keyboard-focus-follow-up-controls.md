@@ -387,10 +387,19 @@ listener on the document.
    non-editable control (a command in Quick Actions, a dialog button) first
    moves focus to that field, without `preventDefault()`, so the character
    lands there. This keeps Quick Actions' type-to-filter, which the scattered
-   scripts used to provide.
+   scripts used to provide. Space on a button is its activation, not text, and
+   is left alone.
 
 *Amended 2026-11-14, on PR 1's review: editable fields, IME and step 4 were
 not stated in the first version of this section.*
+
+**Found during PR 1, not in this slice: keys handled twice.** The Document Map
+tree's `onkeydown` (`document_map_pane.rs`) handles arrows, Home, End, Enter,
+Escape and Space and calls only `prevent_default()`, so the same key also
+reaches `div.app`'s shortcuts — Escape also zooms out, Enter and the arrows
+also run outline commands. The section-title dialog had the same shape and was
+fixed in PR 1. Whether any of the tree's double handling is relied on is not
+yet known; it is decided with §6.5, which owns keyboard movement in the map.
 
 Shortcuts stay in Rust on `div.app`. Catching keys at the document level
 instead is rejected: deciding `preventDefault()` for a shortcut would need the
