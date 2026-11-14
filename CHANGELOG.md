@@ -44,6 +44,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Unsaved changes can no longer be hidden by a hash collision: omriss now keeps
+  the saved text and compares it exactly, instead of comparing a length and a
+  digest (RFC-069 §2.3). Undoing back to the saved text still reads as clean.
+- Every place that commits a pending section edit before navigating — the
+  breadcrumb, child-section links, Preview, the search panel and leaving the
+  text area — now goes through one path (RFC-069 §2.4), so none of them skips
+  the format check or leaves a stale draft behind. Internally, the Document
+  Map asks for its add, rename and delete dialogs with a typed request rather
+  than a status-line string (§2.5). No other visible change.
 - After Ctrl+S (or any other action that commits a pending section edit)
   the unsaved-edit marker could stay lit although nothing was pending, and a
   later navigation pushed no undo record (RFC-069 §2.1).

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — session-state hardening (0.18.0)
-**Status.** Proposed — §2.2 is blocked on a framework capability that does not exist (§2.2). §2.1 landed on `main` as the first PR of RFC-076's 0.18.0 item (`draft_sync::commit_and_resync`, called from `commit_pending`, which covers seven call sites the RFC's list of three missed); §2.2–§2.5 are outstanding.
+**Status.** Proposed — §2.1, §2.3, §2.4 and §2.5 landed on `main` for 0.18.0 (§2.1 with RFC-076's first PR: `draft_sync::commit_and_resync`, which covers seven call sites the RFC's list of three missed; §2.3: `SavedFingerprint` keeps the saved text and compares it exactly; §2.4: `on_navigate` and five more inline copies of the commit sequence — in `focused_content_pane` and `breadcrumb` — now go through `draft_sync`, guarded by a source-scanning test; §2.5: a typed `StructureRequest` consumed in an effect, the sentinel strings and the dead `split` branch removed). §2.2 remains blocked on a framework capability that does not exist (§2.2). Awaiting architect review.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-016, RFC-044, RFC-054
