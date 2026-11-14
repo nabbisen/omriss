@@ -88,6 +88,7 @@ job. A press that succeeded and changed nothing is the failure worth catching.
 | `gui_focus_node ROLE NAME` | moves focus to a node through AT-SPI and asserts it arrived |
 | `gui_type_into ROLE NAME TEXT` | replaces a field's content and asserts the text landed |
 | `gui_key KEYS…` | sends keys to this run's window after verifying it has focus |
+| `gui_focused`, `gui_focused_is ROLE NAME`, `gui_focused_none` | which node holds focus: prints `[role] 'name'`, nothing when none; asserts "exactly this one" and "none" |
 | `gui_tree`, `gui_tree_has TEXT` | the accessible tree, and a fixed-string search in it |
 | `gui_text ROLE NAME`, `gui_text_contains ROLE NAME TEXT` | a node's full text |
 | `gui_wait_until DESC CMD…` | polls a condition with a deadline instead of sleeping a fixed time |
@@ -119,13 +120,14 @@ alone is overridden and a run silently comes up in the wrong language.
 
 ## The Python tools
 
-All four register as AT-SPI clients — the same interface a screen reader uses —
+All five register as AT-SPI clients — the same interface a screen reader uses —
 and are runnable on their own.
 
 | Tool | Purpose |
 |---|---|
 | `atspi_probe.py [APP]` | the accessible tree: roles, names, states, live-region attributes. Truncates text for readability |
 | `atspi_text.py APP ROLE NAME` | one node's **full** text, for asserting against |
+| `atspi_focused.py APP [--all]` | the focused node. WebKit reports a focused element's ancestors (`scroll pane`, `document web`) as focused too, so by default only the deepest is printed; `--all` prints every node with the state. Prints nothing when nothing is focused |
 | `atspi_act.py APP ROLE NAME [--focus]` | press a node, or move focus to it |
 | `atspi_events.py SECONDS` | log the events an assistive technology would receive |
 
