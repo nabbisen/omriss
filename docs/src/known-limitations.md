@@ -126,33 +126,21 @@ actions normally.
 
 ## Navigation Limitations
 
-### Keyboard Shortcuts Stop Working After a View Change or a Save (WebView constraint)
+### After Saving on Windows the Keyboard May Need a Click
 
-Keyboard shortcuts are delivered to the application window. When an action
-replaces the element that had keyboard focus, focus falls back to the document
-body, outside the window's shortcut handler. Shortcuts pressed from that state
-do nothing until focus returns.
+On Windows, after Ctrl+S the file is written and the status says "Saved", but the
+next keyboard shortcut may do nothing until you click in the window or press
+Tab. The document is saved correctly; only the keyboard stops responding.
 
-**Saving does this too**, which is the case you are most likely to meet: after
-Ctrl+S the file is written and the status says "Saved", but the next shortcut
-may do nothing. Leaving a section with Esc can have the same effect. The
-document is saved correctly — only the keyboard stops responding.
-
-Zooming shows it as well: after zooming in with Enter, Esc often does not zoom
-back out, because focus was lost during the zoom itself. Ctrl+` for plain file
-text can be affected the same way.
-
-**Why:** When the element that holds focus is removed, the WebView leaves focus
-on the document body and does not say so; nothing in this release puts it back.
-The shortcuts themselves are correctly bound; they are simply not reached.
+This was reported on Windows in 0.17.0 and has **not been re-checked** since
+omriss began returning focus to a sensible place whenever the element that held
+it goes away (RFC-059). On Linux the cause that remained — focus left on the
+page background after a dialog, Quick Actions or a view change — is fixed, and
+saving never moved focus there.
 
 **Owner:** RFC-059 §6.2a.
 
-**Workaround:** Click once anywhere in the window, or press Tab, to put focus
-back inside it — shortcuts then work normally.
-
-Every affected action also has an on-screen control: use the "Document"
-breadcrumb to zoom out, and the toolbar button for plain file text.
+**Workaround:** Click once anywhere in the window, or press Tab.
 
 ### Closing the Window Does Not Warn About Unsaved Changes
 

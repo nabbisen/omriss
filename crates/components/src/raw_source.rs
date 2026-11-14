@@ -86,6 +86,7 @@ pub fn RawSourceView(
             if editing {
                 textarea {
                     class: "raw-editor",
+                    "data-focus-primary": "true",
                     "aria-label": t(lang, "raw.editor_label"),
                     spellcheck: "false",
                     autofocus: true,
@@ -96,9 +97,13 @@ pub fn RawSourceView(
             } else {
                 pre {
                     class: "raw-pre",
-                    // role="region" + label so screen readers can browse the source.
+                    // Focusable, so a keyboard user can scroll the source, and
+                    // the view's primary surface (RFC-059 §12.3). role="region"
+                    // + label so screen readers can browse it.
                     role: "region",
-                    "aria-label": t(lang, "raw.title"),
+                    tabindex: "0",
+                    "data-focus-primary": "true",
+                    "aria-label": t(lang, "raw.source_label"),
                     code { class: "raw-code", {source} }
                 }
             }

@@ -40,7 +40,7 @@ pub use confirm_delete_dialog::{ConfirmDeleteChoice, ConfirmDeleteDialog};
 pub use document_map_pane::DocumentMapPane;
 pub use error_dialog::ErrorDialog;
 pub use ext_modified_dialog::{ExtModifiedChoice, ExtModifiedDialog};
-pub use focus::use_focus_script;
+pub use focus::{focus_primary, use_focus_script};
 pub use focused_content_pane::FocusedContentPane;
 pub use overview_pane::OverviewPane;
 pub use preview_pane::PreviewPane;

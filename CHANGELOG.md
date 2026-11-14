@@ -44,6 +44,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Focus no longer disappears** (RFC-059 §6.2a, RFC-060 F-4). When a dialog,
+  Quick Actions, the search panel or the preview closes, or a view change removes
+  the element that had focus, the WebView used to leave focus on the page
+  background — no control focused, screen readers told nothing, and the next
+  keyboard shortcut ignored. Focus now returns to where the overlay was opened
+  from (a row menu's dialogs return to that row's *Section actions* button), or
+  failing that to the view's main surface, or to the window itself. The same rule
+  covers start-up: the first shortcut after launch works without a click.
+- Plain file text in its read-only view can now take focus, so the keyboard can
+  scroll it, and is announced as "Plain file text, read-only" (English and
+  Japanese).
 - **Ctrl+F puts the cursor in the search field** (RFC-059 §6.2b). The field's
   `autofocus` was never honoured by the WebView, so the panel opened with focus
   left where it was.

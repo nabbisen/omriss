@@ -11,6 +11,8 @@
 //! | `data-focus-scope="panel"` | the search panel, the preview: takes initial focus, does **not** contain Tab |
 //! | `data-focus-arrows` | on a scope: arrow keys, Home and End move between its controls |
 //! | `autofocus` | the control a scope focuses first; otherwise its first focusable control |
+//! | `data-focus-return="ID"` | on a control that opens a scope: focus returns to element `ID`, not to the control |
+//! | `data-focus-primary` | at most one per view: the view's primary surface, where focus falls back to |
 //!
 //! `autofocus` is not honoured by the WebView on its own (Task 019), which is
 //! why the script looks it up and focuses it. Shortcuts stay in Rust on
@@ -24,7 +26,7 @@ use dioxus::prelude::*;
 const FOCUS_SCRIPT: &str = r#"
 (() => {
   if (window.__omrissFocus) return;
-  window.__omrissFocus = true;
+  window.__omrissFocus = {};
 
   const FOCUSABLE =
     'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
@@ -70,20 +72,98 @@ const FOCUS_SCRIPT: &str = r#"
     }));
   };
 
+  // ── Restoration (§12.2 step 2) ──────────────────────────────────────────
+  // The WebView leaves focus on <body> when the focused element is removed and
+  // fires no blur or focusout, so removal is what the observer watches.
+
+  // The element that had focus, kept from `focusin`: by the time a scope is
+  // added its opener may already be gone (a menu item, when the menu closes in
+  // the same batch as the dialog it opened).
+  let lastFocus = null;
+  document.addEventListener('focusin', (e) => { lastFocus = e.target; }, true);
+
+  // `data-focus-return="ID"` on a control that opens a scope: focus returns to
+  // element ID, not to the control.
+  const returnId = (el) => {
+    const holder = el && el.closest ? el.closest('[data-focus-return]') : null;
+    return holder ? holder.getAttribute('data-focus-return') : null;
+  };
+
+  const open = [];            // scopes that are open: { el, opener, retId }
+  let justClosed = null;      // the scope that closed since the last check
+
+  const track = (scope) => {
+    open.push({ el: scope, opener: lastFocus, retId: returnId(lastFocus) });
+  };
+
+  const settle = () => {
+    for (let i = open.length - 1; i >= 0; i--) {
+      if (!open[i].el.isConnected) justClosed = open.splice(i, 1)[0];
+    }
+  };
+
+  const returnTarget = (s) => (s.retId ? document.getElementById(s.retId) : s.opener);
+
+  // Focus left on <body>, one frame after a batch of mutations, and only while
+  // this window is the active one: the first of (a) where the scope that just
+  // closed was opened from, if it is still in the document; (b) the view's
+  // primary surface; (c) div.app. An open `contain` scope takes its own focus.
+  const check = () => {
+    const closed = justClosed;
+    justClosed = null;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (!document.hasFocus() || topmost()) return;
+    const targets = [
+      closed && returnTarget(closed),
+      document.querySelector('[data-focus-primary]'),
+      document.querySelector('.app'),
+    ];
+    for (const target of targets) {
+      if (!target || !target.isConnected) continue;
+      target.focus();
+      if (document.activeElement === target) return;
+    }
+  };
+
+  let checking = false;
+  const scheduleCheck = () => {
+    if (checking) return;
+    checking = true;
+    requestAnimationFrame(() => { checking = false; check(); });
+  };
+
+  const adopt = (scope) => { track(scope); enter(scope); };
+
   new MutationObserver((records) => {
     for (const record of records) {
       for (const node of record.addedNodes) {
         if (node.nodeType !== 1) continue;
-        if (node.matches('[data-focus-scope]')) enter(node);
-        node.querySelectorAll('[data-focus-scope]').forEach(enter);
+        if (node.matches('[data-focus-scope]')) adopt(node);
+        node.querySelectorAll('[data-focus-scope]').forEach(adopt);
       }
     }
+    settle();
+    scheduleCheck();
   }).observe(document.body, { childList: true, subtree: true });
 
   // The script is installed after the first render, so a scope that is already
   // in the document (a dialog opened at start-up) is never "added" to the
-  // observer: enter those too.
-  document.querySelectorAll('[data-focus-scope]').forEach(enter);
+  // observer: enter those too. Launch itself leaves focus on <body>: check it,
+  // and again whenever the window gains focus.
+  document.querySelectorAll('[data-focus-scope]').forEach(adopt);
+  window.addEventListener('focus', scheduleCheck);
+  scheduleCheck();
+
+  // The one explicit call: after a deliberate move (choosing a search result),
+  // focus the new view's primary surface. Two frames, so it lands after the
+  // restoration check the same change triggers and is not overridden by it.
+  window.__omrissFocus.primary = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target = document.querySelector('[data-focus-primary]') || document.querySelector('.app');
+      if (target) target.focus();
+    }));
+  };
 
   const ARROWS = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Home', 'End'];
 
@@ -137,6 +217,17 @@ const FOCUS_SCRIPT: &str = r#"
   }, true);
 })()
 "#;
+
+/// The one explicit focus call (RFC-059 §12.3): after a deliberate move such as
+/// choosing a search result, focus the new view's primary surface. Everything
+/// else is the script's own rule.
+pub fn focus_primary() {
+    spawn(async move {
+        let _ = document::eval(
+            "window.__omrissFocus && window.__omrissFocus.primary && window.__omrissFocus.primary()",
+        );
+    });
+}
 
 /// Installs the focus script, once, when the calling component first renders.
 /// The host calls it from its root component.

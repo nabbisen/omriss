@@ -252,6 +252,10 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "raw.readonly_notice",
         "読み取り専用です。ファイルテキストを変更するには「編集」を選んでください。",
     ),
+    (
+        "raw.source_label",
+        "プレーンファイルテキスト（読み取り専用）",
+    ),
     ("raw.stop_editing", "編集を終える"),
     ("raw.title", "プレーンファイルテキスト"),
     ("search.close", "閉じる"),

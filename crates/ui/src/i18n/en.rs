@@ -248,6 +248,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "raw.readonly_notice",
         "Read-only. Choose Edit to change the file text.",
     ),
+    ("raw.source_label", "Plain file text, read-only"),
     ("raw.stop_editing", "Stop editing"),
     ("raw.title", "Plain File Text"),
     ("search.close", "Close"),

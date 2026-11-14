@@ -333,6 +333,7 @@ pub fn DocumentMapPane(
                                 // Row mutation/organization menu.
                                 button {
                                     class: "row-menu-btn",
+                                    id: "row-actions-{raw_id}",
                                     title: t(lang, "document_map.actions"),
                                     "aria-label": t(lang, "document_map.actions"),
                                     "aria-haspopup": "menu",

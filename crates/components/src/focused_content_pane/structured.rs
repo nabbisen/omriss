@@ -72,6 +72,7 @@ pub fn StructuredFocusView(
                     _ => rsx! {
                         input {
                             r#type: "text",
+                            "data-focus-primary": "true",
                             class: if is_invalid { "structured-value-input invalid" } else { "structured-value-input" },
                             "aria-label": "{kind_label(lang, value_kind)}",
                             "aria-invalid": if is_invalid { "true" } else { "false" },
@@ -109,6 +110,7 @@ pub fn StructuredFocusView(
                 }
                 if *raw_open.read() {
                     textarea {
+                        "data-focus-primary": "true",
                         class: if is_invalid { "structured-raw-editor invalid" } else { "structured-raw-editor" },
                         "aria-label": t(lang, "focused_content.json.raw_text_label"),
                         "aria-invalid": if is_invalid { "true" } else { "false" },

@@ -52,6 +52,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_move_up.is_hidden() {
                 button {
                     class: "row-menu-item",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_move_up.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_up),
@@ -75,6 +76,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_move_down.is_hidden() {
                 button {
                     class: "row-menu-item",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_move_down.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_down),
@@ -98,6 +100,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_move_inside_previous.is_hidden() {
                 button {
                     class: "row-menu-item",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_move_inside_previous.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_inside_previous),
@@ -121,6 +124,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_move_out_one_level.is_hidden() {
                 button {
                     class: "row-menu-item",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_move_out_one_level.is_allowed(),
                     title: disabled_title(lang, &caps.can_move_out_one_level),
@@ -145,6 +149,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_rename.is_hidden() {
                 button {
                     class: "row-menu-item",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_rename.is_allowed(),
                     title: disabled_title(lang, &caps.can_rename),
@@ -167,6 +172,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_join_with_previous.is_hidden() {
                 button {
                     class: "row-menu-item",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_join_with_previous.is_allowed(),
                     title: capability_title(
@@ -196,6 +202,7 @@ pub(super) fn NodeRowMenu(
             if !caps.can_delete.is_hidden() {
                 button {
                     class: "row-menu-item row-menu-item--danger",
+                    "data-focus-return": "row-actions-{node.id}",
                     role: "menuitem",
                     disabled: !caps.can_delete.is_allowed(),
                     onclick: move |_| {

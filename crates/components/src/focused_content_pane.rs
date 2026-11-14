@@ -108,6 +108,7 @@ pub fn FocusedContentPane(
 
                 textarea {
                     class: "body-editor",
+                    "data-focus-primary": "true",
                     "aria-label": t(lang, "aria.editor"),
                     placeholder: t(lang, "editor.body.placeholder"),
                     autofocus: true,
