@@ -145,7 +145,7 @@ documentation.
 
 ## 6. Constraints
 
-1. `omriss-core` and `omriss-ui` do not change.
+1. `omriss-core` does not change; `omriss-ui` only for catalog keys.
 2. No new crate dependency. `omriss-components` still builds for
    `wasm32-unknown-unknown`.
 3. No new shortcut and no new command — §6.5 is out of scope.

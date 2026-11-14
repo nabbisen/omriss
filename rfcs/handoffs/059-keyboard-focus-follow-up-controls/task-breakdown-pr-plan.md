@@ -60,6 +60,8 @@ the editor is present). Inside this PR's GUI run, not a separate round.
 Not in this PR: the Document Map tree's double-handled keys (RFC-059 §12,
 owned by §6.5).
 
+**Landed** (`64fc36c`, harness `634bbea`).
+
 ## PR 3 — Windows, only if needed
 
 Opened only if the owner's checklist, run against PR 2's build, shows the

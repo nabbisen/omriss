@@ -28,8 +28,10 @@ Windows checklist — reported in `design-output.md`. The architect made the
 design decisions from those findings and recorded them in §12. The report's
 own recommendations are input to that, not decisions.
 
-**State:** Phase A done; PR 1 landed. **Next: PR 2.** The report goes to
-`.git-exclude/review-request/059-focus-pr2-restoration/README.md`.
+**State:** Phase A done; PR 1 and PR 2 landed. **Next: the owner's Windows
+run** (`design-output.md` §5, W1–W3) on the Windows build of PR 2's commit —
+CI's `omriss-windows-exe` artifact. PR 3 only if that run calls for it; the
+dev team waits until then.
 
 Files:
 

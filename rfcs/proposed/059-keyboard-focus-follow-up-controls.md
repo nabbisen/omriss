@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 follow-up hardening (proposed)
-**Status.** Proposed — the 0.18.0 slice (§6.2 containment, §6.2a, §6.2b, RFC-060 F-4) has an accepted design (§12) and is handed off: `rfcs/handoffs/059-keyboard-focus-follow-up-controls/`. Implementation not started. §6.1, §6.3, §6.4 and §6.5 remain open.
+**Status.** Proposed — the 0.18.0 slice (§6.2 containment, §6.2a, §6.2b, RFC-060 F-4) has an accepted design (§12); §12.1–§12.3 landed on `main` for 0.18.0 (scopes and containment; restoration after removal, at launch and after choosing a search result). §12.4, Windows, awaits the owner's run. Handoff: `rfcs/handoffs/059-keyboard-focus-follow-up-controls/`. §6.1, §6.3, §6.4 and §6.5 remain open.
 **Document type:** Follow-up RFC design seed
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-049, RFC-050, RFC-051
@@ -363,7 +363,10 @@ One `MutationObserver` on the application root, one capture-phase `keydown`
 listener on the document.
 
 1. **A scope is added:** remember the element that had focus (or its
-   `data-focus-return` target), then focus the scope's first control.
+   `data-focus-return` target), then focus the scope's first control. "Had
+   focus" is the last element a `focusin` reached, not `activeElement` at that
+   moment: a menu item that opened a dialog is already removed by then, and
+   removal fires no event.
 2. **Focus is left on `<body>`** — checked one `requestAnimationFrame` after a
    batch of mutations, and only when `document.hasFocus()`, so another window's
    focus is never taken: focus the first of
@@ -392,6 +395,13 @@ listener on the document.
 
 *Amended 2026-11-14, on PR 1's review: editable fields, IME and step 4 were
 not stated in the first version of this section.*
+
+**Found during PR 2, not in this slice: focus when a view opens.** §12.2
+acts only when focus is left on `<body>`. Zooming into a section from the
+outline therefore leaves focus on `div.app`, not in the new editor; and a JSON
+node with no text control (the on/off pair, a `null` value, a closed group)
+has no primary surface. Neither is a regression, and both are the question
+§6.5 owns: where focus goes on a deliberate move between surfaces.
 
 **Found during PR 1, not in this slice: keys handled twice.** The Document Map
 tree's `onkeydown` (`document_map_pane.rs`) handles arrows, Home, End, Enter,
