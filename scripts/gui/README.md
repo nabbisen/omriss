@@ -82,7 +82,7 @@ job. A press that succeeded and changed nothing is the failure worth catching.
 | Function | What it does |
 |---|---|
 | `gui_init` | checks prerequisites, makes a fresh isolated state, stops our instance on exit |
-| `gui_launch FILE` | refuses if any omriss is running; starts exactly one, X11 backend, all four XDG directories isolated, locale pinned; requires exactly one new window |
+| `gui_launch [FILE]` | refuses if any omriss is running; starts exactly one (no FILE: the welcome screen), X11 backend, all four XDG directories isolated, locale pinned; requires exactly one new window |
 | `gui_quit` | stops this run's instance and asserts zero remain |
 | `gui_press ROLE NAME` | invokes a node's default action through AT-SPI |
 | `gui_focus_node ROLE NAME` | moves focus to a node through AT-SPI and asserts it arrived |

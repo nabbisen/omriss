@@ -21,7 +21,9 @@ echo "launch and read"
 gui_launch "$copy"
 gui_check "the Document Map is in the accessible tree" gui_tree_has "[landmark] 'Document Map'"
 gui_check "the status bar is readable" gui_text 'status bar' ''
-gui_check "nothing is focused on a fresh launch (gui_focused prints nothing)" gui_focused_none
+# Launch used to leave nothing focused (RFC-059 PR 1 measured it); since PR 2 the
+# window's own rule puts focus on the view's main surface, so one node is.
+gui_wait_until "exactly one node is focused on a fresh launch" bash -c 'source scripts/gui/lib.sh; [ "$(gui_focused | grep -c .)" = 1 ]'
 
 echo "act through the accessibility API"
 gui_press button 'Abstract'
@@ -29,6 +31,7 @@ gui_wait_until "Abstract becomes the focused section" gui_tree_has "[heading] 'A
 gui_focus_node entry 'Edit section text'
 gui_check "exactly one node is focused, and it is the editor" gui_focused_is entry 'Edit section text'
 gui_check "the editor is inside the Writing Area landmark" gui_focused_within landmark 'Writing Area'
+gui_check "gui_focused_none is false while the editor holds focus" bash -c 'source scripts/gui/lib.sh; ! gui_focused_none'
 gui_check "an ancestor is not mistaken for the focus" bash -c '! grep -q "document web" <<<"$1"' _ "$(gui_focused)"
 
 echo "keyboard input"

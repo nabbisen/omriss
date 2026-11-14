@@ -137,10 +137,12 @@ gui__no_process()  { [ "$(gui__process_count)" = 0 ]; }
 gui__one_window()  { local ids; ids=$(gui__omriss_windows); [ -n "$ids" ] && [ "${ids// /}" = "$ids" ]; }
 gui__no_window()   { [ -z "$(gui__omriss_windows)" ]; }
 
-# gui_launch FILE — exactly one isolated instance, on the X11 backend.
+# gui_launch [FILE] — exactly one isolated instance, on the X11 backend. With no
+# FILE (or an empty one) the application starts on its welcome screen.
 gui_launch() {
-  local file=$1
-  [ -f "$file" ] || gui_abort "no such file to open: $file"
+  local file=${1:-}
+  # An empty FILE launches with no argument: the welcome screen.
+  [ -z "$file" ] || [ -f "$file" ] || gui_abort "no such file to open: $file"
   # Rule "One instance only": require zero before starting. Refusing here also
   # protects an omriss the user has open — this harness never stops that one.
   gui__no_process || gui_abort "an omriss process is already running; close it first"
@@ -155,7 +157,7 @@ gui_launch() {
     XDG_CACHE_HOME="$OMRISS_GUI_WORK/xdg/cache" \
     XDG_DATA_HOME="$OMRISS_GUI_WORK/xdg/data" \
     GDK_BACKEND=x11 DISPLAY="$OMRISS_GUI_DISPLAY" LANG="$OMRISS_GUI_LANG" \
-    setsid "$OMRISS_BIN" "$file" >"$OMRISS_GUI_WORK/omriss.log" 2>&1 &
+    setsid "$OMRISS_BIN" ${file:+"$file"} >"$OMRISS_GUI_WORK/omriss.log" 2>&1 &
 
   gui_wait_until "exactly one omriss process" gui__one_process
   GUI_PID=$(pgrep -x omriss)
