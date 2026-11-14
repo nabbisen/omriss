@@ -394,3 +394,85 @@ fn focused_structural_actions_report_missing_focus() {
         StructuralEditError::NoFocusedSection
     ));
 }
+
+// ── RFC-069 §2.3: dirtiness is exact text, not a digest ─────────────────────
+
+fn commit_body(session: &mut EditorSession, title: &str, body: &str) {
+    let id = id_of(session, title);
+    let snapshot = session.focus(id).unwrap();
+    session
+        .commit_focused_body(&snapshot, body.to_string())
+        .unwrap();
+}
+
+#[test]
+fn dirtiness_open_without_an_edit_is_clean() {
+    assert!(!session().is_dirty());
+}
+
+#[test]
+fn dirtiness_an_edit_is_dirty() {
+    let mut session = session();
+    commit_body(&mut session, "One", "Rewritten.\n\n");
+    assert!(session.is_dirty());
+}
+
+#[test]
+fn dirtiness_undo_back_to_the_saved_text_is_clean() {
+    let mut session = session();
+    commit_body(&mut session, "One", "Rewritten.\n\n");
+    commit_body(&mut session, "Two", "Also rewritten.\n\n");
+    session.undo().unwrap();
+    assert!(session.is_dirty(), "one edit still outstanding");
+    session.undo().unwrap();
+    assert!(!session.is_dirty());
+    assert_eq!(session.source(), DOC);
+}
+
+#[test]
+fn dirtiness_undo_back_to_a_later_saved_text_is_clean() {
+    // The saved text need not be the opened text: save mid-way, edit, undo.
+    let mut session = session();
+    commit_body(&mut session, "One", "Rewritten.\n\n");
+    session.mark_saved(None);
+    commit_body(&mut session, "Two", "Also rewritten.\n\n");
+    assert!(session.is_dirty());
+    session.undo().unwrap();
+    assert!(!session.is_dirty());
+    // ...and undoing past the save is dirty again, redo returns to clean.
+    session.undo().unwrap();
+    assert!(session.is_dirty());
+    session.redo().unwrap();
+    assert!(!session.is_dirty());
+}
+
+#[test]
+fn dirtiness_edit_then_save_is_clean() {
+    let mut session = session();
+    commit_body(&mut session, "One", "Rewritten.\n\n");
+    session.mark_saved(None);
+    assert!(!session.is_dirty());
+}
+
+#[test]
+fn dirtiness_two_different_texts_of_equal_length_are_told_apart() {
+    // "Body one." -> "Body two." keeps the byte length; a length check alone
+    // cannot see it, and a digest can in principle collide.
+    let mut session = session();
+    commit_body(&mut session, "One", "\nBody xxx.\n\n");
+    assert_eq!(session.source().len(), DOC.len(), "same length by design");
+    assert_ne!(session.source(), DOC);
+    assert!(session.is_dirty());
+}
+
+#[test]
+fn dirtiness_equal_length_edit_after_a_save_is_dirty_and_undo_is_clean() {
+    let mut session = session();
+    commit_body(&mut session, "One", "\nBody xxx.\n\n");
+    session.mark_saved(None);
+    commit_body(&mut session, "One", "\nBody yyy.\n\n");
+    assert_eq!(session.source().len(), DOC.len());
+    assert!(session.is_dirty());
+    session.undo().unwrap();
+    assert!(!session.is_dirty());
+}

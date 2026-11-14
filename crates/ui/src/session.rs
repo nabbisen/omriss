@@ -8,7 +8,6 @@
 //! (line endings, BOM, trailing newline — RFC-018).
 
 use std::cell::RefCell;
-use std::hash::{DefaultHasher, Hash, Hasher};
 
 use omriss_core::{
     Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
@@ -23,24 +22,24 @@ use crate::editor::structure_change::{
 use crate::editor::view_state::{ViewMode, ViewState};
 use crate::file::file_profile::FileTextProfile;
 
-/// Length + hash of the text at the last save. Undo and redo mint fresh
-/// revisions (RFC-044), so "back to the saved bytes" must be detected by
-/// content, not by revision number.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The text at the last save, kept whole. Undo and redo mint fresh revisions
+/// (RFC-044), so "back to the saved bytes" must be detected by content, not by
+/// revision number -- and by *exact* content: a length-plus-digest comparison
+/// can report a modified document as clean on a collision and skip the
+/// unsaved-changes prompt (RFC-069 §2.3). The document is already in memory;
+/// one more copy of it costs nothing, and the comparison only runs once the
+/// revision has moved.
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct SavedFingerprint {
     revision: DocumentRevision,
-    len: usize,
-    hash: u64,
+    text: String,
 }
 
 impl SavedFingerprint {
     fn of(text: &str, revision: DocumentRevision) -> Self {
-        let mut hasher = DefaultHasher::new();
-        text.hash(&mut hasher);
         Self {
             revision,
-            len: text.len(),
-            hash: hasher.finish(),
+            text: text.to_owned(),
         }
     }
 
@@ -48,7 +47,7 @@ impl SavedFingerprint {
         if revision == self.revision {
             return true; // fast path: nothing committed since the save
         }
-        Self::of(text, revision).hash == self.hash && text.len() == self.len
+        self.text == text
     }
 }
 
