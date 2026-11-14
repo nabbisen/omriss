@@ -11,7 +11,7 @@ use crate::shell::actions::{handle_new_guarded, handle_open_guarded, handle_save
 use crate::shell::app_ctx::{
     AppCtx, commit_pending, has_pending_draft, leave_raw_guarded, sync_draft,
 };
-use omriss_components::{CommandId, focus_active_palette};
+use omriss_components::CommandId;
 
 pub(crate) fn open_search_if_available(ctx: AppCtx, mut search_open: Signal<bool>) {
     if !ctx.session.read().document_open() {
@@ -65,9 +65,6 @@ pub(crate) fn dispatch_command(
         AppCommand::OpenPalette => {
             let v = !*palette_open.read();
             palette_open.set(v);
-            if v {
-                focus_active_palette();
-            }
         }
         AppCommand::TogglePreview => {
             if !commit_pending(ctx) {

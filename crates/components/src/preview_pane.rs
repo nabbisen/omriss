@@ -19,17 +19,10 @@ pub fn PreviewPane(
         .map(|s| s.title)
         .unwrap_or_default();
 
-    use_effect(move || {
-        spawn(async move {
-            let _ = document::eval(
-                "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.preview-back')?.focus()))",
-            );
-        });
-    });
-
     rsx! {
         div {
             class: "preview-pane",
+            "data-focus-scope": "panel",
             role: "region",
             "aria-label": t(lang, "editor.preview"),
             div { class: "preview-header",

@@ -7,10 +7,6 @@ use omriss_ui::{DocumentMapNode, EditorSession, node_id_from_raw};
 use crate::structure_request::StructureRequest;
 
 use super::draft::{commit_draft_if_dirty, sync_draft};
-use super::menu_focus::{
-    ROW_MENU_FOCUS_FIRST_ITEM, ROW_MENU_FOCUS_LAST_ITEM, ROW_MENU_FOCUS_NEXT,
-    ROW_MENU_FOCUS_PREVIOUS, focus_open_row_menu, move_open_row_menu_focus,
-};
 use super::node_tree::{capability_title, disabled_title};
 
 #[component]
@@ -27,13 +23,11 @@ pub(super) fn NodeRowMenu(
     let caps = node.capabilities.clone();
     let node_id = node_id_from_raw(node.id);
 
-    use_effect(move || {
-        focus_open_row_menu(node.id);
-    });
-
     rsx! {
         div {
             class: "row-menu",
+            "data-focus-scope": "contain",
+            "data-focus-arrows": "true",
             role: "menu",
             "aria-label": t(lang, "document_map.actions"),
             "data-row-menu-id": "{node.id}",
@@ -46,25 +40,12 @@ pub(super) fn NodeRowMenu(
                     ev.stop_propagation();
                     return;
                 }
-                let focus_script = match ev.key() {
-                    Key::Tab if ev.modifiers().shift() => Some(ROW_MENU_FOCUS_PREVIOUS),
-                    Key::Tab => Some(ROW_MENU_FOCUS_NEXT),
-                    Key::ArrowDown => Some(ROW_MENU_FOCUS_NEXT),
-                    Key::ArrowUp => Some(ROW_MENU_FOCUS_PREVIOUS),
-                    Key::Home => Some(ROW_MENU_FOCUS_FIRST_ITEM),
-                    Key::End => Some(ROW_MENU_FOCUS_LAST_ITEM),
-                    Key::Escape => {
-                        ev.stop_propagation();
-                        ev.prevent_default();
-                        menu_open_for.set(None);
-                        return;
-                    }
-                    _ => None,
-                };
-                if let Some(script) = focus_script {
+                // Tab, the arrows, Home and End are the focus script's
+                // (RFC-059 §12): it keeps them inside this menu. Escape closes.
+                if matches!(ev.key(), Key::Escape) {
                     ev.stop_propagation();
                     ev.prevent_default();
-                    move_open_row_menu_focus(script);
+                    menu_open_for.set(None);
                 }
             },
 
@@ -237,3 +218,6 @@ pub(super) fn NodeRowMenu(
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

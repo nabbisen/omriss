@@ -8,48 +8,6 @@ use omriss_ui::{COMMANDS, filter_commands};
 /// An opaque command id dispatched back to the app shell for execution.
 pub type CommandId = &'static str;
 
-const PALETTE_FOCUS_FIRST: &str = r#"
-(() => {
-  const root = document.querySelector('.palette-overlay[aria-modal="true"]');
-  if (!root) return;
-  const focusables = Array.from(root.querySelectorAll(
-    'input:not([disabled]), button:not([disabled])'
-  )).filter((el) => {
-    const style = window.getComputedStyle(el);
-    return !el.hidden && el.getClientRects().length > 0 && style.visibility !== 'hidden';
-  });
-  (focusables[0] || root).focus();
-})()
-"#;
-
-const PALETTE_FOCUS_LAST: &str = r#"
-(() => {
-  const root = document.querySelector('.palette-overlay[aria-modal="true"]');
-  if (!root) return;
-  const focusables = Array.from(root.querySelectorAll(
-    'input:not([disabled]), button:not([disabled])'
-  )).filter((el) => {
-    const style = window.getComputedStyle(el);
-    return !el.hidden && el.getClientRects().length > 0 && style.visibility !== 'hidden';
-  });
-  (focusables[focusables.length - 1] || root).focus();
-})()
-"#;
-
-fn move_palette_focus(script: &'static str) {
-    spawn(async move {
-        let _ = document::eval(script);
-    });
-}
-
-pub fn focus_active_palette() {
-    spawn(async move {
-        let _ = document::eval(
-            "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.palette-input')?.focus()))",
-        );
-    });
-}
-
 #[component]
 pub fn CommandPalette(
     locale: Signal<Locale>,
@@ -64,13 +22,10 @@ pub fn CommandPalette(
     let filtered = filter_commands(COMMANDS, &query.read(), &t_fn);
     let active_index_value = (*active_index.read()).min(filtered.len().saturating_sub(1));
 
-    use_effect(move || {
-        focus_active_palette();
-    });
-
     rsx! {
         div {
             class: "palette-overlay",
+            "data-focus-scope": "contain",
             role: "dialog",
             "aria-modal": "true",
             "aria-label": t(lang, "palette.title"),
@@ -121,20 +76,9 @@ pub fn CommandPalette(
                             on_close.call(());
                         }
                     }
-                    Key::Tab => {
-                        evt.stop_propagation();
-                    }
                     _ => {}
                 }
             },
-            span {
-                class: "palette-sentinel",
-                tabindex: 0,
-                onfocus: move |_| {
-                    move_palette_focus(PALETTE_FOCUS_LAST);
-                },
-                "Quick Actions focus boundary"
-            }
             div { class: "palette-inner",
                 input {
                     class: "palette-input",
@@ -181,14 +125,6 @@ pub fn CommandPalette(
                         }
                     }
                 }
-            }
-            span {
-                class: "palette-sentinel",
-                tabindex: 0,
-                onfocus: move |_| {
-                    move_palette_focus(PALETTE_FOCUS_FIRST);
-                },
-                "Quick Actions focus boundary"
             }
         }
     }

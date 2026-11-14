@@ -126,22 +126,6 @@ actions normally.
 
 ## Navigation Limitations
 
-### Quick Actions Reverse Tab Traversal Is Deferred
-
-Quick Actions opens with Ctrl+P and supports search, arrow-key command
-selection, Enter execution, and Escape/Ctrl+P dismissal. Reverse Tab traversal
-inside the Quick Actions panel is a known keyboard focus limitation in this
-release.
-
-**Why:** Repeated fixes around native Shift+Tab traversal and focus trapping
-were brittle in the Dioxus WebView event stack. The remaining focus model work
-is tracked as an RFC-059 keyboard follow-up.
-
-**Owner:** RFC-059.
-
-**Workaround:** Use the search field and arrow keys to choose a command, then
-press Enter. Use Escape or Ctrl+P to dismiss Quick Actions.
-
 ### Keyboard Shortcuts Stop Working After a View Change or a Save (WebView constraint)
 
 Keyboard shortcuts are delivered to the application window. When an action
@@ -156,23 +140,16 @@ document is saved correctly — only the keyboard stops responding.
 
 Zooming shows it as well: after zooming in with Enter, Esc often does not zoom
 back out, because focus was lost during the zoom itself. Ctrl+` for plain file
-text, and typing straight into the Search panel after Ctrl+F, can be affected
-the same way.
+text can be affected the same way.
 
-**Why:** Restoring focus after the view re-renders needs programmatic
-`element.focus()` calls in the Dioxus WebView environment, which are not
-implemented in this release. The shortcuts themselves are correctly bound; they
-are simply not reached.
+**Why:** When the element that holds focus is removed, the WebView leaves focus
+on the document body and does not say so; nothing in this release puts it back.
+The shortcuts themselves are correctly bound; they are simply not reached.
 
-**Owner:** RFC-059 §6.2a and §6.2b.
+**Owner:** RFC-059 §6.2a (§6.2b, the search field, is fixed).
 
 **Workaround:** Click once anywhere in the window, or press Tab, to put focus
 back inside it — shortcuts then work normally.
-
-**The search panel is the exception.** Ctrl+F opens it, but the field does not
-take focus, and Tab does not solve it: Tab starts again from the toolbar's
-Open button, so you would have to tab through the whole window to reach the
-field. Click the search field before typing.
 
 Every affected action also has an on-screen control: use the "Document"
 breadcrumb to zoom out, and the toolbar button for plain file text.

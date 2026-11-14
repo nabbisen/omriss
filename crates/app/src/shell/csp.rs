@@ -17,15 +17,16 @@
 //!    `connect-src` fixes this on Linux (verified); on Windows it is unverified.
 //! 2. **`script-src` blocks `document::eval`.** dioxus-desktop runs it through
 //!    `new AsyncFunction(...)`, which CSP treats as `eval` and permits only with
-//!    `'unsafe-eval'`. omriss calls `document::eval` at eleven sites (modal and
-//!    row-menu focus, the palette, the preview, the shell's key handling). With
-//!    the policy applied, a dialog opens with nothing focused — Task 019's
-//!    "Cancel is focused" is lost — and the other eval-driven behaviour fails
-//!    the same way. Observed violation: `script-src eval`.
+//!    `'unsafe-eval'`. omriss calls `document::eval` at one site: the
+//!    focus script `omriss-components` installs at start-up (RFC-059 §12; it
+//!    replaced the scattered ones). With the policy applied that script never
+//!    runs, so a dialog opens with nothing focused — Task 019's "Cancel is
+//!    focused" is lost — and Tab is no longer contained. Observed violation:
+//!    `script-src eval`.
 //!
 //! `'unsafe-eval'` is never conceded (RFC-064 §4.3, H3 handoff §5.1), so (2)
 //! cannot be fixed by editing this policy: it needs either an owner/architect
-//! decision to concede it, or the eleven call sites to stop using `eval`.
+//! decision to concede it, or the one call site to stop using `eval`.
 //!
 //! The constant and its tests stay so the policy has a tested home. The tests
 //! pin which directives may carry `'unsafe-inline'` and refuse every other

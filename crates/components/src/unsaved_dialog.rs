@@ -28,6 +28,8 @@ pub fn UnsavedDialog(locale: Signal<Locale>, on_choice: EventHandler<UnsavedChoi
         // Accessible modal overlay (RFC-028 focus trap expected by M6).
         div {
             class: "modal-overlay",
+            "data-focus-scope": "contain",
+            "data-focus-arrows": "true",
             role: "dialog",
             "aria-modal": "true",
             "aria-labelledby": "unsaved-title",

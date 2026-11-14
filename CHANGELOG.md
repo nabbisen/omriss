@@ -44,6 +44,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Ctrl+F puts the cursor in the search field** (RFC-059 §6.2b). The field's
+  `autofocus` was never honoured by the WebView, so the panel opened with focus
+  left where it was.
+- **Shift+Tab no longer leaves Quick Actions** (RFC-059 §6.2, `RFC048-QA-019`):
+  Tab and Shift+Tab cycle inside it at both ends. Dialogs, menus and the
+  preview take their initial focus from the same single script, which replaces
+  the scattered ones and the two invisible focus-boundary elements Quick
+  Actions used (their English text was readable by a screen reader).
 - Unsaved changes can no longer be hidden by a hash collision: omriss now keeps
   the saved text and compares it exactly, instead of comparing a length and a
   digest (RFC-069 §2.3). Undoing back to the saved text still reads as clean.

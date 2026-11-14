@@ -14,7 +14,6 @@
 
 mod create_buttons;
 mod draft;
-mod menu_focus;
 mod node_tree;
 mod row_menu;
 
@@ -28,7 +27,6 @@ use omriss_ui::{DocumentMapNode, EditorSession, ViewMode, node_id_from_raw};
 use crate::structure_request::StructureRequest;
 use create_buttons::SelectedSectionCreateButtons;
 use draft::{commit_draft_if_dirty, sync_draft};
-use menu_focus::focus_open_row_menu;
 use node_tree::{collect_ancestors, find_node, icon_class, to_item_node};
 use row_menu::NodeRowMenu;
 
@@ -369,7 +367,6 @@ pub fn DocumentMapPane(
                                             map_root_sig.set(Some(fresh_root));
                                             menu_node_sig.set(Some(menu_node));
                                             menu_open_for.set(Some(raw_id));
-                                            focus_open_row_menu(raw_id);
                                         }
                                     },
                                     onkeydown: move |ev| {
@@ -407,7 +404,6 @@ pub fn DocumentMapPane(
                                             map_root_sig.set(Some(fresh_root));
                                             menu_node_sig.set(Some(menu_node));
                                             menu_open_for.set(Some(raw_id));
-                                            focus_open_row_menu(raw_id);
                                         }
                                     },
                                     "⋯"

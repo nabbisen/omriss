@@ -24,7 +24,7 @@ use omriss_components::{
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
     SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar,
     StructureDialog, StructureRequest, Toolbar, UnsavedChoice, UnsavedDialog, WelcomeScreen,
-    focus_active_modal, focus_active_palette, trap_modal_tab, use_structure_requests,
+    use_focus_script, use_structure_requests,
 };
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -35,6 +35,9 @@ pub fn App() -> Element {
     let initial_settings = try_consume_context::<AppSettings>().unwrap_or_default();
     let startup_arg =
         try_consume_context::<crate::cli::StartupArg>().unwrap_or(crate::cli::StartupArg::None);
+
+    // RFC-059 §12: the one script that owns focus (scopes, containment).
+    use_focus_script();
 
     // ── signals ───────────────────────────────────────────────────────────────
 
@@ -119,9 +122,6 @@ pub fn App() -> Element {
     let on_keydown = use_callback(move |event: Event<KeyboardData>| {
         let active_modal = modal.read().clone();
         if !matches!(active_modal, Modal::None) {
-            if trap_modal_tab(&event) {
-                return;
-            }
             if matches!(event.key(), Key::Escape) {
                 event.stop_propagation();
                 event.prevent_default();
@@ -166,12 +166,6 @@ pub fn App() -> Element {
                 po.set(false);
                 return;
             }
-            if !matches!(
-                event.key(),
-                Key::ArrowDown | Key::ArrowUp | Key::Home | Key::End | Key::Enter | Key::Tab
-            ) {
-                focus_active_palette();
-            }
             return;
         }
 
@@ -184,12 +178,6 @@ pub fn App() -> Element {
 
     let on_palette_execute =
         use_callback(move |id| dispatch_palette(id, ctx, search_open, preview_open));
-
-    use_effect(move || {
-        if !matches!(*modal.read(), Modal::None) {
-            focus_active_modal();
-        }
-    });
 
     // ── Document Map structure requests (RFC-069 §2.5) ────────────────────────
     // The Document Map posts a typed `StructureRequest`; it is resolved to a
@@ -207,15 +195,6 @@ pub fn App() -> Element {
                 modal.set(Modal::SectionTitle {
                     action,
                     initial_title,
-                });
-                // Focus the dialog input after the DOM fully settles. The
-                // button's `session.write().focus()` triggers DocumentMapPane's
-                // use_effect -> item_tree write -> another render+patch inside
-                // the first rAF; a second rAF fires after that patch.
-                spawn(async move {
-                    let _ = document::eval(
-                        "requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.split-dialog-input')?.focus()))",
-                    );
                 });
             }
         }

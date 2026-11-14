@@ -32,6 +32,8 @@ pub fn ErrorDialog(
     rsx! {
         div {
             class: "modal-overlay",
+            "data-focus-scope": "contain",
+            "data-focus-arrows": "true",
             role: "dialog",
             "aria-modal": "true",
             "aria-labelledby": "err-title",

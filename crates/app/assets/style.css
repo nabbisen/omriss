@@ -509,14 +509,6 @@ textarea.raw-editor:focus { outline: none; border-color: var(--accent); }
   padding-top: 80px;
   z-index: 1100;
 }
-.palette-sentinel {
-  position: fixed;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 .palette-inner {
   background: var(--panel);
   border: 1px solid var(--panel-edge);
