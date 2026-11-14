@@ -170,7 +170,10 @@ gui_launch() {
   # The window and the bus registration both precede the WebView's content, so
   # a scenario's first read could race it (seen on a cold first launch of a
   # fresh build). The toolbar is rendered whatever is open: wait for it.
-  gui_wait_until "the application's content is in the accessible tree" gui_tree_has "[tool bar] 'File'"
+  # Match the role, not its name: the name is a translated label ("File",
+  # "ファイル"), so a name match times out on every non-English run, and it is
+  # the vestigial label RFC-060's P-4 will change.
+  gui_wait_until "the application's content is in the accessible tree" gui_tree_has "[tool bar]"
   gui_log "launched: zero instances before, pid $GUI_PID, niri window $GUI_NIRI_ID"
 }
 
