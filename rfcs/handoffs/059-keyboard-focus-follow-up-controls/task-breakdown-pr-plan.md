@@ -37,6 +37,11 @@ Docs in this PR: the limitations section on Quick Actions reverse Tab, and the
 Show the guard bites: put a `.focus()` back into `app.rs`, watch the test fail,
 restore.
 
+**Landed** (`481092f`, corrections `ab96585`). The corrections, from review:
+§12.2's editable-field, IME and type-to-field rules; the script enters scopes
+already present when it installs; the section-title dialog stops propagation
+of the Enter and Escape it handles.
+
 ## PR 2 — restoration (F-4, plain file text, launch)
 
 - §12.2 step 2: the observer's removal check and the three-step fallback.
@@ -47,6 +52,13 @@ restore.
 
 Docs in this PR: the limitations section on shortcuts after a view change or a
 save — deleted for Linux, reduced to what the owner's Windows run still shows.
+
+Carried from PR 1: **Rename → Esc leaves the view as it was** — one run,
+English, the baseline taken *after* the dialog opens (the heading and whether
+the editor is present). Inside this PR's GUI run, not a separate round.
+
+Not in this PR: the Document Map tree's double-handled keys (RFC-059 §12,
+owned by §6.5).
 
 ## PR 3 — Windows, only if needed
 

@@ -56,6 +56,7 @@ Through `scripts/gui/`, on X11/WebKitGTK, both `en_US` and `ja_JP` once.
 - [ ] Read-only plain file text: the `<pre>` takes focus and is announced by
       its translated name
 - [ ] Unchanged: dialog arrow keys, row-menu keys, preview Back
+- [ ] Rename → Esc leaves the view as it was (carried from PR 1)
 
 ## Windows (owner)
 
