@@ -264,6 +264,15 @@ gui_focused_is() {
   [ "$(grep -c . <<<"$got")" = 1 ] && grep -qF -- "[$1] '$2" <<<"$got"
 }
 
+# gui_focused_within ROLE NAME_PREFIX — exactly one node is focused, and it sits
+# inside the node `[ROLE] 'NAME_PREFIX…'` (a dialog, a menu, a landmark). The
+# assertion for "focus never left the overlay", which a name match cannot make:
+# a palette command and a toolbar button can share a name.
+gui_focused_within() {
+  local got; got=$(python3 -I "$GUI_DIR/atspi_focused.py" omriss --ancestors) || return 1
+  [ "$(grep -c . <<<"$got")" = 1 ] && grep -qF -- " < [$1] '$2" <<<"$got"
+}
+
 # gui_focused_none — no node is focused.
 gui_focused_none() { [ -z "$(gui_focused)" ]; }
 

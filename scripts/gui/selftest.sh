@@ -28,6 +28,7 @@ gui_press button 'Abstract'
 gui_wait_until "Abstract becomes the focused section" gui_tree_has "[heading] 'Abstract'"
 gui_focus_node entry 'Edit section text'
 gui_check "exactly one node is focused, and it is the editor" gui_focused_is entry 'Edit section text'
+gui_check "the editor is inside the Writing Area landmark" gui_focused_within landmark 'Writing Area'
 gui_check "an ancestor is not mistaken for the focus" bash -c '! grep -q "document web" <<<"$1"' _ "$(gui_focused)"
 
 echo "keyboard input"
