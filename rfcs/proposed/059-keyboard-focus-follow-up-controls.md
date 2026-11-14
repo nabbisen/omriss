@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 follow-up hardening (proposed)
-**Status.** Proposed — the 0.18.0 slice (§6.2 containment, §6.2a, §6.2b, RFC-060 F-4) is handed off design-first: `rfcs/handoffs/059-keyboard-focus-follow-up-controls/`. §6.1, §6.3, §6.4 and §6.5 remain open.
+**Status.** Proposed — the 0.18.0 slice (§6.2 containment, §6.2a, §6.2b, RFC-060 F-4) has an accepted design (§12) and is handed off: `rfcs/handoffs/059-keyboard-focus-follow-up-controls/`. Implementation not started. §6.1, §6.3, §6.4 and §6.5 remain open.
 **Document type:** Follow-up RFC design seed
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-049, RFC-050, RFC-051
@@ -324,3 +324,84 @@ Manual QA must cover:
    into the global status/footer language?
 4. Should header reachability be solved through direct focus, command coverage,
    or tab-order redesign?
+
+## 12. Accepted Design for 0.18.0 (architect, 2026-11-14)
+
+Scope: §6.2 containment, §6.2a, §6.2b and RFC-060 F-4. §6.1, §6.3, §6.4 and
+§6.5 remain open.
+
+Decided by the architect on the dev team's measurements
+(`../handoffs/059-keyboard-focus-follow-up-controls/design-output.md`,
+WebKitGTK 2.54.2). The measurements that decide it:
+
+- On WebKitGTK, Ctrl+S keeps the same focused element. Focus is lost by
+  **removal**: closing Quick Actions or a dialog, or entering plain file text,
+  leaves `document.activeElement` on `<body>` — every time, not sometimes.
+- That removal fires **no** `blur` or `focusout`. A `MutationObserver` sees it.
+- Nothing is focused at launch either, so the first shortcut after start-up is
+  lost too.
+
+### 12.1 The principle
+
+**Rust declares, one script acts.** Components say in markup what focus
+should do; one script, installed once from `crates/components/src/focus.rs`,
+does it. No component calls `document::eval` to move focus, and no
+per-overlay or per-transition focus code exists.
+
+| Markup | Meaning |
+|---|---|
+| `data-focus-scope="contain"` | a dialog, Quick Actions or a menu: takes initial focus, keeps Tab and Shift+Tab inside |
+| `data-focus-scope="panel"` | the search panel, the preview: takes initial focus, does **not** contain Tab |
+| `data-focus-arrows` | on a scope: arrow keys, Home and End move between its controls (dialogs and menus today; not Quick Actions, whose arrows move the active result) |
+| `autofocus` | the control a scope focuses first; otherwise its first focusable control |
+| `data-focus-return="ID"` | on a control that opens a scope: focus returns to element `ID`, not to the control (a row-menu item returns to its row's "Section actions" button, since the menu closes when its dialog opens) |
+| `data-focus-primary` | at most one per view: the view's primary surface |
+
+### 12.2 The script
+
+One `MutationObserver` on the application root, one capture-phase `keydown`
+listener on the document.
+
+1. **A scope is added:** remember the element that had focus (or its
+   `data-focus-return` target), then focus the scope's first control.
+2. **Focus is left on `<body>`** — checked one `requestAnimationFrame` after a
+   batch of mutations, and only when `document.hasFocus()`, so another window's
+   focus is never taken: focus the first of
+   (a) the return target of the scope that just closed, if it is still in the
+   document;
+   (b) the current `data-focus-primary` element;
+   (c) `div.app`.
+   This one rule covers closing every overlay, a view change that removes the
+   focused element, and launch. Restoration has no second code path.
+3. **Tab or Shift+Tab inside a `contain` scope**, and arrows inside a
+   `data-focus-arrows` scope: move focus within the topmost scope and call
+   `preventDefault()`. This is synchronous inside the page, so it needs neither
+   Rust nor a second copy of the keymap.
+
+Shortcuts stay in Rust on `div.app`. Catching keys at the document level
+instead is rejected: deciding `preventDefault()` for a shortcut would need the
+keymap duplicated in JavaScript (handoff §3, confirmed by the measurements).
+
+### 12.3 Primary surfaces
+
+| View | `data-focus-primary` |
+|---|---|
+| Markdown section focused | the section `textarea` |
+| structured (JSON) node focused | its editor control |
+| plain file text, editing | the raw editor |
+| plain file text, read-only | the `<pre>`, made `tabindex="0"` with a translated accessible name, so a keyboard user can scroll it |
+| outline, welcome | none — `div.app` |
+
+Choosing a search result moves the user to a section on purpose; the host then
+focuses that section's primary surface through `focus.rs`'s one explicit call.
+
+Document Map rows are not focusable today, so outline mode falls back to
+`div.app`. Making them focusable is §6.5; the table gains a row when it lands.
+
+### 12.4 Windows
+
+WebView2 is measured by the owner, with the checklist in `design-output.md`
+§5. If it shows that the web view itself loses the keyboard — not just that
+focus sits on `<body>` — then a page-side script cannot fix it, and a
+host-side focus call is a design change that comes back to the architect. It
+is not built speculatively.

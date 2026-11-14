@@ -17,20 +17,21 @@ is the same mechanism and the fix below absorbs it.
 
 **Out of scope:** §6.1 header reachability, §6.3 pending-draft undo, §6.4
 dirty indicators, §6.5 direct focus commands. They are design questions of
-their own and stay in the RFC. §6.5 will be cheap once this lands; that is
-deliberate, not an invitation to do it now.
+their own and stay in the RFC.
 
-**This is a two-phase handoff.** RFC-059 §7 says the design is settled before
-implementation, and the two WebViews are known to disagree about focus, so
-the first deliverable is a short design note backed by measurements — no
-product code. The architect reviews it; implementation starts after.
+**The design is RFC-059 §12.** It is the authority; where anything in this
+directory disagrees with it, §12 wins.
+
+How it got there: Phase A was a technical investigation by the dev team —
+measurements on the real WebView, a throwaway prototype, and the owner's
+Windows checklist — reported in `design-output.md`. The architect made the
+design decisions from those findings and recorded them in §12. The report's
+own recommendations are input to that, not decisions.
 
 Files:
 
-- `implementation-handoff.md` — the cause, the recommended design, what
-  Phase A must measure
-- `task-breakdown-pr-plan.md` — Phase A, then four PRs
+- `implementation-handoff.md` — the cause, and what the investigation was asked
+- `design-output.md` — the investigation's findings (Phase A, done)
+- `task-breakdown-pr-plan.md` — three PRs, the third only if Windows needs it
 - `acceptance-qa-checklist.md` — gates and proofs, including the owner's
   Windows check
-
-Phase A hands back **one** file: `design-output.md` in this directory.

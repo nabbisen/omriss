@@ -4,6 +4,13 @@ Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
 
 Lifecycle status: inherited from RFC-059.
 
+> **The design is RFC-059 §12, decided by the architect on the Phase A
+> findings.** §3 below was the architect's starting proposal and §4–§5 what the
+> investigation was asked; they are kept as the record. Where they differ from
+> §12 — the fallback is markup (`data-focus-primary`), not a Rust function; one
+> observer does restoration for every case, so there is no separate per-close
+> path — §12 wins.
+
 ---
 
 ## 1. The one cause
@@ -25,7 +32,8 @@ goes**, in three places that need one.
 
 ## 2. What exists today
 
-Focus is handled in four places, by three different techniques:
+Focus is handled in five places, by three different techniques (the fifth,
+`preview_pane.rs`, was found by Phase A):
 
 | Where | Technique |
 |---|---|
@@ -66,7 +74,7 @@ view mode, focused section, active node — so put **that** in Rust and test it
 at level 1. Only "focus this element" is JavaScript.
 
 **Rule 3 — re-render.** After a render, focus must not be on `<body>` while
-the window is the active one. Two ways to get there; Phase A decides:
+the window is the active one. Two ways to get there; Phase A measures which applies:
 
 - **(a) don't replace the element.** Find out *which* element Ctrl+S replaces
   and why. Dioxus patches templates in place, so a focused `<textarea>` being
@@ -121,21 +129,23 @@ documentation. Use `scripts/gui/` on Linux (WebKitGTK); §4.6 is the owner's.
    run on Windows for questions 1 and 3 — keys pressed, what to look at, what
    each outcome means. The owner runs it; do not guess its result.
 
-## 5. `design-output.md` — what to hand back
+## 5. `design-output.md` — what the investigation reports
 
 - The answers to §4.1–§4.5, each with its evidence.
-- The design: accept §3 or say what changes and why.
-- The restoration table: every transition in the acceptance checklist, with
-  its target.
+- Observations that bear on §3: where the measurements contradict it, or
+  something it did not foresee. Recommendations are welcome; the architect
+  decides.
+- The current focus after every transition in the acceptance checklist —
+  measured, or marked not measured.
 - The owner's Windows checklist (§4.6).
 - Anything found that changes scope — say so, and stop there.
 
-Short. The design note is input to a review, not documentation.
+Short. The report is input to the architect's design decision, not
+documentation.
 
 ## 6. Constraints
 
-1. `omriss-core` and `omriss-ui` do not change, except a pure fallback
-   function if it belongs in `omriss-ui`.
+1. `omriss-core` and `omriss-ui` do not change.
 2. No new crate dependency. `omriss-components` still builds for
    `wasm32-unknown-unknown`.
 3. No new shortcut and no new command — §6.5 is out of scope.
@@ -157,7 +167,7 @@ Per the GUI rules' Test Optimization Rules.
 
 | Question | Level | Evidence |
 |---|---|---|
-| Is the restoration target right for every view-mode, overlay and section-state combination? | 1 — unit tests on the fallback function | test table |
+| Does every view render at most one `data-focus-primary`, on the right element? | 2 — Dioxus runtime test per view | test results |
 | Is focus code in one place only? | 1 — source-scanning test | the guard, and its deliberate break |
 | Does every overlay root carry the scope marker? | 2 — Dioxus runtime test rendering each overlay | test results |
 | After each transition, is exactly one node focused, the expected one? | 3 — `scripts/gui/` on X11/WebKitGTK | AT-SPI focused node, per transition |

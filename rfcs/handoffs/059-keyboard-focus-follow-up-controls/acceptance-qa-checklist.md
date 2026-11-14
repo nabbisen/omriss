@@ -6,15 +6,9 @@ Lifecycle status: inherited from RFC-059.
 
 ---
 
-## Phase A
+## Phase A — done
 
-- [ ] `design-output.md` answers the implementation handoff §4.1–§4.5, each
-      with its evidence
-- [ ] The restoration table covers every transition below
-- [ ] The owner's Windows checklist is written, and runnable without reading
-      the code
-- [ ] `gui_focused` is in `lib.sh` and covered by `selftest.sh`, which passes
-- [ ] No product code changed
+Investigation reported in `design-output.md`; design decided in RFC-059 §12.
 
 ## Gates (each PR)
 
@@ -32,7 +26,11 @@ Lifecycle status: inherited from RFC-059.
       `cargo test` and bites (show it)
 - [ ] `palette-sentinel` and "Quick Actions focus boundary" appear nowhere —
       grep output in the report
-- [ ] Every overlay root renders the scope marker — level-2 test
+- [ ] Every overlay root renders its `data-focus-scope` — level-2 test
+- [ ] Every view renders at most one `data-focus-primary`, on §12.3's element —
+      level-2 test
+- [ ] No component calls `document::eval` to move focus — the same guard, or
+      a grep in the report
 
 ## Transitions — exactly one node focused afterwards, the expected one
 
@@ -49,17 +47,25 @@ Through `scripts/gui/`, on X11/WebKitGTK, both `en_US` and `ja_JP` once.
       — that command's own focus (Search → the search field)
 - [ ] Quick Actions: Tab and Shift+Tab both cycle inside, at both ends
 - [ ] Each dialog: open → its preferred control; Cancel or Esc → the opener;
-      confirm → the table's target (delete especially: the opener is gone)
+      confirm → §12.2 step 2's fallback (delete especially: the opener is gone)
+- [ ] A dialog opened from a row menu: Cancel → the row's "Section actions"
+      button (`data-focus-return`)
+- [ ] A search result chosen → that section's primary surface
+- [ ] Launch, with a file and without → primary surface or `div.app`, and the
+      first shortcut works
+- [ ] Read-only plain file text: the `<pre>` takes focus and is announced by
+      its translated name
+- [ ] Unchanged: dialog arrow keys, row-menu keys, preview Back
 
 ## Windows (owner)
 
-- [ ] The owner's checklist, run against PR 4's build — result recorded as the
-      owner reported it
+- [ ] The owner's checklist (`design-output.md` §5), run against PR 2's build —
+      result recorded as the owner reported it
 
 ## Records
 
-- [ ] RFC-059 records the accepted design, and which sections landed; §6.1,
-      §6.3, §6.4 and §6.5 remain open
+- [ ] RFC-059's Status says which parts of §12 landed; §6.1, §6.3, §6.4 and
+      §6.5 remain open
 - [ ] `docs/src/known-limitations.md` matches what the evidence shows, changed
       in the PR that fixed each part
 
