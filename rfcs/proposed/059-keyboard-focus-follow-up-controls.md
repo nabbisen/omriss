@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 follow-up hardening (proposed)
-**Status.** Proposed
+**Status.** Proposed — the 0.18.0 slice (§6.2 containment, §6.2a, §6.2b, RFC-060 F-4) is handed off design-first: `rfcs/handoffs/059-keyboard-focus-follow-up-controls/`. §6.1, §6.3, §6.4 and §6.5 remain open.
 **Document type:** Follow-up RFC design seed
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-049, RFC-050, RFC-051
@@ -149,7 +149,7 @@ titles the page "Keyboard Shortcuts Stop Working **After a View Change**" and
 explains it through zooming. Ctrl+S changes no view. It does re-render — the
 status becomes "Saved" and the dirty markers clear — and that is apparently
 enough to replace the focused element, after which `div.app`'s `onkeydown`
-(`shell/app.rs:284-285`) never sees another key.
+(`shell/app.rs:235-236` as of 0.18.0 development) never sees another key.
 
 A user reading that page would not expect **saving** to cost them the keyboard,
 and saving is the most common action in an editor. The documentation is not
