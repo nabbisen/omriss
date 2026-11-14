@@ -2,6 +2,8 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
+use crate::draft_sync::commit_or_block;
+
 /// Maximum number of segments shown before collapsing the middle.
 const MAX_VISIBLE: usize = 4;
 
@@ -66,17 +68,8 @@ pub fn Breadcrumb(
                                 button {
                                     class: "crumb-btn",
                                     onclick: move |_| {
-                                        let snap = session.read().current_snapshot();
-                                        if let Some(snapshot) = snap {
-                                            let d = draft.read().clone();
-                                            if d != snapshot.body
-                                                && session.write()
-                                                    .commit_focused_body(&snapshot, d)
-                                                    .is_err()
-                                            {
-                                                status.set("error.stale_edit".into());
-                                                return;
-                                            }
+                                        if !commit_or_block(&mut session, &mut draft, &mut status) {
+                                            return;
                                         }
                                         if item.level.is_none() {
                                             session.write().show_outline();
@@ -103,13 +96,8 @@ pub fn Breadcrumb(
                 title: t(lang, "nav.up"),
                 "aria-label": t(lang, "nav.up"),
                 onclick: move |_| {
-                    let snap = session.read().current_snapshot();
-                    if let Some(s) = snap {
-                        let d = draft.read().clone();
-                        if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
-                            status.set("error.stale_edit".into());
-                            return;
-                        }
+                    if !commit_or_block(&mut session, &mut draft, &mut status) {
+                        return;
                     }
                     session.write().zoom_out();
                     let body = session

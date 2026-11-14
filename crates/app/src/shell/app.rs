@@ -18,6 +18,7 @@ use crate::shell::actions::{
 use crate::shell::app_ctx::{AppCtx, Modal};
 use crate::shell::dispatch::{dispatch_command, dispatch_palette, open_search_if_available};
 use crate::storage::settings::AppSettings;
+use omriss_components::draft_sync;
 use omriss_components::{
     CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
@@ -343,18 +344,11 @@ pub fn App() -> Element {
                         let mut session = session;
                         let mut draft = draft;
                         let mut status = status;
-                        let snap = session.read().current_snapshot();
-                        if let Some(s) = snap {
-                            let d = draft.read().clone();
-                            if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
-                                status.set("error.stale_edit".into());
-                                return;
-                            }
+                        if !draft_sync::commit_or_block(&mut session, &mut draft, &mut status) {
+                            return;
                         }
                         let _ = session.write().focus(id);
-                        let body = session.read().current_snapshot()
-                            .map(|s| s.body).unwrap_or_default();
-                        draft.set(body);
+                        draft_sync::sync(&session, &mut draft);
                     },
                 }
             }

@@ -8,6 +8,9 @@
 
 pub mod draft_sync;
 
+#[cfg(test)]
+mod commit_path_tests;
+
 mod breadcrumb;
 mod command_palette;
 mod confirm_delete_dialog;

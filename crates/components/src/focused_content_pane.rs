@@ -31,6 +31,7 @@ use omriss_core::DocumentFormat;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
+use super::draft_sync::{commit_and_resync, commit_or_block};
 use super::{Breadcrumb, PreviewPane};
 use structured::StructuredFocusView;
 
@@ -62,26 +63,8 @@ pub fn FocusedContentPane(
     let local_dirty = *draft.read() != snapshot.body;
 
     // Commit on blur (apply-on-navigation pattern: RFC-050).
-    let blur_base = snapshot.clone();
     let do_blur = move |_: Event<FocusData>| {
-        let body = draft.read().clone();
-        if body == blur_base.body {
-            return;
-        }
-        let result = session.write().commit_focused_body(&blur_base, body);
-        match result {
-            Ok(_) => {
-                let refreshed = session
-                    .read()
-                    .current_snapshot()
-                    .map(|s| s.body)
-                    .unwrap_or_default();
-                draft.set(refreshed);
-            }
-            Err(_) => {
-                status.clone().set("error.stale_edit".into());
-            }
-        }
+        commit_and_resync(&mut session, &mut draft, &mut status);
     };
 
     rsx! {
@@ -142,15 +125,8 @@ pub fn FocusedContentPane(
                             let currently_open = *preview_open.read();
                             if !currently_open {
                                 // Commit draft before preview (apply-on-navigation).
-                                let snap = session.read().current_snapshot();
-                                if let Some(s) = snap {
-                                    let d = draft.read().clone();
-                                    if d != s.body
-                                        && session.write().commit_focused_body(&s, d).is_err()
-                                    {
-                                        status.clone().set("error.stale_edit".into());
-                                        return;
-                                    }
+                                if !commit_and_resync(&mut session, &mut draft, &mut status) {
+                                    return;
                                 }
                             }
                             let mut po = preview_open;
@@ -185,15 +161,8 @@ pub fn FocusedContentPane(
                             key: "{child.id.0}",
                             onclick: move |_| {
                                 // Commit before zooming in.
-                                let snap = session.read().current_snapshot();
-                                if let Some(s) = snap {
-                                    let d = draft.read().clone();
-                                    if d != s.body
-                                        && session.write().commit_focused_body(&s, d).is_err()
-                                    {
-                                        status.clone().set("error.stale_edit".into());
-                                        return;
-                                    }
+                                if !commit_or_block(&mut session, &mut draft, &mut status) {
+                                    return;
                                 }
                                 let _ = session.write().focus(child.id);
                                 let body = session
