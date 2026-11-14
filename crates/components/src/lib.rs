@@ -12,6 +12,8 @@ mod focus;
 #[cfg(test)]
 mod commit_path_tests;
 #[cfg(test)]
+mod contrast_tests;
+#[cfg(test)]
 mod focus_path_tests;
 #[cfg(test)]
 mod source_scan;

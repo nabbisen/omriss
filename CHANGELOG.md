@@ -44,6 +44,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Text on coloured buttons is readable in both themes** (RFC-030's contrast
+  target, WCAG AA 4.5:1). The welcome screen's *Open…* button — dark text on the
+  light theme's blue — measured 3.71:1, and the *Delete* button's white on the dark
+  theme's red 2.52:1: the text colour was written as a literal while the
+  background changes with the theme. Text on an accent or danger background now has
+  its own per-theme token. The light theme's muted text (4.09:1 on panels) and
+  accent text (4.27:1) are darkened to pass, and an unused skip-link style is
+  removed. A test now checks every text-on-background pair in both themes, and
+  refuses a literal text colour.
 - **Focus no longer disappears** (RFC-059 §6.2a, RFC-060 F-4). When a dialog,
   Quick Actions, the search panel or the preview closes, or a view change removes
   the element that had focus, the WebView used to leave focus on the page

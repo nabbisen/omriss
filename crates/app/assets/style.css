@@ -7,6 +7,10 @@
   --accent: #4da3ff;
   --accent-soft: rgba(77, 163, 255, 0.14);
   --danger: #ff7a7a;
+  /* Text on a coloured background: the background token changes with the
+     theme, so the text colour must too (RFC-030). */
+  --on-accent: #0b1320;
+  --on-danger: #0b1320;
 }
 
 * { box-sizing: border-box; }
@@ -42,8 +46,8 @@ button {
 }
 button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 button:disabled { opacity: 0.4; cursor: default; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #0b1320; }
-button.primary:hover:not(:disabled) { color: #0b1320; filter: brightness(1.1); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button.primary:hover:not(:disabled) { color: var(--on-accent); filter: brightness(1.1); }
 
 .body { display: flex; flex: 1; min-height: 0; }
 
@@ -575,7 +579,7 @@ textarea.raw-editor:focus { outline: none; border-color: var(--accent); }
 .struct-btn--add:hover:not(:disabled) { background: var(--accent-soft); }
 .struct-btn--danger:hover:not(:disabled) { background: rgba(255,122,122,.12); }
 .btn-danger {
-  background: var(--danger); color: #fff; border-color: var(--danger);
+  background: var(--danger); color: var(--on-danger); border-color: var(--danger);
   border-radius: 6px; padding: 5px 14px; cursor: pointer;
 }
 .btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
@@ -603,10 +607,12 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
     --panel: #ebedf0;
     --panel-edge: #cdd1d8;
     --text: #1e2227;
-    --muted: #6b737d;
-    --accent: #1a6fcc;
-    --accent-soft: rgba(26, 111, 204, 0.12);
+    --muted: #5f6670;
+    --accent: #1866bd;
+    --accent-soft: rgba(24, 102, 189, 0.12);
     --danger: #c0392b;
+    --on-accent: #ffffff;
+    --on-danger: #ffffff;
   }
 }
 
@@ -625,15 +631,6 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   outline-offset: 2px;
   border-radius: 2px;
 }
-
-/* RFC-028: skip-link for keyboard users (hidden until focused) */
-.skip-link {
-  position: absolute; left: -999px; top: 4px;
-  background: var(--accent); color: #fff;
-  padding: 4px 10px; border-radius: 4px; z-index: 9999;
-  font-size: 13px; text-decoration: none;
-}
-.skip-link:focus { left: 8px; }
 
 /* ── M8/M9 additions (RFC-036..042) ─────────────────────────────────────── */
 
