@@ -251,6 +251,22 @@ gui__node_focused() {
   grep -F -- "[$1] '$2" <<<"$t" | grep -q 'focused'
 }
 
+# gui_focused — print the node(s) the tree reports as focused, one per line as
+# `[role] 'name'`. Prints nothing when none is: "no node is focused" is the F-4
+# defect (RFC-060), so an empty result is an answer, not a failure. Walks the
+# whole tree; see atspi_focused.py.
+gui_focused() { python3 -I "$GUI_DIR/atspi_focused.py" omriss; }
+
+# gui_focused_is ROLE NAME_PREFIX — exactly one node is focused, and it is that
+# one. The assertion a focus transition wants: "one node, the expected one".
+gui_focused_is() {
+  local got; got=$(gui_focused) || return 1
+  [ "$(grep -c . <<<"$got")" = 1 ] && grep -qF -- "[$1] '$2" <<<"$got"
+}
+
+# gui_focused_none — no node is focused.
+gui_focused_none() { [ -z "$(gui_focused)" ]; }
+
 # gui_focus_node ROLE NAME_PREFIX — move keyboard focus to a node through AT-SPI
 # and assert that it arrived.
 gui_focus_node() {
