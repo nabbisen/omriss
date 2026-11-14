@@ -377,6 +377,20 @@ listener on the document.
    `data-focus-arrows` scope: move focus within the topmost scope and call
    `preventDefault()`. This is synchronous inside the page, so it needs neither
    Rust nor a second copy of the keymap.
+   - **Editable fields keep their keys.** Arrows, Home and End are not taken
+     from a text `input`, a `textarea` or an editable element: they move the
+     caret. Tab still moves between controls.
+   - **IME composition is never interrupted.** A key with `isComposing` set
+     is left alone, Tab included.
+4. **Typing returns to the field.** In a `contain` scope whose `autofocus`
+   control is a text field, a printable key pressed while focus is on another,
+   non-editable control (a command in Quick Actions, a dialog button) first
+   moves focus to that field, without `preventDefault()`, so the character
+   lands there. This keeps Quick Actions' type-to-filter, which the scattered
+   scripts used to provide.
+
+*Amended 2026-11-14, on PR 1's review: editable fields, IME and step 4 were
+not stated in the first version of this section.*
 
 Shortcuts stay in Rust on `div.app`. Catching keys at the document level
 instead is rejected: deciding `preventDefault()` for a shortcut would need the
