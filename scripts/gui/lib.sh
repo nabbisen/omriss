@@ -167,6 +167,10 @@ gui_launch() {
   local rc=0
   python3 -I "$GUI_DIR/atspi_text.py" omriss frame '' >/dev/null 2>&1 || rc=$?
   [ "$rc" -ne 2 ] || gui_abort "omriss never appeared on the accessibility bus"
+  # The window and the bus registration both precede the WebView's content, so
+  # a scenario's first read could race it (seen on a cold first launch of a
+  # fresh build). The toolbar is rendered whatever is open: wait for it.
+  gui_wait_until "the application's content is in the accessible tree" gui_tree_has "[tool bar] 'File'"
   gui_log "launched: zero instances before, pid $GUI_PID, niri window $GUI_NIRI_ID"
 }
 
