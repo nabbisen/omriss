@@ -37,6 +37,15 @@ const FOCUS_SCRIPT: &str = r#"
   const focusables = (scope) =>
     Array.from(scope.querySelectorAll(FOCUSABLE)).filter(visible);
 
+  // Input types that are not text: a checkbox, a radio or a button has no caret.
+  const NON_TEXT = ['button', 'checkbox', 'radio', 'submit', 'reset', 'file',
+                    'color', 'range', 'image', 'hidden'];
+  const isTextInput = (el) =>
+    !!el && el.tagName === 'INPUT' && !NON_TEXT.includes((el.type || 'text').toLowerCase());
+  // A control with a caret: it keeps the arrows, Home and End.
+  const isEditable = (el) =>
+    !!el && (el.isContentEditable || el.tagName === 'TEXTAREA' || isTextInput(el));
+
   // Containment is the topmost `contain` scope: the last in document order.
   const topmost = () => {
     const all = document.querySelectorAll('[data-focus-scope="contain"]');
@@ -71,15 +80,41 @@ const FOCUS_SCRIPT: &str = r#"
     }
   }).observe(document.body, { childList: true, subtree: true });
 
+  // The script is installed after the first render, so a scope that is already
+  // in the document (a dialog opened at start-up) is never "added" to the
+  // observer: enter those too.
+  document.querySelectorAll('[data-focus-scope]').forEach(enter);
+
   const ARROWS = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Home', 'End'];
 
   document.addEventListener('keydown', (e) => {
+    // IME composition is never interrupted: not by Tab, not by anything.
+    if (e.isComposing) return;
+
     const scope = topmost();
     if (!scope) return;
-    // `key` is not always "Tab" for Shift+Tab (X11 reports ISO_Left_Tab), so
-    // the physical `code` counts too.
+
+    // Typing returns to the field. A printable key pressed on a control that is
+    // not a text field, in a scope whose first control is one (Quick Actions'
+    // input, a dialog's title), moves focus there *without* preventDefault, so
+    // the character lands in the field. Space on a button is its activation, not
+    // text, and is left alone.
+    const printable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+    if (printable) {
+      if (e.key === ' ' && e.target && e.target.tagName === 'BUTTON') return;
+      const field = firstControl(scope);
+      if (field && isTextInput(field) && !isEditable(e.target)) field.focus();
+      return;
+    }
+
+    // `key` is not always "Tab" for Shift+Tab: WebKitGTK reports "Unidentified"
+    // for Shift+Tab sent through xdotool (observed, WebKitGTK 2.54.2, with
+    // `code` "Tab"), so the physical `code` counts too.
     const isTab = e.key === 'Tab' || e.code === 'Tab';
-    if (!isTab && !(ARROWS.includes(e.key) && scope.hasAttribute('data-focus-arrows'))) return;
+    // Editable fields keep their caret keys: arrows, Home and End move the
+    // caret there. Tab is unaffected.
+    const caretKey = ARROWS.includes(e.key) && isEditable(e.target);
+    if (!isTab && !(ARROWS.includes(e.key) && scope.hasAttribute('data-focus-arrows') && !caretKey)) return;
 
     // Decided here, synchronously, so the key never reaches Rust or the
     // WebView's own traversal.

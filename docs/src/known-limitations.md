@@ -146,7 +146,7 @@ text can be affected the same way.
 on the document body and does not say so; nothing in this release puts it back.
 The shortcuts themselves are correctly bound; they are simply not reached.
 
-**Owner:** RFC-059 §6.2a (§6.2b, the search field, is fixed).
+**Owner:** RFC-059 §6.2a.
 
 **Workaround:** Click once anywhere in the window, or press Tab, to put focus
 back inside it — shortcuts then work normally.

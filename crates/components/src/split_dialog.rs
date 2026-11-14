@@ -67,11 +67,18 @@ pub fn SectionTitleDialog(
                     onkeydown: move |evt| {
                         use keyboard_types::Code;
                         match evt.data().code() {
+                            // Handled here, so it must not also reach `div.app`:
+                            // the dialog has closed by the time it bubbles, and
+                            // Enter and Escape are shortcuts there.
                             Code::Enter if !title.read().trim().is_empty() => {
+                                evt.stop_propagation();
                                 let t = title.read().trim().to_string();
                                 on_choice.call(SectionTitleChoice::Confirm(t));
                             }
-                            Code::Escape => on_choice.call(SectionTitleChoice::Cancel),
+                            Code::Escape => {
+                                evt.stop_propagation();
+                                on_choice.call(SectionTitleChoice::Cancel);
+                            }
                             _ => {}
                         }
                     },
