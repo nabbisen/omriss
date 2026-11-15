@@ -44,6 +44,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **The welcome screen fills the window.** Its block was content-sized, so the
+  status bar sat directly under it with empty space below; the status bar is now at
+  the bottom and the welcome block is centred in the free space, as its styling
+  intended.
 - **Text on coloured buttons is readable in both themes** (RFC-030's contrast
   target, WCAG AA 4.5:1). The welcome screen's *Open…* button — dark text on the
   light theme's blue — measured 3.71:1, and the *Delete* button's white on the dark
