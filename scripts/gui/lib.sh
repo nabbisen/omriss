@@ -25,6 +25,7 @@ GUI_REPO=$(cd "$GUI_DIR/../.." && pwd)
 : "${OMRISS_GUI_DISPLAY:=:1}"
 : "${OMRISS_GUI_LANG:=en_US.UTF-8}"
 : "${OMRISS_GUI_TIMEOUT:=15}"
+: "${OMRISS_GUI_THEME:=light}"
 
 GUI_PID=""        # the omriss process this run launched
 GUI_NIRI_ID=""    # its window, as niri knows it
@@ -143,6 +144,10 @@ gui_launch() {
   local file=${1:-}
   # An empty FILE launches with no argument: the welcome screen.
   [ -z "$file" ] || [ -f "$file" ] || gui_abort "no such file to open: $file"
+  case "$OMRISS_GUI_THEME" in
+    light|dark) ;;
+    *) gui_abort "OMRISS_GUI_THEME must be 'light' or 'dark', not '$OMRISS_GUI_THEME'" ;;
+  esac
   # Rule "One instance only": require zero before starting. Refusing here also
   # protects an omriss the user has open — this harness never stops that one.
   gui__no_process || gui_abort "an omriss process is already running; close it first"
@@ -151,12 +156,19 @@ gui_launch() {
   # The locale is pinned by unsetting LC_ALL / LC_MESSAGES / LANGUAGE as well as
   # setting LANG: on a machine whose shell sets LC_* to Japanese, LANG alone is
   # overridden and the run silently comes up in the wrong language.
+  #
+  # The theme is pinned the same way, with GTK_THEME. On the X11 backend the page's
+  # `prefers-color-scheme` follows GTK's own settings, which the isolated
+  # XDG_CONFIG_HOME hides — so without this an instance is always light, whatever the
+  # desktop says. GTK_THEME overrides those settings for this one process and
+  # touches nothing outside it (Task 025).
   env -u WAYLAND_DISPLAY -u LC_ALL -u LC_MESSAGES -u LANGUAGE \
     XDG_CONFIG_HOME="$OMRISS_GUI_WORK/xdg/config" \
     XDG_STATE_HOME="$OMRISS_GUI_WORK/xdg/state" \
     XDG_CACHE_HOME="$OMRISS_GUI_WORK/xdg/cache" \
     XDG_DATA_HOME="$OMRISS_GUI_WORK/xdg/data" \
     GDK_BACKEND=x11 DISPLAY="$OMRISS_GUI_DISPLAY" LANG="$OMRISS_GUI_LANG" \
+    GTK_THEME="Adwaita:$OMRISS_GUI_THEME" \
     setsid "$OMRISS_BIN" ${file:+"$file"} >"$OMRISS_GUI_WORK/omriss.log" 2>&1 &
 
   gui_wait_until "exactly one omriss process" gui__one_process

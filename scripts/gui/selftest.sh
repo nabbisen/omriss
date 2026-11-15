@@ -18,7 +18,14 @@ cp "$fixture" "$copy"
 original=$(gui_sha "$copy")
 
 echo "launch and read"
+# A theme other than light or dark is refused before anything starts.
+if ( OMRISS_GUI_THEME=blue gui_launch "$copy" ) >/dev/null 2>&1; then
+  gui_abort "gui_launch accepted OMRISS_GUI_THEME=blue"
+fi
+gui_log "ok: OMRISS_GUI_THEME=blue is refused"
 gui_launch "$copy"
+gui_check "the launch pinned the theme (GTK_THEME reached the process)" \
+  bash -c 'tr "\0" "\n" < /proc/$1/environ | grep -qx "GTK_THEME=Adwaita:$2"' _ "$GUI_PID" "$OMRISS_GUI_THEME"
 gui_check "the Document Map is in the accessible tree" gui_tree_has "[landmark] 'Document Map'"
 gui_check "the status bar is readable" gui_text 'status bar' ''
 # Launch used to leave nothing focused (RFC-059 PR 1 measured it); since PR 2 the

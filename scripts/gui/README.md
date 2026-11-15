@@ -109,6 +109,7 @@ Every function is prefixed `gui_`. An earlier copy of these helpers defined
 | `OMRISS_GUI_DISPLAY` | `:1` |
 | `OMRISS_GUI_LANG` | `en_US.UTF-8` — set `ja_JP.UTF-8` for a Japanese run |
 | `OMRISS_GUI_TIMEOUT` | `15` seconds per wait |
+| `OMRISS_GUI_THEME` | `light` — set `dark` for a dark run; anything else aborts. `gui_launch` sets `GTK_THEME=Adwaita:$OMRISS_GUI_THEME` on every launch, because on the X11 backend the page's `prefers-color-scheme` follows GTK's own settings, which the isolated config directory hides: without it every run is light whatever the desktop says |
 
 The application's own output goes to `$OMRISS_GUI_WORK/omriss.log`. When a
 launch times out waiting for a window, read that first: a binary that exits on
