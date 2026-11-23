@@ -65,6 +65,7 @@ what was once intended — the previous version of this table promised an
 | Windows | `omriss-X.Y.Z.msix` | **built automatically** by `release.yml` on a bare-semver tag, after `cargo test --workspace` passes, and uploaded as a run artifact. **Submitted to the Store by hand** — automated publishing is deferred (owner decision, 2026-11-03); the `publish` job is skipped unless the repository variable `STORE_PUBLISH` is `true` |
 | Any | crates.io: `omriss-core`, then `omriss-ui` | **by hand** at the tag, in that order (RFC-062 §10.1) |
 | Any | source archive of the tag | GitHub serves one for every tag; the release process does not build it |
+| Any | GitHub release | **by hand** at the tag. Its title is the bare version, `X.Y.Z` — the same as the tag, with no product name and no label: `gh release create X.Y.Z --title X.Y.Z` |
 | Linux | binary tarball, AUR `omriss` and `omriss-bin` | planned — RFC-072 |
 | Linux | Flatpak via Flathub | planned — RFC-074 |
 | macOS | app bundle | **not planned.** No Mac has been available to build or test on, and RFC-038 forbids claiming a platform that has not been run |
