@@ -20,6 +20,8 @@ mod focus_path_tests;
 #[cfg(test)]
 mod source_scan;
 #[cfg(test)]
+mod test_texts;
+#[cfg(test)]
 mod text_area_sites_tests;
 
 mod breadcrumb;

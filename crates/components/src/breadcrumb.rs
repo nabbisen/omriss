@@ -15,11 +15,10 @@ pub fn Breadcrumb(
     status: Signal<String>,
 ) -> Element {
     let lang = *locale.read();
-    let Some(snapshot) = session.read().current_snapshot() else {
+    let path = session.read().focused_path();
+    if path.is_empty() {
         return rsx! {};
-    };
-
-    let path = snapshot.path.clone();
+    }
     let total = path.len();
 
     let collapsed = total > MAX_VISIBLE;
@@ -73,7 +72,7 @@ pub fn Breadcrumb(
                                         class: "crumb-btn",
                                         title: "{label}",
                                         onclick: move |_| {
-                                            if item.level.is_none() {
+                                            if item.is_root {
                                                 open_overview(&mut session, &mut draft, &mut status);
                                             } else {
                                                 open_node(&mut session, &mut draft, &mut status, item.id);
@@ -101,5 +100,7 @@ pub fn Breadcrumb(
     }
 }
 
+#[cfg(test)]
+mod crumbs_tests;
 #[cfg(test)]
 mod tests;

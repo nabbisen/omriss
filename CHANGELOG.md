@@ -78,6 +78,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
   else in the file changed, and Undo took it back. The card set the editor's text
   from the wrong source, so omriss saw a change you had not made and committed it.
   The overview, Document Map, breadcrumb and search now open a node one way.
+- **With a JSON file open, every pane now reads the JSON structure** (RFC-085).
+  The overview, the section path above the editor, Esc and the up button, Search
+  and the statistics had read a Markdown heading parse of the JSON text, which
+  means nothing: the overview showed one "Document" card, the path was empty,
+  Esc always went to the overview, every search result was labelled "Document"
+  and opened the whole file, and the statistics said "0 sections". The overview
+  now shows the members of the current level, each labelled with what it is
+  (Text, Number, On/Off, or its item count); the path and Esc follow the
+  structure; Search looks at the decoded text of each value, labels a result
+  with its path and opens that value; and the statistics count values. The
+  statistics message and the cards' counts are now translated into Japanese.
+  Markdown behaves as before, except that the "Current Section" search scope
+  now also covers the sections under the focused one.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

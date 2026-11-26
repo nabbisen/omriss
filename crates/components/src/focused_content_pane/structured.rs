@@ -229,7 +229,8 @@ fn commit_raw_draft(
     }
 }
 
-fn kind_label(lang: Locale, kind: ValueKind) -> &'static str {
+/// The word the Writing Area, and an overview card, show for what a JSON value is.
+pub(crate) fn kind_label(lang: Locale, kind: ValueKind) -> &'static str {
     match kind {
         ValueKind::Text => t(lang, "focused_content.json.kind.text"),
         ValueKind::Number => t(lang, "focused_content.json.kind.number"),

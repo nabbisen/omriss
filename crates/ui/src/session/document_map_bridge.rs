@@ -1,20 +1,7 @@
-//! Builds a `DocumentMapNode` tree from the current session outline (RFC-049).
-//!
-//! This bridges `omriss_core::Outline` (Markdown-only, RFC-006/007) to the
-//! format-neutral `DocumentMapNode` used by the left-panel Document Map.
-//! Capability production is `omriss_core::formats::structure::markdown_node_capabilities`
-//! (RFC-053 S2); this module only projects the outline into `DocumentMapNode`s
-//! and tracks selection, which is session state rather than document
-//! structure (RFC-053 §14).
-//!
-//! RFC-054 J3: non-Markdown formats are bridged by `super::structure_bridge`
-//! instead, which projects a `DocumentFormatAdapter`'s `DocumentStructure`
-//! (JSON's real one, or `PlainTextAdapter`'s fallback) onto the same
-//! `DocumentMapNode` type — the Dioxus component that renders it is
-//! unchanged either way.
-
-use omriss_core::formats::structure::markdown_node_capabilities;
-use omriss_core::{DocumentFormat, NodeCapabilities, NodeId, Outline, StructureNodeKind};
+//! The Document Map's tree (RFC-049), projected from the session's
+//! `DocumentStructure` (RFC-085 §3.1) by `super::structure_bridge`. Selection is
+//! session state rather than document structure (RFC-053 §14), so it is added
+//! here, from the focused node.
 
 use crate::interface::document_map::DocumentMapNode;
 
@@ -24,47 +11,13 @@ impl super::EditorSession {
     /// Returns the root node. The root itself is not shown as a row; the
     /// caller renders `root.children`. `selected_id` is the currently focused
     /// `NodeId`, if any.
+    ///
+    /// Every format is projected from its `DocumentStructure` (RFC-085 §3.1):
+    /// for Markdown, `MarkdownAdapter`'s, whose capabilities are
+    /// `markdown_node_capabilities` (RFC-053 S2).
     pub fn document_map_nodes(&self) -> DocumentMapNode {
         let selected = self.view.focused();
-        match self.format {
-            DocumentFormat::Markdown => {
-                let outline = self.document.outline();
-                build_map_node(outline, outline.root_id(), selected)
-            }
-            _ => {
-                let structure = self.structure_or_fallback();
-                super::structure_bridge::document_map_node(&structure, selected)
-            }
-        }
-    }
-}
-
-fn build_map_node(outline: &Outline, id: NodeId, selected: Option<NodeId>) -> DocumentMapNode {
-    let node = outline
-        .node(id)
-        .expect("NodeId from same outline is always valid");
-
-    let children = node
-        .children
-        .iter()
-        .map(|&cid| build_map_node(outline, cid, selected))
-        .collect();
-
-    let (capabilities, kind) = if node.is_root() {
-        (NodeCapabilities::hidden(), StructureNodeKind::DocumentRoot)
-    } else {
-        (
-            markdown_node_capabilities(outline, id),
-            StructureNodeKind::MarkdownSection,
-        )
-    };
-
-    DocumentMapNode {
-        id: id.0,
-        title: node.title.clone(),
-        kind,
-        children,
-        is_selected: selected == Some(id),
-        capabilities,
+        let (structure, _) = self.pane_view();
+        super::structure_bridge::document_map_node(&structure, selected)
     }
 }

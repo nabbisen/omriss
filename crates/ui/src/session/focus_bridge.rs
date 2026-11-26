@@ -97,17 +97,9 @@ impl super::EditorSession {
     /// `document.source()` after undo would ever catch.
     pub(super) fn prune_dead_history(&mut self) -> bool {
         let mode_before = self.view.mode();
-        match self.format {
-            DocumentFormat::Markdown => {
-                let outline = self.document.outline();
-                self.view.retain_alive(|id| outline.contains(id));
-            }
-            _ => {
-                let structure = self.structure_or_fallback();
-                self.view
-                    .retain_alive(|id| structure.nodes.iter().any(|n| n.id == id));
-            }
-        }
+        // Every format: a target is alive while the structure has the node.
+        let (_, index) = self.pane_view();
+        self.view.retain_alive(|id| index.contains_key(&id));
         // If the current mode changed, a stale node was pruned.
         self.view.mode() != mode_before
     }

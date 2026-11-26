@@ -11,7 +11,7 @@ use std::cell::RefCell;
 
 use omriss_core::{
     Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
-    FocusSnapshot, OutlineItem, ReplaceSectionBody, document_newline,
+    FocusSnapshot, ReplaceSectionBody, document_newline,
 };
 
 use self::structure_bridge::StructureCache;
@@ -96,12 +96,11 @@ pub struct EditorSession {
 
 mod document_map_bridge;
 mod focus_bridge;
-mod outline_bridge;
+mod pane_structure;
 mod raw_edit;
 mod structural;
 mod structure_bridge;
 mod structured_edit;
-pub use outline_bridge::OutlineNode;
 pub use raw_edit::RawCommit;
 
 impl EditorSession {
@@ -257,63 +256,6 @@ impl EditorSession {
         self.document.can_redo()
     }
 
-    /// Top-level outline rows: the root's direct children, or just the root
-    /// for a document without headings.
-    pub fn outline_items(&self) -> Vec<OutlineItem> {
-        let root = self
-            .document
-            .focus_snapshot(self.document.outline().root_id())
-            .expect("root always exists");
-        if root.children.is_empty() {
-            vec![OutlineItem {
-                id: root.node_id,
-                title: root.title,
-                level: root.level,
-                child_count: 0,
-            }]
-        } else {
-            root.children
-        }
-    }
-
-    /// Outline items relevant to the current view:
-    /// - In overview mode: the top-level items (same as [`outline_items`]).
-    /// - In focus mode: the immediate children of the focused section.
-    ///
-    /// Used to populate the Document Map and the card list for keyboard
-    /// selection (RFC-011, RFC-014).
-    pub fn current_children(&self) -> Vec<OutlineItem> {
-        match self.view.focused() {
-            Some(_) => self
-                .current_snapshot()
-                .map(|s| s.children)
-                .unwrap_or_default(),
-            None => self.outline_items(),
-        }
-    }
-
-    /// Zooms out one level: moves focus to the parent section, or returns to
-    /// the outline overview if the current focus is a direct child of the root.
-    ///
-    /// This is the structural "Esc" action (RFC-014). It pushes the current
-    /// node onto the back history (via `ViewState::focus`/`show_outline`) so
-    /// the user can return forward with Alt+Right.
-    pub fn zoom_out(&mut self) {
-        let Some(id) = self.view.focused() else {
-            return;
-        };
-        let parent_id = self.document.outline().node(id).and_then(|n| n.parent_id);
-        match parent_id {
-            Some(pid) if pid != self.document.outline().root_id() => {
-                self.view.focus(pid);
-            }
-            _ => {
-                self.view.show_outline();
-            }
-        }
-        self.prune_dead_history();
-    }
-
     /// Returns to the whole-document outline view.
     pub fn show_outline(&mut self) {
         self.view.show_outline();
@@ -454,91 +396,6 @@ impl EditorSession {
             Some(id) => crate::editor::navigation::sibling_info(self.document.outline(), id),
             None => crate::editor::navigation::SiblingInfo::default(),
         }
-    }
-
-    /// Navigates to the parent section (or overview if parent is root).
-    /// Returns `true` if navigation happened.
-    pub fn navigate_parent(&mut self) -> bool {
-        let Some(id) = self.view.focused() else {
-            return false;
-        };
-        let outline = self.document.outline();
-        let Some(node) = outline.node(id) else {
-            return false;
-        };
-        match node.parent_id {
-            Some(pid) if pid != outline.root_id() => {
-                self.view.focus(pid);
-                true
-            }
-            Some(_) => {
-                self.view.show_outline();
-                true
-            }
-            None => false,
-        }
-    }
-
-    /// Navigates to the first child of the focused section.
-    pub fn navigate_first_child(&mut self) -> bool {
-        let Some(id) = self.view.focused() else {
-            return false;
-        };
-        let outline = self.document.outline();
-        let Some(node) = outline.node(id) else {
-            return false;
-        };
-        let Some(&child_id) = node.children.first() else {
-            return false;
-        };
-        self.view.focus(child_id);
-        true
-    }
-
-    /// Navigates to the previous sibling in source order.
-    pub fn navigate_prev_sibling(&mut self) -> bool {
-        let Some(id) = self.view.focused() else {
-            return false;
-        };
-        let info = crate::editor::navigation::sibling_info(self.document.outline(), id);
-        if let Some(prev) = info.prev_sibling {
-            self.view.focus(prev);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Navigates to the next sibling in source order.
-    pub fn navigate_next_sibling(&mut self) -> bool {
-        let Some(id) = self.view.focused() else {
-            return false;
-        };
-        let info = crate::editor::navigation::sibling_info(self.document.outline(), id);
-        if let Some(next) = info.next_sibling {
-            self.view.focus(next);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Searches the whole document for `query` (RFC-021).
-    pub fn search_document(&self, query: &str) -> Vec<crate::editor::search::SearchMatch> {
-        crate::editor::search::search_document(&self.document, query)
-    }
-
-    /// Searches only the focused section's body for `query`.
-    pub fn search_section(&self, query: &str) -> Vec<crate::editor::search::SearchMatch> {
-        match self.view.focused() {
-            Some(id) => crate::editor::search::search_section(&self.document, id, query),
-            None => crate::editor::search::search_document(&self.document, query),
-        }
-    }
-
-    /// Returns document statistics (RFC-046): word counts and section count.
-    pub fn stats(&self) -> crate::editor::stats::DocumentStats {
-        crate::editor::stats::compute_stats(&self.document, self.view.focused())
     }
 
     /// Renders the focused section body as HTML for the preview pane (RFC-045).

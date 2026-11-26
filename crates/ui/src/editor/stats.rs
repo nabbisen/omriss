@@ -4,17 +4,30 @@
 //! ASCII text and reasonable approximations for CJK-heavy documents where
 //! space-based word segmentation is conventional enough for a writing aid.
 
-use omriss_core::{Document, NodeId, Outline};
+use omriss_core::{DocumentFormat, DocumentStructure, NodeId, StructureNodeKind};
+
+use crate::editor::node_text::NodeText;
+
+/// What `section_count` counts: the format's own noun (RFC-085 §3.3 item 6).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum StatsUnit {
+    /// A Markdown document's sections.
+    #[default]
+    Sections,
+    /// A JSON document's values (its leaves; groups and lists are not counted).
+    Values,
+}
 
 /// Lightweight statistics for the status bar display.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DocumentStats {
-    /// Total word count across the whole canonical source.
+    /// Total word count across the document's text.
     pub total_words: usize,
-    /// Word count of the currently focused section body (0 in overview mode).
+    /// Word count of the focused node's text (0 in overview mode).
     pub focused_words: usize,
-    /// Number of named sections in the outline (root excluded).
+    /// Number of `unit`s in the document (the root excluded).
     pub section_count: usize,
+    pub unit: StatsUnit,
 }
 
 /// Counts the whitespace-delimited words in `text`.
@@ -22,35 +35,89 @@ pub fn word_count(text: &str) -> usize {
     text.split_whitespace().count()
 }
 
-/// Computes statistics for `doc`, optionally scoped to `focus_id`.
-pub fn compute_stats(doc: &Document, focus_id: Option<NodeId>) -> DocumentStats {
-    let section_count = non_root_section_count(doc.outline());
-    let total_words = word_count(doc.source());
-    let focused_words = focus_id
-        .and_then(|id| doc.outline().node(id))
-        .and_then(|n| doc.source().get(n.body_range.as_range()))
-        .map(word_count)
-        .unwrap_or(0);
-
+/// Statistics over a document's `structure`.
+///
+/// `texts` is every node's own text (`node_text::node_texts` over the whole
+/// document); `focus_ids` is the focused node and what is under it. A Markdown
+/// document counts the words of its whole source and, for the focused section,
+/// of its own body — as it always has. Any other format counts the words of the
+/// node texts, since its source is mostly syntax.
+pub fn compute_stats(
+    source: &str,
+    structure: &DocumentStructure,
+    texts: &[NodeText],
+    focus: Option<(NodeId, &[NodeId])>,
+) -> DocumentStats {
+    let markdown = structure.format == DocumentFormat::Markdown;
+    let unit = if markdown {
+        StatsUnit::Sections
+    } else {
+        StatsUnit::Values
+    };
+    let section_count = structure
+        .nodes
+        .iter()
+        .filter(|n| match unit {
+            StatsUnit::Sections => n.kind == StructureNodeKind::MarkdownSection,
+            StatsUnit::Values => n.kind == StructureNodeKind::Value,
+        })
+        .count();
+    let (total_words, focused_words) = if markdown {
+        let own = focus.and_then(|(id, _)| texts.iter().find(|t| t.id == id));
+        (
+            word_count(source),
+            own.map(|t| word_count(&t.text)).unwrap_or(0),
+        )
+    } else {
+        let total = texts.iter().map(|t| word_count(&t.text)).sum();
+        let focused = focus
+            .map(|(_, ids)| {
+                texts
+                    .iter()
+                    .filter(|t| ids.contains(&t.id))
+                    .map(|t| word_count(&t.text))
+                    .sum()
+            })
+            .unwrap_or(0);
+        (total, focused)
+    };
     DocumentStats {
         total_words,
         focused_words,
         section_count,
+        unit,
     }
-}
-
-fn non_root_section_count(outline: &Outline) -> usize {
-    // `iter()` yields all nodes; skip the root (has no level).
-    outline.iter().filter(|n| n.level.is_some()).count()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omriss_core::Document;
+    use crate::editor::node_text::{node_texts, preorder, subtree};
+    use omriss_core::{Document, DocumentFormatAdapter, MarkdownAdapter};
 
     fn doc(md: &str) -> Document {
         Document::parse(md.to_string()).unwrap()
+    }
+
+    /// What a Markdown session computes.
+    fn compute_stats(d: &Document, focus: Option<NodeId>) -> DocumentStats {
+        let structure = MarkdownAdapter
+            .build_structure(d.source(), d.revision())
+            .unwrap();
+        let index = structure
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.id, i))
+            .collect();
+        let texts = node_texts(
+            d.source(),
+            &structure,
+            &index,
+            &preorder(&structure, &index),
+        );
+        let ids = focus.map(|id| subtree(&structure, &index, id));
+        super::compute_stats(d.source(), &structure, &texts, focus.zip(ids.as_deref()))
     }
 
     #[test]

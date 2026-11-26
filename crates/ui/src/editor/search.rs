@@ -1,20 +1,28 @@
-//! Document search over the canonical Markdown source (RFC-021).
+//! Document search over each node's own text (RFC-021, RFC-085 §3.3 item 5).
 //!
-//! Search is purely read-only: it never mutates the document. Results are
-//! grouped by section node so the UI can show the containing path and the
-//! user can navigate directly to the matching section.
+//! Search is purely read-only: it never mutates the document. It reads
+//! [`NodeText`]s, which come from the document's `DocumentStructure`, so it
+//! works the same for every format: a Markdown section's body, a JSON value.
+//! Each result names the node it was found in, so the UI can show the node's
+//! path and open it. Titles are RFC-077's: one more kind of result, found on the
+//! same walk.
 
-use omriss_core::{ByteRange, Document, NodeId, OutlineItem};
+use omriss_core::{ByteRange, NodeId};
+
+use crate::editor::node_text::NodeText;
+use crate::interface::node_item::NodeItem;
 
 /// One match of a search query inside the canonical source text.
 #[derive(Debug, Clone)]
 pub struct SearchMatch {
-    /// Byte range in the full canonical source text (RFC-002 ByteRange).
+    /// Byte range in the full canonical source text (RFC-002 ByteRange): the
+    /// match itself in a Markdown body; the whole value for a JSON value, whose
+    /// text is shown decoded and so has no byte offsets of its own.
     pub range: ByteRange,
-    /// The section whose body range contains this match.
+    /// The node whose own text contains this match.
     pub containing_node: NodeId,
     /// Breadcrumb path from root to `containing_node`.
-    pub path: Vec<OutlineItem>,
+    pub path: Vec<NodeItem>,
     /// Short text snippet around the match for display.
     pub preview: String,
 }
@@ -84,96 +92,76 @@ fn make_preview(body: &str, match_start: usize) -> String {
 
 // ── public API ────────────────────────────────────────────────────────────────
 
-/// Searches the body of every section in `doc` for `query`.
-/// Results are in source order. Empty query returns no results.
-pub fn search_document(doc: &Document, query: &str) -> Vec<SearchMatch> {
+/// Searches `texts` (in document order) for `query`; results are in that order.
+/// Empty query returns no results. `path_of` gives a node's path from the root.
+pub fn search_texts(
+    texts: &[NodeText],
+    query: &str,
+    path_of: impl Fn(NodeId) -> Vec<NodeItem>,
+) -> Vec<SearchMatch> {
     if query.trim().is_empty() {
         return vec![];
     }
-    let source = doc.source();
-    let outline = doc.outline();
     let mut results = Vec::new();
-
-    for node in outline.iter() {
-        let body = match source.get(node.body_range.as_range()) {
-            Some(s) => s,
-            None => continue,
-        };
-        for (start_in_body, end_in_body) in find_all(body, query) {
-            let abs_start = node.body_range.start + start_in_body;
-            let abs_end = node.body_range.start + end_in_body;
-            let preview = make_preview(body, start_in_body);
-            let path = outline
-                .path(node.id)
-                .unwrap_or_default()
-                .iter()
-                .map(|n| OutlineItem {
-                    id: n.id,
-                    title: n.title.clone(),
-                    level: n.level,
-                    child_count: n.children.len(),
-                })
-                .collect();
+    for node in texts {
+        let hits = find_all(&node.text, query);
+        if hits.is_empty() {
+            continue;
+        }
+        let path = path_of(node.id);
+        for (start, end) in hits {
+            let range = if node.exact {
+                ByteRange::new(node.range.start + start, node.range.start + end)
+                    .unwrap_or(ByteRange::empty_at(node.range.start + start))
+            } else {
+                node.range
+            };
             results.push(SearchMatch {
-                range: ByteRange::new(abs_start, abs_end).unwrap_or(ByteRange::empty_at(abs_start)),
+                range,
                 containing_node: node.id,
-                path,
-                preview,
+                path: path.clone(),
+                preview: make_preview(&node.text, start),
             });
         }
     }
     results
 }
 
-/// Searches only the body of the node identified by `scope_node`.
-/// Falls back to whole-document search when `scope_node` does not exist.
-pub fn search_section(doc: &Document, scope_node: NodeId, query: &str) -> Vec<SearchMatch> {
-    if query.trim().is_empty() {
-        return vec![];
-    }
-    let source = doc.source();
-    let outline = doc.outline();
-    let Some(node) = outline.node(scope_node) else {
-        return search_document(doc, query);
-    };
-    let body = match source.get(node.body_range.as_range()) {
-        Some(s) => s,
-        None => return vec![],
-    };
-    let path: Vec<OutlineItem> = outline
-        .path(node.id)
-        .unwrap_or_default()
-        .iter()
-        .map(|n| OutlineItem {
-            id: n.id,
-            title: n.title.clone(),
-            level: n.level,
-            child_count: n.children.len(),
-        })
-        .collect();
-
-    find_all(body, query)
-        .into_iter()
-        .map(|(start_in_body, end_in_body)| {
-            let abs_start = node.body_range.start + start_in_body;
-            let abs_end = node.body_range.start + end_in_body;
-            SearchMatch {
-                range: ByteRange::new(abs_start, abs_end).unwrap_or(ByteRange::empty_at(abs_start)),
-                containing_node: node.id,
-                path: path.clone(),
-                preview: make_preview(body, start_in_body),
-            }
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omriss_core::Document;
+    use crate::editor::node_text::{node_texts, preorder, subtree};
+    use omriss_core::{Document, DocumentFormatAdapter, MarkdownAdapter};
 
     fn doc(md: &str) -> Document {
         Document::parse(md.to_string()).unwrap()
+    }
+
+    /// The search a Markdown session runs, over `scope`'s subtree (or all of it).
+    fn run(d: &Document, scope: Option<NodeId>, query: &str) -> Vec<SearchMatch> {
+        let structure = MarkdownAdapter
+            .build_structure(d.source(), d.revision())
+            .unwrap();
+        let index = structure
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.id, i))
+            .collect();
+        let ids = match scope {
+            Some(id) => subtree(&structure, &index, id),
+            None => preorder(&structure, &index),
+        };
+        let texts = node_texts(d.source(), &structure, &index, &ids);
+        search_texts(&texts, query, |_| Vec::new())
+    }
+
+    fn search_document(d: &Document, query: &str) -> Vec<SearchMatch> {
+        run(d, None, query)
+    }
+
+    fn search_section(d: &Document, scope: NodeId, query: &str) -> Vec<SearchMatch> {
+        run(d, Some(scope), query)
     }
 
     #[test]

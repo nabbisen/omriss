@@ -3,10 +3,12 @@
 //! (RFC-011) with keyboard-selected highlighting driven by `selected_card`.
 
 use dioxus::prelude::*;
+use omriss_core::StructureNodeKind;
 use omriss_ui::EditorSession;
-use omriss_ui::i18n::{Locale, t};
+use omriss_ui::i18n::{Locale, t, t_args};
 
 use crate::draft_sync::open_node;
+use crate::focused_content_pane::structured::kind_label;
 
 #[component]
 pub fn OverviewPane(
@@ -35,9 +37,25 @@ pub fn OverviewPane(
                             let id = item.id;
                             let count = item.child_count;
                             let title = item.title.clone();
-                            let level_label = item.level
-                                .map(|l| format!("H{}", l.as_u8()))
-                                .unwrap_or_default();
+                            // The label each format already uses (RFC-085 §3.3 item 3): "H2"
+                            // for a Markdown section; for JSON, what the value is. A group or
+                            // list is told apart by its item count, below.
+                            let level_label = match (item.level, item.value_kind) {
+                                (Some(l), _) => format!("H{}", l.as_u8()),
+                                (None, Some(kind)) => kind_label(lang, kind).to_string(),
+                                (None, None) => String::new(),
+                            };
+                            let is_markdown = item.level.is_some()
+                                || item.kind == StructureNodeKind::MarkdownSection
+                                || item.kind == StructureNodeKind::DocumentRoot;
+                            let meta = if is_markdown {
+                                "overview.card.subsections"
+                            } else if count == 1 {
+                                "overview.card.items_one"
+                            } else {
+                                "overview.card.items"
+                            };
+                            let count_text = t_args(lang, meta, &[("count", &count.to_string())]);
                             let is_selected = idx == sel;
                             rsx! {
                                 div {
@@ -65,7 +83,7 @@ pub fn OverviewPane(
                                     }
                                     if count > 0 {
                                         div { class: "card-meta",
-                                            span { class: "count", "{count} subsections" }
+                                            span { class: "count", "{count_text}" }
                                         }
                                     }
                                 }
@@ -77,3 +95,6 @@ pub fn OverviewPane(
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

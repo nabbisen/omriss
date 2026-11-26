@@ -28,9 +28,14 @@ dropped automatically and the view falls back to the Document Map.
 ## Searching
 
 Click **Search** in the header, or press **Ctrl+F**, to open the search panel.
-Search runs case-insensitively across either the focused section body or the
-whole document. Selecting a result applies any valid pending draft first, then
-navigates directly to the matching section.
+Search runs case-insensitively across either the focused section and what is
+under it, or the whole document. Selecting a result applies any valid pending
+draft first, then navigates directly to the matching section.
+
+In a JSON file the same panel searches the text of each value (decoded, so
+`café` finds `"caf\u00e9"`). A result is labelled with the value's path, for
+example `Document › nested › deep`, and selecting it opens that value. Keys are
+not searched yet.
 
 ## Preview
 

@@ -4,7 +4,8 @@
 //! Separated here to keep `app.rs` under the 500-ELOC guideline.
 
 use dioxus::prelude::*;
-use omriss_ui::ViewMode;
+use omriss_ui::i18n::{Locale, t_args};
+use omriss_ui::{StatsUnit, ViewMode};
 
 use crate::input::keyboard::AppCommand;
 use crate::shell::actions::{handle_new_guarded, handle_open_guarded, handle_save};
@@ -163,6 +164,7 @@ pub(crate) fn dispatch_command(
 pub(crate) fn dispatch_palette(
     id: CommandId,
     ctx: AppCtx,
+    locale: Signal<Locale>,
     search_open: Signal<bool>,
     mut preview_open: Signal<bool>,
 ) {
@@ -189,17 +191,22 @@ pub(crate) fn dispatch_palette(
         "view.stats" => {
             // RFC-046: show document statistics as a status message.
             let stats = session.read().stats();
-            let msg = if stats.focused_words > 0 {
-                format!(
-                    "{} words (section) / {} words · {} sections",
-                    stats.focused_words, stats.total_words, stats.section_count
-                )
-            } else {
-                format!(
-                    "{} words · {} sections",
-                    stats.total_words, stats.section_count
-                )
+            let lang = *locale.read();
+            let key = match (stats.unit, stats.focused_words > 0) {
+                (StatsUnit::Sections, false) => "stats.message.sections",
+                (StatsUnit::Sections, true) => "stats.message.sections_focused",
+                (StatsUnit::Values, false) => "stats.message.values",
+                (StatsUnit::Values, true) => "stats.message.values_focused",
             };
+            let msg = t_args(
+                lang,
+                key,
+                &[
+                    ("focused", &stats.focused_words.to_string()),
+                    ("words", &stats.total_words.to_string()),
+                    ("count", &stats.section_count.to_string()),
+                ],
+            );
             ctx.status.clone().set(msg);
         }
         _ => {}

@@ -24,7 +24,7 @@
 //! `session.read().format()` is checked once, first, before any of the
 //! Markdown-only `current_snapshot()` logic runs.
 
-mod structured;
+pub(crate) mod structured;
 
 use dioxus::prelude::*;
 use omriss_core::DocumentFormat;

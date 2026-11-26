@@ -177,7 +177,7 @@ pub fn App() -> Element {
     });
 
     let on_palette_execute =
-        use_callback(move |id| dispatch_palette(id, ctx, search_open, preview_open));
+        use_callback(move |id| dispatch_palette(id, ctx, locale, search_open, preview_open));
 
     // ── Document Map structure requests (RFC-069 §2.5) ────────────────────────
     // The Document Map posts a typed `StructureRequest`; it is resolved to a

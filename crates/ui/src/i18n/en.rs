@@ -235,6 +235,9 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "Add headings with # to begin organizing.",
     ),
     ("outline.title", "Outline"),
+    ("overview.card.items", "{count} items"),
+    ("overview.card.items_one", "1 item"),
+    ("overview.card.subsections", "{count} subsections"),
     ("palette.no_results", "No matching commands."),
     ("palette.placeholder", "Search actions\u{2026}"),
     ("palette.title", "Quick Actions"),
@@ -262,6 +265,22 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     (
         "search.unavailable",
         "Search is available after opening a document.",
+    ),
+    (
+        "stats.message.sections",
+        "{words} words \u{b7} {count} sections",
+    ),
+    (
+        "stats.message.sections_focused",
+        "{focused} words (section) / {words} words \u{b7} {count} sections",
+    ),
+    (
+        "stats.message.values",
+        "{words} words \u{b7} {count} values",
+    ),
+    (
+        "stats.message.values_focused",
+        "{focused} words (selected) / {words} words \u{b7} {count} values",
     ),
     ("stats.sections", "sections"),
     ("stats.words", "words"),

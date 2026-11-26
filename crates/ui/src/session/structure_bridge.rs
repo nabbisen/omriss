@@ -23,9 +23,13 @@
 //! revision — so this is exactly the layer RFC-054 §0.4 always needed
 //! beneath it, not an exception to it.
 
+use std::collections::HashMap;
+use std::rc::Rc;
+
 use omriss_core::{
     DocumentFormat, DocumentFormatAdapter, DocumentRevision, DocumentStructure, JsonAdapter,
-    NodeId, PlainTextAdapter, StructureError, TomlAdapter, YamlExperimentalAdapter,
+    MarkdownAdapter, NodeId, PlainTextAdapter, StructureError, TomlAdapter,
+    YamlExperimentalAdapter,
 };
 
 use crate::interface::document_map::DocumentMapNode;
@@ -40,7 +44,10 @@ use crate::interface::document_map::DocumentMapNode;
 #[derive(Debug, Clone)]
 pub(super) struct StructureCache {
     revision: DocumentRevision,
-    result: Result<DocumentStructure, StructureError>,
+    result: Result<Rc<DocumentStructure>, StructureError>,
+    /// Node id -> position in `DocumentStructure.nodes`, built with the entry, so a
+    /// pane looking up many nodes (cards, crumbs, search paths) does not scan.
+    index: Rc<HashMap<NodeId, usize>>,
 }
 
 impl super::EditorSession {
@@ -53,7 +60,7 @@ impl super::EditorSession {
     /// directly. Callers needing "always something to show" (the Document
     /// Map) use `structure_or_fallback` instead. `pub(super)`: shared by
     /// the sibling `focus_bridge`/`structured_edit` modules.
-    pub(super) fn structure_result(&self) -> Result<DocumentStructure, StructureError> {
+    pub(super) fn structure_result(&self) -> Result<Rc<DocumentStructure>, StructureError> {
         let revision = self.document.revision();
         if let Some(cached) = self.structure_cache.borrow().as_ref()
             && cached.revision == revision
@@ -62,18 +69,23 @@ impl super::EditorSession {
         }
         let source = self.document.source();
         let result = match self.format {
+            DocumentFormat::Markdown => MarkdownAdapter.build_structure(source, revision),
             DocumentFormat::Json => JsonAdapter.build_structure(source, revision),
             DocumentFormat::Toml => TomlAdapter.build_structure(source, revision),
             DocumentFormat::YamlExperimental => {
                 YamlExperimentalAdapter.build_structure(source, revision)
             }
-            DocumentFormat::PlainText | DocumentFormat::Unsupported | DocumentFormat::Markdown => {
-                Err(fallback_only())
-            }
-        };
+            DocumentFormat::PlainText | DocumentFormat::Unsupported => Err(fallback_only()),
+        }
+        .map(Rc::new);
+        let index = Rc::new(match &result {
+            Ok(structure) => index_of(structure),
+            Err(_) => HashMap::new(),
+        });
         *self.structure_cache.borrow_mut() = Some(StructureCache {
             revision,
             result: result.clone(),
+            index,
         });
         result
     }
@@ -82,12 +94,46 @@ impl super::EditorSession {
     /// fails) when the active adapter can't parse the source. Used by every
     /// reader that needs a structure to display rather than to edit
     /// against: the Document Map, `focus`, `prune_dead_history`.
-    pub(super) fn structure_or_fallback(&self) -> DocumentStructure {
+    pub(super) fn structure_or_fallback(&self) -> Rc<DocumentStructure> {
         self.structure_result().unwrap_or_else(|_| {
-            PlainTextAdapter
-                .build_structure(self.document.source(), self.document.revision())
-                .expect("PlainTextAdapter::build_structure never fails")
+            Rc::new(
+                PlainTextAdapter
+                    .build_structure(self.document.source(), self.document.revision())
+                    .expect("PlainTextAdapter::build_structure never fails"),
+            )
         })
+    }
+}
+
+pub(super) fn index_of(structure: &DocumentStructure) -> HashMap<NodeId, usize> {
+    structure
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (n.id, i))
+        .collect()
+}
+
+impl super::EditorSession {
+    /// The structure every pane reads (RFC-085 §3.1) with its node index: the
+    /// active format's own structure, cached by revision, or — when that adapter
+    /// cannot read the source — the plain-text fallback, a lone root.
+    pub(super) fn pane_view(&self) -> (Rc<DocumentStructure>, Rc<HashMap<NodeId, usize>>) {
+        if self.structure_result().is_ok()
+            && let Some(cache) = self.structure_cache.borrow().as_ref()
+            && let Ok(structure) = &cache.result
+        {
+            return (structure.clone(), cache.index.clone());
+        }
+        let structure = self.structure_or_fallback();
+        let index = Rc::new(index_of(&structure));
+        (structure, index)
+    }
+
+    /// Whether the active format's adapter could read the source. `false` is an
+    /// unreadable `.json`, say: panes then have only the plain-text fallback.
+    pub fn structure_readable(&self) -> bool {
+        self.structure_result().is_ok()
     }
 }
 

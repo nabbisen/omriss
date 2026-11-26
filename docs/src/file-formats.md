@@ -32,8 +32,11 @@ rely on it continuing to work.
 ## What "Supported" means for JSON
 
 Open a `.json` file and its keys, objects, arrays, and values appear in the
-Document Map exactly like Markdown's headings do. Select a value to edit it
-in place:
+Document Map exactly like Markdown's headings do. The overview shows the
+top-level members as cards — each says what it is (Text, Number, On/Off, or its
+item count) — the path above the editor follows the structure, Esc and the up
+button climb one level, and the status-bar statistics count values. Select a
+value to edit it in place:
 
 - text, numbers, and on/off (`true`/`false`) values, validated as you type. A
   text value is edited in a box that grows with it, so a line break inside the
