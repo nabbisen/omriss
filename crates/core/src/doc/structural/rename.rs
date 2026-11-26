@@ -5,6 +5,7 @@ use crate::doc::edit::EditResult;
 use crate::doc::history::EditRecord;
 use crate::doc::revision::DocumentRevision;
 use crate::index::outline::NodeId;
+use crate::newline::split_first_line;
 use crate::range::ByteRange;
 
 use super::error::StructuralEditError;
@@ -32,8 +33,9 @@ pub(crate) fn rename_section(
 
     let source = doc.source();
     let heading = &source[node.heading_range.as_range()];
-    let line_len = heading.find('\n').unwrap_or(heading.len());
-    let line = &heading[..line_len];
+    // The title line ends at the first line break of any of the three endings.
+    let (line, _, _) = split_first_line(heading);
+    let line_len = line.len();
     let title_range = if starts_with_atx_heading(line) {
         atx_title_range(node.heading_range.start, line).ok_or(StructuralEditError::InvalidTitle)?
     } else {

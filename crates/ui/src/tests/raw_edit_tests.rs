@@ -1,8 +1,8 @@
 //! RFC-076: committing an edit of the plain file text.
 
-use omriss_core::{DocumentFormat, EditError, NodeId};
+use omriss_core::{DocumentFormat, EditError, NodeId, normalize_to_lf};
 
-use crate::editor::raw_text::{as_shown_in_a_text_area, raw_edit};
+use crate::editor::raw_text::raw_edit;
 use crate::editor::structure_change::StructureChange;
 use crate::editor::view_state::ViewMode;
 use crate::file::file_profile::FileTextProfile;
@@ -188,7 +188,7 @@ const CRLF: &str = "# One\r\nbody\r\n\r\n# Two\r\nmore\r\n";
 
 #[test]
 fn a_text_area_never_shows_a_carriage_return() {
-    assert_eq!(as_shown_in_a_text_area("a\r\nb\rc\nd"), "a\nb\nc\nd");
+    assert_eq!(normalize_to_lf("a\r\nb\rc\nd"), "a\nb\nc\nd");
     let s = open(CRLF);
     assert!(!s.raw_text().contains('\r'));
 }
@@ -300,7 +300,7 @@ fn every_single_span_edit_realises_the_draft_and_preserves_everything_else() {
     let snippets = ["", "Z", "\n", "\n\n", "é\nü", "# H\n"];
 
     for source in corpus {
-        let shown = as_shown_in_a_text_area(source);
+        let shown = normalize_to_lf(source);
         let cuts: Vec<usize> = shown
             .char_indices()
             .map(|(i, _)| i)
@@ -312,7 +312,7 @@ fn every_single_span_edit_realises_the_draft_and_preserves_everything_else() {
                     let draft = format!("{}{}{}", &shown[..i], snippet, &shown[j..]);
                     let Some(edit) = raw_edit(source, &draft) else {
                         assert_eq!(
-                            as_shown_in_a_text_area(&draft),
+                            normalize_to_lf(&draft),
                             shown,
                             "None means the draft shows what the source shows"
                         );
@@ -322,8 +322,8 @@ fn every_single_span_edit_realises_the_draft_and_preserves_everything_else() {
                     applied.replace_range(edit.range.clone(), &edit.replacement);
 
                     assert_eq!(
-                        as_shown_in_a_text_area(&applied),
-                        as_shown_in_a_text_area(&draft),
+                        normalize_to_lf(&applied),
+                        normalize_to_lf(&draft),
                         "{source:?} -> {draft:?}: the document must show the draft"
                     );
                     assert_eq!(

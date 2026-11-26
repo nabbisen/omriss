@@ -5,8 +5,7 @@
 //! A draft here is what a text area delivers: every line break is `\n`.
 
 use crate::{
-    Document, DocumentFormatAdapter, DocumentRevision, FocusedContent, JsonAdapter,
-    as_shown_in_a_text_area,
+    Document, DocumentFormatAdapter, DocumentRevision, FocusedContent, JsonAdapter, normalize_to_lf,
 };
 
 fn structure(source: &str) -> crate::DocumentStructure {
@@ -42,7 +41,7 @@ fn with_x_typed(source: &str, title: &str) -> String {
     else {
         panic!("a value");
     };
-    format!("{}x", as_shown_in_a_text_area(&editable_text))
+    format!("{}x", normalize_to_lf(&editable_text))
 }
 
 // ── Task 028's six values, byte-exact ───────────────────────────────────────
@@ -90,7 +89,7 @@ fn an_unchanged_draft_leaves_every_byte() {
         };
         // As the text area delivers it, and as the decoded text is.
         assert_eq!(
-            edit(TASK_028, key, &as_shown_in_a_text_area(&editable_text)),
+            edit(TASK_028, key, &normalize_to_lf(&editable_text)),
             TASK_028
         );
         assert_eq!(edit(TASK_028, key, &editable_text), TASK_028);
@@ -205,7 +204,7 @@ fn property(tokens: &[usize]) -> usize {
                 else {
                     panic!()
                 };
-                assert_eq!(as_shown_in_a_text_area(&editable_text), draft, "{ctx}");
+                assert_eq!(normalize_to_lf(&editable_text), draft, "{ctx}");
 
                 // Nothing outside the literal changed.
                 let open = "{\"k\": \"";

@@ -8,9 +8,9 @@
 //! (it is bracketed by RFC-071's detector like every other source rewrite), and
 //! focus returns to the outline instead of being guessed at.
 
-use omriss_core::{ByteRange, DocumentRevision, EditError, EditResult};
+use omriss_core::{ByteRange, DocumentRevision, EditError, EditResult, normalize_to_lf};
 
-use crate::editor::raw_text::{as_shown_in_a_text_area, raw_edit};
+use crate::editor::raw_text::raw_edit;
 use crate::editor::structure_change::Operation;
 
 /// What a raw-text commit did.
@@ -27,7 +27,7 @@ impl super::EditorSession {
     /// The source as the raw view's text area shows it: line endings as `\n`.
     /// This is the text the raw draft starts from and is compared against.
     pub fn raw_text(&self) -> String {
-        as_shown_in_a_text_area(self.document.source())
+        normalize_to_lf(self.document.source())
     }
 
     /// The revision a raw edit is composed against. The commit is refused if the

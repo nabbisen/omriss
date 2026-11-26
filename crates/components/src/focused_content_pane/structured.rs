@@ -15,7 +15,7 @@
 //! — a toggle click commits immediately, matching §4.6's mockup exactly.
 
 use dioxus::prelude::*;
-use omriss_core::{FocusedContent, ValueKind, as_shown_in_a_text_area};
+use omriss_core::{FocusedContent, ValueKind, normalize_to_lf};
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{EditorSession, StructureErrorKindCatalogKey};
 
@@ -76,7 +76,7 @@ pub fn StructuredFocusView(
                     ValueKind::Text => rsx! {
                         div {
                             class: "structured-value-grow",
-                            "data-replicated-value": "{as_shown_in_a_text_area(&draft.read())}",
+                            "data-replicated-value": "{normalize_to_lf(&draft.read())}",
                             textarea {
                                 "data-focus-primary": "true",
                                 class: "structured-value-input",

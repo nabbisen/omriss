@@ -5,9 +5,8 @@
 //! is the original *as a text area shows it* with an edit applied — exactly what
 //! the page hands to the application.
 
-use omriss_core::{DocumentFormat, NodeId};
+use omriss_core::{DocumentFormat, NodeId, normalize_to_lf};
 
-use crate::editor::raw_text::as_shown_in_a_text_area;
 use crate::file::file_profile::FileTextProfile;
 use crate::interface::document_map::{DocumentMapNode, node_id_from_raw};
 use crate::session::EditorSession;
@@ -184,7 +183,7 @@ fn property(source: &str) -> usize {
         let mut s = open(source);
         focus(&mut s, &title);
         let original = body(&s);
-        let view = as_shown_in_a_text_area(&original);
+        let view = normalize_to_lf(&original);
         let is_last = source.ends_with(&original);
         for draft in drafts(&view) {
             let mut s = open(source);
@@ -196,14 +195,14 @@ fn property(source: &str) -> usize {
             // The text area shows what the user made — plus, in a section that
             // is followed by a heading, the one line break that keeps that
             // heading on its own line (core's `joining_separator`).
-            let shown_draft = as_shown_in_a_text_area(&draft);
+            let shown_draft = normalize_to_lf(&draft);
             let separator = if !is_last && !draft.is_empty() && !draft.ends_with('\n') {
                 "\n"
             } else {
                 ""
             };
             assert_eq!(
-                as_shown_in_a_text_area(&body(&s)),
+                normalize_to_lf(&body(&s)),
                 format!("{shown_draft}{separator}"),
                 "the editor must show the draft and nothing else: {ctx}"
             );
@@ -344,7 +343,7 @@ fn deleting_the_text_between_a_lone_cr_and_an_lf_does_not_fuse_them() {
     focus(&mut s, "A");
     commit(&mut s, "\n\n");
     assert!(s.source().starts_with("# A\r"), "{:?}", s.source());
-    assert_eq!(as_shown_in_a_text_area(&body(&s)), "\n\n");
+    assert_eq!(normalize_to_lf(&body(&s)), "\n\n");
     assert!(!s.source().starts_with("# A\r\n"));
     s.undo().unwrap();
     assert_eq!(s.source(), doc);
@@ -404,7 +403,7 @@ fn typing_in_a_crlf_section_keeps_the_sections_other_lines_crlf() {
 fn a_draft_that_shows_what_the_section_shows_is_not_pending() {
     let mut s = open(&crlf(&lf_doc()));
     focus(&mut s, "Two");
-    let as_delivered = as_shown_in_a_text_area(&body(&s));
+    let as_delivered = normalize_to_lf(&body(&s));
     assert!(
         !s.body_draft_differs(&as_delivered),
         "an untouched CRLF section is not pending"
@@ -422,7 +421,7 @@ fn a_lone_cr_is_not_turned_into_anything_by_an_edit_elsewhere() {
     let doc = "# A\nold line\rkept\r\n\r\n# B\nb\n";
     let mut s = open(doc);
     focus(&mut s, "A");
-    let view = as_shown_in_a_text_area(&body(&s));
+    let view = normalize_to_lf(&body(&s));
     commit(&mut s, &view.replace("old", "new"));
     assert_eq!(s.source(), "# A\nnew line\rkept\r\n\r\n# B\nb\n");
 }
@@ -463,7 +462,7 @@ fn a_crlf_json_container_edit_keeps_every_untouched_ending() {
     );
 
     // As delivered by the text area: LF only, with one value changed.
-    let draft = as_shown_in_a_text_area(&original).replace("\"b\"", "\"c\"");
+    let draft = normalize_to_lf(&original).replace("\"b\"", "\"c\"");
     assert!(s.structured_draft_differs(&draft));
     s.commit_structured_draft(&draft).unwrap();
     assert_eq!(
@@ -479,7 +478,7 @@ fn an_untouched_crlf_json_container_is_not_pending() {
     let mut s = open_json(doc);
     focus_container(&mut s);
     let original = s.focused_structured_raw_text().unwrap();
-    assert!(!s.structured_draft_differs(&as_shown_in_a_text_area(&original)));
+    assert!(!s.structured_draft_differs(&normalize_to_lf(&original)));
     assert!(!s.structured_draft_differs(&original));
 }
 
@@ -504,11 +503,11 @@ const B: &str = "# One\nbody one\n\n# Two\nbody two\n\n# Three\nbody three";
 fn type_x_at_the_end(doc: &str, section: &str) -> String {
     let mut s = open(doc);
     focus(&mut s, section);
-    let draft = format!("{}x", as_shown_in_a_text_area(&body(&s)));
+    let draft = format!("{}x", normalize_to_lf(&body(&s)));
     assert!(s.body_draft_differs(&draft));
     commit(&mut s, &draft);
     // The editor is resynchronised to the committed body: nothing is pending.
-    assert!(!s.body_draft_differs(&as_shown_in_a_text_area(&body(&s))));
+    assert!(!s.body_draft_differs(&normalize_to_lf(&body(&s))));
     s.source().to_string()
 }
 
@@ -566,7 +565,7 @@ fn case_5_leaving_the_section_commits_the_same_bytes_as_saving() {
     let by_save = type_x_at_the_end(&crlf(A), "Two");
     let mut s = open(&crlf(A));
     focus(&mut s, "Two");
-    let draft = format!("{}x", as_shown_in_a_text_area(&body(&s)));
+    let draft = format!("{}x", normalize_to_lf(&body(&s)));
     commit(&mut s, &draft);
     s.zoom_out();
     assert_eq!(s.source(), by_save);
@@ -576,12 +575,12 @@ fn case_5_leaving_the_section_commits_the_same_bytes_as_saving() {
 fn a_second_commit_after_the_separator_adds_nothing_more() {
     let mut s = open(&crlf(A));
     focus(&mut s, "Two");
-    let draft = format!("{}x", as_shown_in_a_text_area(&body(&s)));
+    let draft = format!("{}x", normalize_to_lf(&body(&s)));
     commit(&mut s, &draft);
     let once = s.source().to_string();
     // The editor now holds the committed body; typing `y` and committing again
     // puts `y` on the line after `x` and adds no second separator.
-    let draft = format!("{}y", as_shown_in_a_text_area(&body(&s)));
+    let draft = format!("{}y", normalize_to_lf(&body(&s)));
     commit(&mut s, &draft);
     assert_eq!(
         s.source(),

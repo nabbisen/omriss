@@ -16,8 +16,8 @@
 //! lone `\r`, else `\n`).
 
 use crate::doc::structural::document_newline;
+use crate::newline::normalize_to_lf;
 use crate::range::ByteRange;
-use crate::text_area::as_shown_in_a_text_area;
 
 use super::scalar::encode_string_body;
 use super::string_literal::{SpelledChar, parse_string_spans};
@@ -45,7 +45,7 @@ pub(super) fn string_edit(
     let decoded: String = spelled.iter().map(|(c, _)| *c).collect();
     let style = document_newline(&decoded);
 
-    let wanted: Vec<char> = as_shown_in_a_text_area(draft).chars().collect();
+    let wanted: Vec<char> = normalize_to_lf(draft).chars().collect();
     let shown: Vec<char> = units.iter().map(|u| u.ch).collect();
     if shown == wanted {
         return None;

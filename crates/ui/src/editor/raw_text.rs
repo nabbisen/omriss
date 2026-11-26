@@ -19,7 +19,7 @@
 
 use std::ops::Range;
 
-pub use omriss_core::as_shown_in_a_text_area;
+use omriss_core::{document_newline, normalize_to_lf};
 
 /// A single replacement of `range` of the source by `replacement`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,7 +34,7 @@ pub struct RawEdit {
 /// draft shows exactly what the source shows (nothing to commit). The whole-source
 /// form of [`text_area_edit`]: inserted newlines take the source's own style.
 pub fn raw_edit(source: &str, draft: &str) -> Option<RawEdit> {
-    text_area_edit(source, draft, newline_of(source))
+    text_area_edit(source, draft, document_newline(source))
 }
 
 /// The edit that turns `original` — a stretch of the document that a text area
@@ -42,7 +42,7 @@ pub fn raw_edit(source: &str, draft: &str) -> Option<RawEdit> {
 /// `original` shows.
 ///
 /// The range of the returned edit is relative to `original`. `newline` is the
-/// **document's** newline (see [`newline_of`]), not `original`'s: a stretch with
+/// **document's** newline (see [`document_newline`]), not `original`'s: a stretch with
 /// no line break in it (a one-line JSON array, an empty body) still belongs to a
 /// CRLF document, and a newline the user types into it must be CRLF.
 pub fn text_area_edit(original: &str, draft: &str, newline: &str) -> Option<RawEdit> {
@@ -63,8 +63,8 @@ pub fn text_area_edit_after(
     newline: &str,
 ) -> Option<RawEdit> {
     let source = original;
-    let shown = as_shown_in_a_text_area(source);
-    let wanted = as_shown_in_a_text_area(draft);
+    let shown = normalize_to_lf(source);
+    let wanted = normalize_to_lf(draft);
     if shown == wanted {
         return None;
     }
@@ -149,11 +149,6 @@ pub fn apply_text_area_draft_after(
     merged.push_str(&original[edit.range.end..]);
     Some(merged)
 }
-
-/// The newline the document `source` uses for text written into it. One rule for
-/// core's structural edits and for every text area (RFC-084 §10.3): core's
-/// `document_newline`, not a second copy.
-pub use omriss_core::document_newline as newline_of;
 
 fn with_newline(newline: &str, text_area_text: &str) -> String {
     if newline == "\n" {

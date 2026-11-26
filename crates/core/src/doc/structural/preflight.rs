@@ -206,9 +206,9 @@ fn blank_line(newline: &str) -> &'static str {
 
 /// The document's own newline sequence, for splice sites that need to insert
 /// one (RFC-065 §4.4: derive it from the document, never assume `"\n"`). The
-/// one rule lives in [`crate::text_area::document_newline`], shared with the
-/// application's text areas (RFC-084 §10.3).
-pub(crate) use crate::text_area::document_newline;
+/// one rule lives in [`crate::newline::document_newline`], shared with the
+/// application's edits (RFC-084 §10.3).
+pub(crate) use crate::newline::document_newline;
 
 /// The title span of a single ATX heading line (e.g. `"## Title ##"`),
 /// excluding the opening marker and any optional closing `#` run —

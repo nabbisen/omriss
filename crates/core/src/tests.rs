@@ -11,6 +11,7 @@ mod json_adapter_tests;
 mod json_container_editing_tests;
 mod json_scalar_editing_tests;
 mod json_string_edit_tests;
+mod line_ending_structure_tests;
 mod markdown_adapter_add_tests;
 mod markdown_adapter_move_tests;
 mod markdown_adapter_tests;

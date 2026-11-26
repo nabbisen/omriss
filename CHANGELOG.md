@@ -62,6 +62,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
   intact. A text value is now edited in a box that shows its line breaks, and only
   the characters you change are rewritten. Files whose lines end in a bare CR
   (classic Mac OS) now keep that ending for everything omriss writes into them.
+  **Renaming a section in a CRLF file** used to turn that heading's line ending into
+  LF (the same mixed-endings result as above); it no longer does, and joining a
+  heading in a bare-CR file, which was refused, now works. For library users:
+  `omriss-core` exports `normalize_to_lf` and `document_newline`, and its
+  line-ending rule is one function for every edit.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

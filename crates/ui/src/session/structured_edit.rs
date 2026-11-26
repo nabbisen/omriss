@@ -7,12 +7,10 @@
 
 use omriss_core::{
     DocumentFormat, DocumentFormatAdapter, DraftState, EditResult, FocusedContent, JsonAdapter,
-    StructureErrorKind, StructureNodeKind, ValueKind,
+    StructureErrorKind, StructureNodeKind, ValueKind, document_newline, normalize_to_lf,
 };
 
-use crate::editor::raw_text::{
-    apply_text_area_draft, as_shown_in_a_text_area, newline_of, text_area_edit,
-};
+use crate::editor::raw_text::{apply_text_area_draft, text_area_edit};
 
 impl super::EditorSession {
     /// The text a structured `draft` means for the focused JSON node, as source:
@@ -24,7 +22,7 @@ impl super::EditorSession {
     fn structured_draft_source(&self, draft: &str) -> Option<String> {
         match self.focused_structured_raw_text() {
             Some(original) => {
-                apply_text_area_draft(&original, draft, newline_of(self.document.source()))
+                apply_text_area_draft(&original, draft, document_newline(self.document.source()))
             }
             None => Some(draft.to_string()),
         }
@@ -66,14 +64,14 @@ impl super::EditorSession {
                 value_kind: ValueKind::Text,
                 editable_text,
                 ..
-            }) => as_shown_in_a_text_area(draft) != as_shown_in_a_text_area(&editable_text),
+            }) => normalize_to_lf(draft) != normalize_to_lf(&editable_text),
             Some(FocusedContent::StructuredValue { editable_text, .. }) => draft != editable_text,
             Some(FocusedContent::StructuredGroup { .. }) => {
                 // In the text-area view, so a CRLF container the user has not
                 // changed is not "pending" (RFC-084 §4.2).
                 match self.focused_structured_raw_text() {
                     Some(original) => {
-                        text_area_edit(&original, draft, newline_of(self.document.source()))
+                        text_area_edit(&original, draft, document_newline(self.document.source()))
                             .is_some()
                     }
                     None => true,

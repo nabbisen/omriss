@@ -12,7 +12,10 @@ file. Everything else is preserved bit-for-bit:
   section you are editing that you did not change; a line break you type or that
   omriss must add (such as the one that keeps the next heading on its own line)
   is written in the file's own style, so a CRLF file stays CRLF — and a file
-  whose lines end in a bare CR (classic Mac OS) stays that way;
+  whose lines end in a bare CR (classic Mac OS) stays that way. The one
+  exception: in a file that mixes bare CRs with LFs, a bare CR right next to the
+  text you edit can be rewritten as the file's newline, because a bare CR followed
+  by an LF would otherwise read as one CRLF and a line break would be lost;
 - HTML comments and inline/block HTML;
 - code fences (a `#` inside a fence is code, not a heading);
 - YAML/TOML front matter;

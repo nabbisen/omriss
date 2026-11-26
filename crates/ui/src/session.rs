@@ -11,12 +11,12 @@ use std::cell::RefCell;
 
 use omriss_core::{
     Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
-    FocusSnapshot, OutlineItem, ReplaceSectionBody,
+    FocusSnapshot, OutlineItem, ReplaceSectionBody, document_newline,
 };
 
 use self::structure_bridge::StructureCache;
 
-use crate::editor::raw_text::{apply_text_area_draft_after, newline_of, text_area_edit};
+use crate::editor::raw_text::{apply_text_area_draft_after, text_area_edit};
 use crate::editor::structure_change::{
     ExpectedChange, Operation, OutlineSummary, StructureChange, detect, expected_change,
 };
@@ -342,7 +342,12 @@ impl EditorSession {
     /// CRLF section the user has not touched is never pending.
     pub fn body_draft_differs(&self, draft: &str) -> bool {
         self.current_snapshot().is_some_and(|snapshot| {
-            text_area_edit(&snapshot.body, draft, newline_of(self.document.source())).is_some()
+            text_area_edit(
+                &snapshot.body,
+                draft,
+                document_newline(self.document.source()),
+            )
+            .is_some()
         })
     }
 
@@ -368,8 +373,9 @@ impl EditorSession {
             .node(base.node_id)
             .and_then(|node| source.get(..node.body_range.start))
             .unwrap_or("");
-        let new_body = apply_text_area_draft_after(before, &base.body, &draft, newline_of(source))
-            .unwrap_or_else(|| base.body.clone());
+        let new_body =
+            apply_text_area_draft_after(before, &base.body, &draft, document_newline(source))
+                .unwrap_or_else(|| base.body.clone());
         // No separator is added here. Keeping the next heading on its own line
         // is core's `joining_separator` (RFC-065) and nothing else's: it writes
         // the document's own newline, and only when one is missing (RFC-084 §4.3).

@@ -5,6 +5,7 @@ use crate::doc::edit::EditResult;
 use crate::doc::history::EditRecord;
 use crate::doc::revision::DocumentRevision;
 use crate::index::outline::{HeadingLevel, NodeId};
+use crate::newline::split_first_line;
 use crate::range::ByteRange;
 
 use super::error::StructuralEditError;
@@ -158,21 +159,6 @@ pub(crate) fn merge_with_prev_sibling(
         revision_after: result.new_revision,
     });
     Ok(result)
-}
-
-/// Splits `s` at its first line break into `(line, terminator, rest)`,
-/// where `terminator` is `"\r\n"`, `"\n"`, or `""` (no break found) and
-/// `line` never includes it — unlike a plain `s.find('\n')` split, this
-/// correctly keeps a `\r` immediately before `\n` as part of the
-/// terminator rather than as the last byte of `line`.
-fn split_first_line(s: &str) -> (&str, &str, &str) {
-    match s.find('\n') {
-        Some(i) if i > 0 && s.as_bytes()[i - 1] == b'\r' => {
-            (&s[..i - 1], &s[i - 1..=i], &s[i + 1..])
-        }
-        Some(i) => (&s[..i], &s[i..=i], &s[i + 1..]),
-        None => (s, "", ""),
-    }
 }
 
 /// Strips a heading's marker — ATX `#`s, or the setext underline line —

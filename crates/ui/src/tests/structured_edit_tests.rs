@@ -318,7 +318,7 @@ mod string_values {
         else {
             panic!("a value");
         };
-        crate::editor::raw_text::as_shown_in_a_text_area(&editable_text)
+        omriss_core::normalize_to_lf(&editable_text)
     }
 
     #[test]
