@@ -249,7 +249,7 @@ pub fn App() -> Element {
                     } else {
                         match mode {
                             ViewMode::Outline | ViewMode::RawSource => rsx! {
-                                OverviewPane { session, locale, draft, selected_card }
+                                OverviewPane { session, locale, draft, status, selected_card }
                             },
                             // RFC-050: FocusedContentPane has no structure controls.
                             ViewMode::Focus(_) => rsx! {
@@ -273,11 +273,7 @@ pub fn App() -> Element {
                         let mut session = session;
                         let mut draft = draft;
                         let mut status = status;
-                        if !draft_sync::commit_or_block(&mut session, &mut draft, &mut status) {
-                            return;
-                        }
-                        let _ = session.write().focus(id);
-                        draft_sync::sync(&session, &mut draft);
+                        draft_sync::open_node(&mut session, &mut draft, &mut status, id);
                     },
                 }
             }

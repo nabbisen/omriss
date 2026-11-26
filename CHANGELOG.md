@@ -70,6 +70,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
   **Renaming a section in a CRLF file** used to turn that heading's line ending into
   LF (the same mixed-endings result as above); it no longer does, and joining a
   heading in a bare-CR file, which was refused, now works.
+- **Opening a JSON file from the overview no longer changes it** (RFC-085).
+  **In omriss 0.17.0 and earlier, if you opened a JSON file, clicked the
+  "Document" card in the overview, and then went anywhere else (a Document Map row,
+  Save), a JSON file that ends with a newline gained one more newline at the end.**
+  A CRLF file gained a CRLF. A file with no final newline was not affected, nothing
+  else in the file changed, and Undo took it back. The card set the editor's text
+  from the wrong source, so omriss saw a change you had not made and committed it.
+  The overview, Document Map, breadcrumb and search now open a node one way.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

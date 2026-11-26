@@ -24,6 +24,7 @@ use omriss_core::DocumentFormat;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{DocumentMapNode, EditorSession, ViewMode, node_id_from_raw};
 
+use crate::draft_sync::open_node;
 use crate::structure_request::StructureRequest;
 use create_buttons::SelectedSectionCreateButtons;
 use draft::{commit_draft_if_dirty, sync_draft};
@@ -141,16 +142,13 @@ pub fn DocumentMapPane(
         ItemTreeEvent::Selected(id, mode) => {
             menu_open_for.set(None);
             let section_id = node_id_from_raw(id.0);
-            if !commit_draft_if_dirty(
+            if open_node(
                 &mut session.clone(),
                 &mut draft.clone(),
                 &mut status.clone(),
+                section_id,
             ) {
-                return;
-            }
-            if session.write().focus(section_id).is_ok() {
                 item_tree.write().on_selected(id, mode);
-                sync_draft(&session, &mut draft.clone());
             }
         }
         ItemTreeEvent::Drag(_) => {}
@@ -299,18 +297,15 @@ pub fn DocumentMapPane(
                                     ev.stop_propagation();
                                     menu_open_for.set(None);
                                     menu_node_sig.set(None);
-                                    if !commit_draft_if_dirty(
+                                    if open_node(
                                         &mut session.clone(),
                                         &mut draft.clone(),
                                         &mut status.clone(),
+                                        node_id,
                                     ) {
-                                        return;
-                                    }
-                                    if session.write().focus(node_id).is_ok() {
                                         item_tree
                                             .write()
                                             .on_selected(SwNodeId(raw_id), SelectionMode::Replace);
-                                        sync_draft(&session, &mut draft.clone());
                                     }
                                 },
                                 // Caret toggles expand/collapse
@@ -349,15 +344,14 @@ pub fn DocumentMapPane(
                                         }
                                         menu_open_for.set(None);
                                         menu_node_sig.set(None);
-                                        if !commit_draft_if_dirty(
+                                        if !open_node(
                                             &mut session.clone(),
                                             &mut draft.clone(),
                                             &mut status.clone(),
+                                            node_id,
                                         ) {
                                             return;
                                         }
-                                        let _ = session.write().focus(node_id);
-                                        sync_draft(&session, &mut draft.clone());
                                         item_tree
                                             .write()
                                             .on_selected(SwNodeId(raw_id), SelectionMode::Replace);
@@ -386,15 +380,14 @@ pub fn DocumentMapPane(
                                         }
                                         menu_open_for.set(None);
                                         menu_node_sig.set(None);
-                                        if !commit_draft_if_dirty(
+                                        if !open_node(
                                             &mut session.clone(),
                                             &mut draft.clone(),
                                             &mut status.clone(),
+                                            node_id,
                                         ) {
                                             return;
                                         }
-                                        let _ = session.write().focus(node_id);
-                                        sync_draft(&session, &mut draft.clone());
                                         item_tree
                                             .write()
                                             .on_selected(SwNodeId(raw_id), SelectionMode::Replace);

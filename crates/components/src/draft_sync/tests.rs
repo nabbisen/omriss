@@ -11,11 +11,12 @@ use dioxus::prelude::*;
 use omriss_core::{DocumentFormat, NodeId};
 use omriss_ui::{DocumentMapNode, EditorSession, FileTextProfile, node_id_from_raw};
 
-use super::{commit_and_resync, is_pending, sync};
+use super::{commit_and_resync, is_pending, open_node, sync};
 
 type Panic = Box<dyn std::any::Any + Send>;
 
 thread_local! {
+    static SOURCE: std::cell::Cell<&'static str> = const { std::cell::Cell::new("") };
     static BODY: RefCell<Option<fn()>> = const { RefCell::new(None) };
     static FAILURE: RefCell<Option<Panic>> = const { RefCell::new(None) };
 }
@@ -41,6 +42,18 @@ fn in_runtime(body: fn()) {
     if let Some(panic) = FAILURE.with(|f| f.borrow_mut().take()) {
         std::panic::resume_unwind(panic);
     }
+}
+
+/// [`in_runtime`] for a body that needs one source text.
+fn in_runtime_with(source: &'static str, body: fn(&'static str)) {
+    SOURCE.with(|s| s.set(source));
+    // `body` is stored as a plain `fn()` that reads the source back.
+    thread_local! { static WITH: std::cell::Cell<Option<fn(&'static str)>> = const { std::cell::Cell::new(None) }; }
+    WITH.with(|w| w.set(Some(body)));
+    in_runtime(|| {
+        let body = WITH.with(|w| w.get()).unwrap();
+        body(SOURCE.with(|s| s.get()));
+    });
 }
 
 fn find_in(node: &DocumentMapNode, title: &str) -> Option<NodeId> {
@@ -310,4 +323,65 @@ fn read_only_raw_view_has_no_pending_draft() {
         assert!(!session.read().raw_editing());
         assert!(!is_pending(&session, &draft));
     });
+}
+
+// ── RFC-085 §5, F2: a JSON file is not changed by opening its root ──────────
+//
+// Measured on 0.17.0's code before the fix: the overview card focused the root and set the
+// draft to the Markdown snapshot's body (the whole file), bypassing `sync`. The next navigation then
+// committed that draft over the root's raw text. For a file ending in a newline the
+// file gained one (`"[1, 2]\n"` became `"[1, 2]\n\n"`, a CRLF file gained a CRLF, with an undo
+// record); a file with no final newline was unchanged. Now every surface opens the node through
+// `open_node`, and this test is what the card does today.
+
+fn f2(source: &'static str) {
+    in_runtime_with(source, |source| {
+        let mut session = Signal::new(
+            EditorSession::open_detected(
+                source.to_string(),
+                None,
+                FileTextProfile::detect(source, false),
+                DocumentFormat::Json,
+            )
+            .unwrap(),
+        );
+        let root = node_id_from_raw(session.read().document_map_nodes().id);
+        let mut draft = Signal::new(String::new());
+        let mut status = Signal::new(String::new());
+        assert!(open_node(&mut session, &mut draft, &mut status, root));
+        // The next navigation: every one commits what is pending first.
+        let ok = commit_and_resync(&mut session, &mut draft, &mut status);
+        eprintln!(
+            "F2 {source:?}: navigation ok={ok}, source after = {:?}, can_undo={}, status={:?}",
+            session.read().source(),
+            session.read().can_undo(),
+            status.read()
+        );
+        assert_eq!(
+            session.read().source(),
+            source,
+            "navigating after the overview card changed the file"
+        );
+        assert!(
+            !session.read().can_undo(),
+            "navigating after the overview card pushed an undo record"
+        );
+    });
+}
+
+#[test]
+fn f2_object_with_a_final_newline() {
+    f2("{\"a\": 1, \"b\": \"x\"}\n");
+}
+#[test]
+fn f2_object_without_a_final_newline() {
+    f2("{\"a\": 1, \"b\": \"x\"}");
+}
+#[test]
+fn f2_crlf_object() {
+    f2("{\r\n  \"a\": 1\r\n}\r\n");
+}
+#[test]
+fn f2_array_with_a_final_newline() {
+    f2("[1, 2]\n");
 }

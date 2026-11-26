@@ -31,7 +31,7 @@ use omriss_core::DocumentFormat;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
-use super::draft_sync::{commit_and_resync, commit_or_block};
+use super::draft_sync::commit_and_resync;
 use super::{Breadcrumb, PreviewPane};
 use structured::StructuredFocusView;
 
@@ -161,17 +161,13 @@ pub fn FocusedContentPane(
                             class: "child-card",
                             key: "{child.id.0}",
                             onclick: move |_| {
-                                // Commit before zooming in.
-                                if !commit_or_block(&mut session, &mut draft, &mut status) {
-                                    return;
-                                }
-                                let _ = session.write().focus(child.id);
-                                let body = session
-                                    .read()
-                                    .current_snapshot()
-                                    .map(|s| s.body)
-                                    .unwrap_or_default();
-                                draft.set(body);
+                                // Commit before zooming in, then open the child.
+                                crate::draft_sync::open_node(
+                                    &mut session,
+                                    &mut draft,
+                                    &mut status,
+                                    child.id,
+                                );
                             },
                             "{child.title}"
                             if child.child_count > 0 {

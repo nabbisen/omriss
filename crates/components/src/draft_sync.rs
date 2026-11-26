@@ -132,6 +132,58 @@ pub fn commit_and_resync(
     true
 }
 
+/// Opens node `id` — the one way every surface does it (RFC-085 §3.2): a map
+/// row, an overview card, a child card, a search result, a crumb. Commits what
+/// is pending first (a refused commit keeps the user where they are), focuses
+/// the node, then [`sync`]s the draft to that node's own committed content.
+/// No caller sets the draft itself: a draft built from anything but the
+/// focused node's content (the whole file, say, for a JSON root) reads as a
+/// change the user never made, and the next navigation commits it (RFC-085 F2).
+/// Returns `true` when the node is open.
+pub fn open_node(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+    id: omriss_core::NodeId,
+) -> bool {
+    if !commit_or_block(session, draft, status) {
+        return false;
+    }
+    if session.write().focus(id).is_err() {
+        return false;
+    }
+    sync(session, draft);
+    true
+}
+
+/// Opens the whole-document view, by the same sequence as [`open_node`].
+pub fn open_overview(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+) -> bool {
+    if !commit_or_block(session, draft, status) {
+        return false;
+    }
+    session.write().show_outline();
+    sync(session, draft);
+    true
+}
+
+/// Zooms out one level (Up, Esc), by the same sequence as [`open_node`].
+pub fn zoom_out(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+) -> bool {
+    if !commit_or_block(session, draft, status) {
+        return false;
+    }
+    session.write().zoom_out();
+    sync(session, draft);
+    true
+}
+
 /// Syncs `draft` to the focused node's current committed content —
 /// Markdown's section body, or (RFC-054 J7b) a JSON node's editable text
 /// (a value) or full raw text (a container).

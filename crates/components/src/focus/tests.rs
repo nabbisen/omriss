@@ -484,6 +484,7 @@ fn the_outline_and_the_welcome_screen_have_no_primary_so_focus_falls_to_the_app_
                 session,
                 locale: use_signal(Locale::default),
                 draft: use_signal(String::new),
+                status: use_signal(String::new),
                 selected_card: use_signal(|| 0usize),
             }
         }

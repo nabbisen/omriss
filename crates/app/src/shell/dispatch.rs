@@ -11,7 +11,7 @@ use crate::shell::actions::{handle_new_guarded, handle_open_guarded, handle_save
 use crate::shell::app_ctx::{
     AppCtx, commit_pending, has_pending_draft, leave_raw_guarded, sync_draft,
 };
-use omriss_components::CommandId;
+use omriss_components::{CommandId, draft_sync};
 
 pub(crate) fn open_search_if_available(ctx: AppCtx, mut search_open: Signal<bool>) {
     if !ctx.session.read().document_open() {
@@ -131,8 +131,8 @@ pub(crate) fn dispatch_command(
                 let idx = *selected_card.read();
                 if let Some(item) = items.get(idx) {
                     let id = item.id;
-                    let _ = session.write().focus(id);
-                    sync_draft(ctx);
+                    let mut ctx = ctx;
+                    draft_sync::open_node(&mut ctx.session, &mut ctx.draft, &mut ctx.status, id);
                 }
             }
         }

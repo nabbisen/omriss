@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
-use crate::draft_sync::commit_or_block;
+use crate::draft_sync::{open_node, open_overview};
 
 /// Maximum number of segments shown before collapsing the middle.
 const MAX_VISIBLE: usize = 4;
@@ -73,19 +73,10 @@ pub fn Breadcrumb(
                                         class: "crumb-btn",
                                         title: "{label}",
                                         onclick: move |_| {
-                                            if !commit_or_block(&mut session, &mut draft, &mut status) {
-                                                return;
-                                            }
                                             if item.level.is_none() {
-                                                session.write().show_outline();
-                                                draft.set(String::new());
+                                                open_overview(&mut session, &mut draft, &mut status);
                                             } else {
-                                                let _ = session.write().focus(item.id);
-                                                let body = session.read()
-                                                    .current_snapshot()
-                                                    .map(|s| s.body)
-                                                    .unwrap_or_default();
-                                                draft.set(body);
+                                                open_node(&mut session, &mut draft, &mut status, item.id);
                                             }
                                         },
                                         "{label}"
@@ -102,16 +93,7 @@ pub fn Breadcrumb(
                 title: t(lang, "nav.up"),
                 "aria-label": t(lang, "nav.up"),
                 onclick: move |_| {
-                    if !commit_or_block(&mut session, &mut draft, &mut status) {
-                        return;
-                    }
-                    session.write().zoom_out();
-                    let body = session
-                        .read()
-                        .current_snapshot()
-                        .map(|s| s.body)
-                        .unwrap_or_default();
-                    draft.set(body);
+                    crate::draft_sync::zoom_out(&mut session, &mut draft, &mut status);
                 },
                 "↑"
             }

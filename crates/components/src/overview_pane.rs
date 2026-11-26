@@ -6,13 +6,19 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
 
+use crate::draft_sync::open_node;
+
 #[component]
 pub fn OverviewPane(
     session: Signal<EditorSession>,
     locale: Signal<Locale>,
     draft: Signal<String>,
+    status: Signal<String>,
     selected_card: Signal<usize>,
 ) -> Element {
+    let mut draft = draft;
+    let mut status = status;
+    let mut session = session;
     let lang = *locale.read();
     let items = session.read().current_children();
     let sel = *selected_card.read();
@@ -45,10 +51,7 @@ pub fn OverviewPane(
                                     },
                                     onclick: move |_| {
                                         selected_card.set(idx);
-                                        let _ = session.write().focus(id);
-                                        let body = session.read().current_snapshot()
-                                            .map(|s| s.body).unwrap_or_default();
-                                        draft.set(body);
+                                        open_node(&mut session, &mut draft, &mut status, id);
                                     },
                                     div { class: "card-header",
                                         span { class: "card-level", "{level_label}" }
