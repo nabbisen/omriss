@@ -142,6 +142,33 @@ const FOCUS_SCRIPT: &str = r#"
 
   const adopt = (scope) => { track(scope); enter(scope); };
 
+  // ── Keeping the caret (RFC-084 §4.4) ────────────────────────────────────
+  // A commit resynchronises the text area's value with the committed text, and
+  // setting a text area's value puts the caret at the end. The host asks for the
+  // selection to be held just before it commits; once the new value is in, it is
+  // put back at the same offsets (clamped to the new length). The commit only
+  // ever adds text after what the user typed (a separator at the end), so the
+  // same offsets are the same place in the user's text.
+  let held = null;
+  const restoreSelection = (force) => {
+    if (!held) return;
+    const h = held;
+    if (!h.el.isConnected || document.activeElement !== h.el) { held = null; return; }
+    // Not yet patched: wait for the fallback, which forces.
+    if (!force && h.el.value === h.value) return;
+    held = null;
+    const end = h.el.value.length;
+    h.el.setSelectionRange(Math.min(h.start, end), Math.min(h.end, end), h.dir || 'none');
+  };
+  window.__omrissFocus.holdSelection = () => {
+    const el = document.activeElement;
+    if (!el || el.tagName !== 'TEXTAREA' || typeof el.selectionStart !== 'number') { held = null; return; }
+    held = { el, value: el.value, start: el.selectionStart, end: el.selectionEnd, dir: el.selectionDirection };
+    // If nothing in the page changes, the observer never calls back: three
+    // frames is long enough for a patch to land and too short to type into.
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => restoreSelection(true))));
+  };
+
   new MutationObserver((records) => {
     for (const record of records) {
       for (const node of record.addedNodes) {
@@ -152,6 +179,7 @@ const FOCUS_SCRIPT: &str = r#"
     }
     settle();
     scheduleCheck();
+    requestAnimationFrame(() => restoreSelection(false));
   }).observe(document.body, { childList: true, subtree: true });
 
   // The script is installed after the first render, so a scope that is already
@@ -214,6 +242,16 @@ const FOCUS_SCRIPT: &str = r#"
   }, true);
 })()
 "#;
+
+/// Asks the script to hold the active text area's selection until the commit
+/// that is about to happen has put its new value in (RFC-084 §4.4). Call it just
+/// before committing a pending draft; it does nothing when no text area is
+/// focused.
+pub fn hold_selection() {
+    let _ = document::eval(
+        "window.__omrissFocus && window.__omrissFocus.holdSelection && window.__omrissFocus.holdSelection()",
+    );
+}
 
 /// Installs the focus script, once, when the calling component first renders.
 /// The host calls it from its root component.

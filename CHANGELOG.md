@@ -44,6 +44,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Editing a section no longer rewrites line endings you did not touch, and Ctrl+S
+  no longer moves the caret** (RFC-084). **If you edited a file with Windows (CRLF)
+  line endings in omriss 0.17.0 or earlier, that file may now have mixed line
+  endings:** typing in a section turned that whole section's lines into LF, and a
+  line break omriss added at the end of the section was LF too. Your text is
+  otherwise intact, and editors that show line endings will show the difference;
+  omriss does not convert such files back, because it does not rewrite what you did
+  not edit. From this version a CRLF file stays CRLF — the lines you leave alone,
+  and every line break you type or omriss adds. The same fix covers a JSON
+  container's raw-text editor and the plain file text. Separately, the line break
+  that keeps the next heading on its own line is now added by one rule, in the
+  file's own newline, and the caret stays where you left it instead of jumping to
+  the line after it.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

@@ -108,7 +108,7 @@ pub fn commit_or_block(
 /// actually committed (RFC-069 §2.1).
 ///
 /// The resync is the point. A commit stores the body the *session* decided on —
-/// a non-last section's body gets a newline appended — while the draft signal
+/// a non-last section's body gets the separator that keeps the next heading on its own line — while the draft signal
 /// still holds what the user typed. Without the resync `is_pending` stays true
 /// forever, so the dirty dot stays lit after a byte-correct save, and every
 /// later navigation, preview toggle or search re-commits an identical body: a
@@ -120,6 +120,11 @@ pub fn commit_and_resync(
     draft: &mut Signal<String>,
     status: &mut Signal<String>,
 ) -> bool {
+    // The resync below replaces the text area's value, which would put the caret
+    // at the end; the script puts it back (RFC-084 §4.4).
+    if is_pending(session, draft) {
+        crate::focus::hold_selection();
+    }
     if !commit_or_block(session, draft, status) {
         return false;
     }

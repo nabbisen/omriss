@@ -8,7 +8,10 @@ When you commit a body edit, omriss splices exactly that byte range of the
 file. Everything else is preserved bit-for-bit:
 
 - spacing quirks, blank-line conventions, missing trailing newlines;
-- CRLF and LF line endings, exactly as found;
+- CRLF and LF line endings, exactly as found — including the lines of the
+  section you are editing that you did not change; a line break you type or that
+  omriss must add (such as the one that keeps the next heading on its own line)
+  is written in the file's own style, so a CRLF file stays CRLF;
 - HTML comments and inline/block HTML;
 - code fences (a `#` inside a fence is code, not a heading);
 - YAML/TOML front matter;
