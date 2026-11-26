@@ -140,10 +140,9 @@ fn drafts(view: &str) -> Vec<String> {
 ///   file that uses CRLF, no `\r` appears in a file that does not;
 /// * undo restores the original exactly.
 ///
-/// `needs_no_separator` limits the edits to those that end the body with a line
-/// break (or sit in the last section), where no separator between the body and
-/// the next heading is involved.
-fn property(source: &str, needs_no_separator: bool) -> usize {
+/// A section followed by a heading whose edited text does not end in a line
+/// break gains exactly one — core's separator, in the document's newline.
+fn property(source: &str) -> usize {
     let probe = open(source);
     let mut all = Vec::new();
     titles(&probe.document_map_nodes(), &mut all);
@@ -156,20 +155,25 @@ fn property(source: &str, needs_no_separator: bool) -> usize {
         let view = as_shown_in_a_text_area(&original);
         let is_last = source.ends_with(&original);
         for draft in drafts(&view) {
-            if needs_no_separator && !is_last && !draft.is_empty() && !draft.ends_with('\n') {
-                continue;
-            }
             let mut s = open(source);
             focus(&mut s, &title);
             commit(&mut s, &draft);
             let after = s.source().to_string();
             let ctx = format!("{title:?}, draft {draft:?}, doc {source:?}");
 
-            // The text area shows what the user made.
+            // The text area shows what the user made — plus, in a section that
+            // is followed by a heading, the one line break that keeps that
+            // heading on its own line (core's `joining_separator`).
+            let shown_draft = as_shown_in_a_text_area(&draft);
+            let separator = if !is_last && !draft.is_empty() && !draft.ends_with('\n') {
+                "\n"
+            } else {
+                ""
+            };
             assert_eq!(
                 as_shown_in_a_text_area(&body(&s)),
-                as_shown_in_a_text_area(&draft),
-                "the editor must show the draft: {ctx}"
+                format!("{shown_draft}{separator}"),
+                "the editor must show the draft and nothing else: {ctx}"
             );
             // Everything outside the changed span is the same bytes: the head
             // and the tail the text area did not change, and the document around
@@ -227,24 +231,24 @@ fn property(source: &str, needs_no_separator: bool) -> usize {
 
 #[test]
 fn an_lf_file_keeps_its_bytes_outside_the_edit() {
-    assert!(property(&lf_doc(), true) > 500);
+    assert!(property(&lf_doc()) > 500);
 }
 
 #[test]
 fn a_crlf_file_keeps_its_crlf_outside_the_edit_and_inserts_crlf() {
-    assert!(property(&crlf(&lf_doc()), true) > 500);
+    assert!(property(&crlf(&lf_doc())) > 500);
 }
 
 #[test]
 fn a_mixed_file_keeps_each_untouched_ending_and_inserts_crlf() {
-    assert!(property(&mixed(&lf_doc()), true) > 500);
+    assert!(property(&mixed(&lf_doc())) > 500);
 }
 
 #[test]
 fn a_file_without_a_final_newline_and_with_nested_sections() {
     let doc = "# A\nintro\n\n## B\nbee\n\n# C\nsea";
     for doc in [doc.to_string(), crlf(doc), mixed(doc)] {
-        assert!(property(&doc, true) > 300);
+        assert!(property(&doc) > 300);
     }
 }
 
@@ -366,4 +370,99 @@ fn a_newline_typed_into_a_one_line_container_inside_a_crlf_file_is_crlf() {
     assert_eq!(original, "[\"a\"]");
     s.commit_structured_draft("[\n\"a\"\n]").unwrap();
     assert_eq!(s.source(), "{\r\n  \"tags\": [\r\n\"a\"\r\n]\r\n}\r\n");
+}
+
+// ── Task 027's cases, byte-exact (RFC-084 §7) ───────────────────────────────
+
+const A: &str = "# One\nbody one\n\n# Two\nbody two\n\n# Three\nbody three\n";
+const B: &str = "# One\nbody one\n\n# Two\nbody two\n\n# Three\nbody three";
+
+/// Types `x` at the end of `section`'s text, as the page does, and commits.
+fn type_x_at_the_end(doc: &str, section: &str) -> String {
+    let mut s = open(doc);
+    focus(&mut s, section);
+    let draft = format!("{}x", as_shown_in_a_text_area(&body(&s)));
+    assert!(s.body_draft_differs(&draft));
+    commit(&mut s, &draft);
+    // The editor is resynchronised to the committed body: nothing is pending.
+    assert!(!s.body_draft_differs(&as_shown_in_a_text_area(&body(&s))));
+    s.source().to_string()
+}
+
+#[test]
+fn case_1_a_middle_section_gains_one_document_newline_after_the_typed_text() {
+    assert_eq!(
+        type_x_at_the_end(A, "Two"),
+        "# One\nbody one\n\n# Two\nbody two\n\nx\n# Three\nbody three\n"
+    );
+    assert_eq!(
+        type_x_at_the_end(&crlf(A), "Two"),
+        crlf("# One\nbody one\n\n# Two\nbody two\n\nx\n# Three\nbody three\n"),
+        "CRLF throughout: the section's own endings and the separator"
+    );
+}
+
+#[test]
+fn case_2_the_last_section_gains_nothing() {
+    assert_eq!(
+        type_x_at_the_end(A, "Three"),
+        "# One\nbody one\n\n# Two\nbody two\n\n# Three\nbody three\nx"
+    );
+    assert_eq!(
+        type_x_at_the_end(&crlf(A), "Three"),
+        crlf("# One\nbody one\n\n# Two\nbody two\n\n# Three\nbody three\n") + "x"
+    );
+}
+
+#[test]
+fn case_3_a_file_without_a_final_newline_gains_nothing() {
+    assert_eq!(
+        type_x_at_the_end(B, "Three"),
+        "# One\nbody one\n\n# Two\nbody two\n\n# Three\nbody threex"
+    );
+}
+
+#[test]
+fn case_4_a_crlf_file_stays_crlf_in_every_case() {
+    let out = type_x_at_the_end(&crlf(A), "Two");
+    assert!(
+        !out.replace("\r\n", "").contains('\n'),
+        "no bare LF: {out:?}"
+    );
+    let out = type_x_at_the_end(&crlf(B), "Three");
+    assert!(
+        !out.replace("\r\n", "").contains('\n'),
+        "no bare LF: {out:?}"
+    );
+}
+
+#[test]
+fn case_5_leaving_the_section_commits_the_same_bytes_as_saving() {
+    // Saving and leaving both commit the pending draft through the same call
+    // (`draft_sync::commit_or_block`); at the session there is one commit.
+    let by_save = type_x_at_the_end(&crlf(A), "Two");
+    let mut s = open(&crlf(A));
+    focus(&mut s, "Two");
+    let draft = format!("{}x", as_shown_in_a_text_area(&body(&s)));
+    commit(&mut s, &draft);
+    s.zoom_out();
+    assert_eq!(s.source(), by_save);
+}
+
+#[test]
+fn a_second_commit_after_the_separator_adds_nothing_more() {
+    let mut s = open(&crlf(A));
+    focus(&mut s, "Two");
+    let draft = format!("{}x", as_shown_in_a_text_area(&body(&s)));
+    commit(&mut s, &draft);
+    let once = s.source().to_string();
+    // The editor now holds the committed body; typing `y` and committing again
+    // puts `y` on the line after `x` and adds no second separator.
+    let draft = format!("{}y", as_shown_in_a_text_area(&body(&s)));
+    commit(&mut s, &draft);
+    assert_eq!(
+        s.source(),
+        once.replace("x\r\n# Three", "x\r\ny\r\n# Three"),
+        "one separator, in the document's newline, however often it is committed"
+    );
 }
