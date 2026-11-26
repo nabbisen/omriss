@@ -48,8 +48,10 @@ pub fn is_pending(session: &Signal<EditorSession>, draft: &Signal<String>) -> bo
         return s.raw_draft_differs(&draft.read());
     }
     if s.format() == DocumentFormat::Markdown {
-        let d = draft.read();
-        s.current_snapshot().is_some_and(|snap| *d != snap.body)
+        // In the text-area view: a text area delivers `\n` whatever the file
+        // uses, so comparing bytes would call every untouched CRLF section
+        // "pending" (RFC-084 §4.2).
+        s.body_draft_differs(&draft.read())
     } else {
         s.structured_draft_differs(&draft.read())
     }
@@ -94,7 +96,8 @@ pub fn commit_or_block(
     let snap = session.read().current_snapshot();
     let Some(s) = snap else { return true };
     let d = draft.read().clone();
-    if d != s.body && session.write().commit_focused_body(&s, d).is_err() {
+    if session.read().body_draft_differs(&d) && session.write().commit_focused_body(&s, d).is_err()
+    {
         status.set("error.stale_edit".into());
         return false;
     }

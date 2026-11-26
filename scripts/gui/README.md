@@ -136,6 +136,29 @@ and are runnable on their own.
 ROLE, name starts with NAME — so a script never reads one node and presses
 another.
 
+## Known traps
+
+Things that look like a failure of the product and are not. Each cost a run.
+
+- **AT-SPI's text of a `textarea` omits one trailing newline.** `gui_text` and
+  `atspi_text.py` showed `…x` while the page's own `value` was `…x\n`
+  (RFC-084 / Task 027). Whenever a trailing newline matters — a separator the
+  editor added, a caret at the end — read the page's value (a script installed
+  in a throwaway build), not the accessibility text. The bytes of a *file*
+  (`gui_bytes`) are not affected.
+- **`xdotool type` drops or garbles characters in `ja_JP`** (`gui_type_into`
+  timed out, RFC-059 PR 3), while `xdotool key`, one character at a time, works.
+  Measured on a machine running `fcitx5` with `mozc`: with the default
+  environment `xdotool type` of "Modern" into the search field came out as
+  "Men"; with `GTK_IM_MODULE=gtk-im-context-simple` (no input method) it typed
+  all of it. `type` remaps keycodes on the fly, which an input method does not
+  see as ordinary keys; `key` uses the real ones. So the cause is the input
+  method, not omriss. **Workaround:** in a Japanese run type with `gui_key`, one
+  character per call, or export `GTK_IM_MODULE=gtk-im-context-simple` before
+  `gui_launch` (the harness passes it through). Not made the default: a run
+  without the input method is a run of a different configuration from the one a
+  Japanese user has.
+
 ## Headless runs — tried, and deliberately not adopted
 
 GTK 3's own `broadwayd` runs omriss with no display server and no window on

@@ -60,7 +60,7 @@ pub fn FocusedContentPane(
         return rsx! { main { class: "focused-content-pane" } };
     };
 
-    let local_dirty = *draft.read() != snapshot.body;
+    let local_dirty = session.read().body_draft_differs(&draft.read());
 
     // Commit on blur (apply-on-navigation pattern: RFC-050).
     let do_blur = move |_: Event<FocusData>| {

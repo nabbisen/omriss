@@ -1,4 +1,9 @@
-//! The edit a raw-text draft makes to the document source (RFC-076).
+//! The edit a text-area draft makes to the document source (RFC-076, RFC-084).
+//!
+//! **Every** text area that commits into the source goes through this module:
+//! the plain file text (the whole source), a Markdown section's body, and a JSON
+//! group's raw text (a byte range of the source). The one general function is
+//! [`text_area_edit`]; [`raw_edit`] is its whole-source form.
 //!
 //! A text area's value always uses `\n`: the browser turns `\r\n` and a lone
 //! `\r` into `\n` before the application sees it. Committing that value as the
@@ -42,8 +47,22 @@ pub struct RawEdit {
 }
 
 /// The edit that turns `source` into what `draft` says, or `None` when the
-/// draft shows exactly what the source shows (nothing to commit).
+/// draft shows exactly what the source shows (nothing to commit). The whole-source
+/// form of [`text_area_edit`]: inserted newlines take the source's own style.
 pub fn raw_edit(source: &str, draft: &str) -> Option<RawEdit> {
+    text_area_edit(source, draft, newline_of(source))
+}
+
+/// The edit that turns `original` — a stretch of the document that a text area
+/// showed — into what `draft` says, or `None` when the draft shows exactly what
+/// `original` shows.
+///
+/// The range of the returned edit is relative to `original`. `newline` is the
+/// **document's** newline (see [`newline_of`]), not `original`'s: a stretch with
+/// no line break in it (a one-line JSON array, an empty body) still belongs to a
+/// CRLF document, and a newline the user types into it must be CRLF.
+pub fn text_area_edit(original: &str, draft: &str, newline: &str) -> Option<RawEdit> {
+    let source = original;
     let shown = as_shown_in_a_text_area(source);
     let wanted = as_shown_in_a_text_area(draft);
     if shown == wanted {
@@ -72,13 +91,27 @@ pub fn raw_edit(source: &str, draft: &str) -> Option<RawEdit> {
 
     Some(RawEdit {
         range: start..end,
-        replacement: with_newlines_of(source, &middle),
+        replacement: with_newline(newline, &middle),
     })
 }
 
-/// The newline `source` uses for text written into it: CRLF if it contains any
-/// `\r\n`, else LF — the same preference core applies (`document_newline`).
-fn newline_of(source: &str) -> &'static str {
+/// `original` with `draft`'s changes applied (see [`text_area_edit`]): the new
+/// text of that stretch of the document, every byte outside the changed span
+/// exactly as it was. `None` when the draft changes nothing.
+pub fn apply_text_area_draft(original: &str, draft: &str, newline: &str) -> Option<String> {
+    let edit = text_area_edit(original, draft, newline)?;
+    let mut merged = String::with_capacity(original.len() + edit.replacement.len());
+    merged.push_str(&original[..edit.range.start]);
+    merged.push_str(&edit.replacement);
+    merged.push_str(&original[edit.range.end..]);
+    Some(merged)
+}
+
+/// The newline the document `source` uses for text written into it: CRLF if it
+/// contains any `\r\n`, else LF — the same preference core applies
+/// (`document_newline`), so a newline inserted by an edit here and one inserted by
+/// a structural operation there always agree.
+pub fn newline_of(source: &str) -> &'static str {
     if source.contains("\r\n") {
         "\r\n"
     } else {
@@ -86,10 +119,11 @@ fn newline_of(source: &str) -> &'static str {
     }
 }
 
-fn with_newlines_of(source: &str, text_area_text: &str) -> String {
-    match newline_of(source) {
-        "\r\n" => text_area_text.replace('\n', "\r\n"),
-        _ => text_area_text.to_string(),
+fn with_newline(newline: &str, text_area_text: &str) -> String {
+    if newline == "\r\n" {
+        text_area_text.replace('\n', "\r\n")
+    } else {
+        text_area_text.to_string()
     }
 }
 

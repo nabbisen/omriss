@@ -10,7 +10,23 @@ use omriss_core::{
     StructureErrorKind, StructureNodeKind,
 };
 
+use crate::editor::raw_text::{apply_text_area_draft, newline_of, text_area_edit};
+
 impl super::EditorSession {
+    /// The text a structured `draft` means for the focused JSON node, as source:
+    /// for a container's raw-text editor (a text area, which only ever delivers
+    /// `\n`) the original text with just the user's change applied and inserted
+    /// newlines in the document's style (RFC-084); for a scalar's one-line input
+    /// the draft itself. `None` when a container's draft changes nothing.
+    fn structured_draft_source(&self, draft: &str) -> Option<String> {
+        match self.focused_structured_raw_text() {
+            Some(original) => {
+                apply_text_area_draft(&original, draft, newline_of(self.document.source()))
+            }
+            None => Some(draft.to_string()),
+        }
+    }
+
     /// The focused JSON container's own full raw source text (RFC-054
     /// §7.4), for pre-populating its raw-text editor — `focused_content()`
     /// (via `focused_structured_content()`) only ever returns a truncated
@@ -42,7 +58,15 @@ impl super::EditorSession {
         match self.focused_structured_content() {
             Some(FocusedContent::StructuredValue { editable_text, .. }) => draft != editable_text,
             Some(FocusedContent::StructuredGroup { .. }) => {
-                self.focused_structured_raw_text().as_deref() != Some(draft)
+                // In the text-area view, so a CRLF container the user has not
+                // changed is not "pending" (RFC-084 §4.2).
+                match self.focused_structured_raw_text() {
+                    Some(original) => {
+                        text_area_edit(&original, draft, newline_of(self.document.source()))
+                            .is_some()
+                    }
+                    None => true,
+                }
             }
             _ => false,
         }
@@ -74,8 +98,11 @@ impl super::EditorSession {
             .focused()
             .ok_or(StructureErrorKind::InternalInvariantFailed)?;
         let structure = self.structure_result().map_err(|e| e.kind)?;
+        let source_text = self
+            .structured_draft_source(draft)
+            .unwrap_or_else(|| draft.to_string());
         JsonAdapter
-            .validate_focused_edit(self.document.source(), &structure, id, draft)
+            .validate_focused_edit(self.document.source(), &structure, id, &source_text)
             .map(|_| ())
             .map_err(|e| e.kind)
     }
@@ -96,8 +123,11 @@ impl super::EditorSession {
             .focused()
             .ok_or(StructureErrorKind::InternalInvariantFailed)?;
         let structure = self.structure_result().map_err(|e| e.kind)?;
+        let source_text = self
+            .structured_draft_source(draft)
+            .unwrap_or_else(|| draft.to_string());
         let edit = JsonAdapter
-            .validate_focused_edit(self.document.source(), &structure, id, draft)
+            .validate_focused_edit(self.document.source(), &structure, id, &source_text)
             .map_err(|e| e.kind)?;
         let applied = JsonAdapter
             .apply_validated_edit(&mut self.document, edit)

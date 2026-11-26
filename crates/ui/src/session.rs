@@ -16,6 +16,7 @@ use omriss_core::{
 
 use self::structure_bridge::StructureCache;
 
+use crate::editor::raw_text::{apply_text_area_draft, newline_of, text_area_edit};
 use crate::editor::structure_change::{
     ExpectedChange, Operation, OutlineSummary, StructureChange, detect, expected_change,
 };
@@ -336,13 +337,31 @@ impl EditorSession {
         self.document.focus_snapshot(id).ok()
     }
 
+    /// Whether `draft`, as the section's text area delivers it, would change the
+    /// focused section's body. Compared in the text-area view (RFC-084 §4.2): a
+    /// CRLF section the user has not touched is never pending.
+    pub fn body_draft_differs(&self, draft: &str) -> bool {
+        self.current_snapshot().is_some_and(|snapshot| {
+            text_area_edit(&snapshot.body, draft, newline_of(self.document.source())).is_some()
+        })
+    }
+
     /// Replaces the body of the currently focused section. The snapshot the
     /// edit was composed against supplies the revision check (RFC-008).
+    ///
+    /// `draft` is what the section's text area delivered, so it uses `\n`
+    /// whatever the file uses. It is never the new body: the body is the
+    /// original with only the user's change applied and inserted newlines in
+    /// the document's style (RFC-084), so line endings the user did not touch
+    /// survive.
     pub fn commit_focused_body(
         &mut self,
         base: &FocusSnapshot,
-        new_body: String,
+        draft: String,
     ) -> Result<EditResult, EditError> {
+        let new_body =
+            apply_text_area_draft(&base.body, &draft, newline_of(self.document.source()))
+                .unwrap_or_else(|| base.body.clone());
         let new_body = self.body_for_focused_editor_commit(base, new_body)?;
         let pending = self.begin_change(Operation::BodyCommit);
         let result = self.document.replace_section_body(ReplaceSectionBody {
