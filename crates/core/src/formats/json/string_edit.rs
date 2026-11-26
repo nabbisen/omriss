@@ -28,6 +28,8 @@ struct Shown {
     bytes: ByteRange,
     /// A lone `\r`: shown as a line break, but fusing with a `\n` placed after it.
     lone_cr: bool,
+    /// A lone `\n` (not the end of a `\r\n`).
+    lone_lf: bool,
 }
 
 /// The replacement a draft makes to the string literal at `literal`: a byte
@@ -61,23 +63,32 @@ pub(super) fn string_edit(
         .count();
 
     let closing_quote = literal.end - 1;
-    let mut start = units.get(head).map_or(closing_quote, |u| u.bytes.start);
+    let mut head = head;
+    let middle: String = wanted[head..wanted.len() - tail].iter().collect();
+    let mut replacement = middle.replace('\n', style);
+
+    // A lone `\r` meeting a `\n` becomes one `\r\n`, and the text area would show
+    // one line break where the draft has two. That happens when the edit puts a
+    // `\n` right after a lone `\r` — typed, or the tail's own after a deletion.
+    // The edit takes the `\r` in and writes it as the string's own newline (and
+    // each lone `\r` before it, for a run): the one kind of byte beside the
+    // user's span an edit may rewrite.
+    let right_is_lone_lf = tail > 0 && units[units.len() - tail].lone_lf;
+    while head > 0
+        && units[head - 1].lone_cr
+        && (replacement.starts_with('\n') || (replacement.is_empty() && right_is_lone_lf))
+    {
+        head -= 1;
+        replacement.insert_str(0, style);
+    }
+
+    let start = units.get(head).map_or(closing_quote, |u| u.bytes.start);
     let end = if tail == 0 {
         closing_quote
     } else {
         units[units.len() - tail].bytes.start
     };
-    let mut middle: String = wanted[head..wanted.len() - tail].iter().collect();
-
-    // An inserted `\n` right after a lone `\r` would fuse with it into one
-    // `\r\n` and the text area would show one line break where the draft has
-    // two. Take that `\r` into the edit, rewritten in the string's style.
-    if head > 0 && units[head - 1].lone_cr && middle.starts_with('\n') {
-        start = units[head - 1].bytes.start;
-        middle.insert(0, '\n');
-    }
-
-    let escaped = encode_string_body(&middle.replace('\n', style));
+    let escaped = encode_string_body(&replacement);
     if head == 0 && tail == 0 {
         // Nothing of the old text survives: the whole literal is new.
         return Some((literal, format!("\"{escaped}\"")));
@@ -99,6 +110,7 @@ fn shown_units(spelled: &[SpelledChar]) -> Vec<Shown> {
                         end: next.end,
                     },
                     lone_cr: false,
+                    lone_lf: false,
                 });
                 i += 2;
                 continue;
@@ -107,12 +119,14 @@ fn shown_units(spelled: &[SpelledChar]) -> Vec<Shown> {
                 ch: '\n',
                 bytes,
                 lone_cr: true,
+                lone_lf: false,
             });
         } else {
             units.push(Shown {
                 ch,
                 bytes,
                 lone_cr: false,
+                lone_lf: ch == '\n',
             });
         }
         i += 1;

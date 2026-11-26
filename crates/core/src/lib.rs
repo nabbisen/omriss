@@ -76,4 +76,4 @@ pub use formats::structure::{
 pub use formats::unsupported::{TomlAdapter, YamlExperimentalAdapter};
 pub use index::outline::{HeadingLevel, NodeId, Outline, SectionNode};
 pub use range::{ByteRange, RangeError};
-pub use text_area::as_shown_in_a_text_area;
+pub use text_area::{as_shown_in_a_text_area, document_newline};

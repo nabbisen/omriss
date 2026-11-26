@@ -56,7 +56,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
   container's raw-text editor and the plain file text. Separately, the line break
   that keeps the next heading on its own line is now added by one rule, in the
   file's own newline, and the caret stays where you left it instead of jumping to
-  the line after it.
+  the line after it. **JSON text values:** in omriss 0.17.0 and earlier, editing a
+  text value that contained a line break dropped the line break, and re-wrote every
+  escape in it (`\u00e9` became `é`, `\/` became `/`) — your data was otherwise
+  intact. A text value is now edited in a box that shows its line breaks, and only
+  the characters you change are rewritten. Files whose lines end in a bare CR
+  (classic Mac OS) now keep that ending for everything omriss writes into them.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

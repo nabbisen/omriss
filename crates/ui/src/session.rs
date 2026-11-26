@@ -16,7 +16,7 @@ use omriss_core::{
 
 use self::structure_bridge::StructureCache;
 
-use crate::editor::raw_text::{apply_text_area_draft, newline_of, text_area_edit};
+use crate::editor::raw_text::{apply_text_area_draft_after, newline_of, text_area_edit};
 use crate::editor::structure_change::{
     ExpectedChange, Operation, OutlineSummary, StructureChange, detect, expected_change,
 };
@@ -359,9 +359,17 @@ impl EditorSession {
         base: &FocusSnapshot,
         draft: String,
     ) -> Result<EditResult, EditError> {
-        let new_body =
-            apply_text_area_draft(&base.body, &draft, newline_of(self.document.source()))
-                .unwrap_or_else(|| base.body.clone());
+        // Computed against the document, not the body alone: the edit has to see
+        // the heading's line ending that precedes the body (RFC-084 §10.3).
+        let source = self.document.source();
+        let before = self
+            .document
+            .outline()
+            .node(base.node_id)
+            .and_then(|node| source.get(..node.body_range.start))
+            .unwrap_or("");
+        let new_body = apply_text_area_draft_after(before, &base.body, &draft, newline_of(source))
+            .unwrap_or_else(|| base.body.clone());
         // No separator is added here. Keeping the next heading on its own line
         // is core's `joining_separator` (RFC-065) and nothing else's: it writes
         // the document's own newline, and only when one is missing (RFC-084 §4.3).

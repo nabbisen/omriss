@@ -35,7 +35,11 @@ Open a `.json` file and its keys, objects, arrays, and values appear in the
 Document Map exactly like Markdown's headings do. Select a value to edit it
 in place:
 
-- text, numbers, and on/off (`true`/`false`) values, validated as you type;
+- text, numbers, and on/off (`true`/`false`) values, validated as you type. A
+  text value is edited in a box that grows with it, so a line break inside the
+  text shows, stays, and can be typed. Editing it changes only the characters you
+  changed: an escape you did not touch (`\u00e9`, `\/`, a `\r\n`) keeps the
+  spelling the file gave it;
 - an object or array's raw text, via "Show this part as text" — the
   replacement must itself be valid JSON and keep the same shape (an object
   cannot become an array, or the reverse);

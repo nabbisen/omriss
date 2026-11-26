@@ -171,6 +171,9 @@ fn strings() -> Vec<Vec<usize>> {
         vec![2, 12, 7, 8, 9],
         vec![10, 0, 11, 0],
         vec![1, 1, 1],
+        // Lone CRs in a run, and beside LFs.
+        vec![6, 6, 0, 6, 6],
+        vec![0, 6, 0, 4, 0, 6, 0, 4],
         vec![],
     ]
 }
@@ -236,15 +239,16 @@ fn property(tokens: &[usize]) -> usize {
                     .zip(wanted[head..].iter().rev())
                     .take_while(|(x, y)| x == y)
                     .count();
-                // A lone `\r` right before an inserted line break is rewritten
-                // (it would fuse into a `\r\n`).
-                let lone_cr_before = head > 0
-                    && TOKENS[tokens[head - 1]].0 == "\\r"
-                    && wanted[head..].first() == Some(&'\n')
-                    && wanted.len() - tail > head;
-                let kept_head = if lone_cr_before { head - 1 } else { head };
+                // Only a lone `\r` right before the edit may be rewritten (it
+                // would fuse with a `\n` into a `\r\n`), and so each lone `\r`
+                // before it, for a run.
+                let lone_cr_run = tokens[..head]
+                    .iter()
+                    .rev()
+                    .take_while(|&&t| TOKENS[t].0 == "\\r")
+                    .count();
                 assert!(
-                    literal.starts_with(&spell(&tokens[..kept_head])),
+                    (0..=lone_cr_run).any(|k| literal.starts_with(&spell(&tokens[..head - k]))),
                     "{ctx}: the unchanged head was respelled: {literal}"
                 );
                 assert!(

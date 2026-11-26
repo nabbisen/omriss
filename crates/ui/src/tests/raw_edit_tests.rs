@@ -291,6 +291,11 @@ fn every_single_span_edit_realises_the_draft_and_preserves_everything_else() {
         "A\n===\nsetext\n---\n<!--\n",
         "\r\n\r\n\r\n",
         "lone\rcr\rhere",
+        // Bare CRs (RFC-084 §10.3): all of them, in runs, beside LFs.
+        "a\rb\rc\r",
+        "a\r\rb\r\r",
+        "a\rb\nc",
+        "a\r\rb\n\nc",
     ];
     let snippets = ["", "Z", "\n", "\n\n", "é\nü", "# H\n"];
 

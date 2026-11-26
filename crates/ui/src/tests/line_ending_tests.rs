@@ -69,6 +69,39 @@ fn mixed(s: &str) -> String {
 
 // ── the property (RFC-084 §4.5) ─────────────────────────────────────────────
 
+/// Every line break a bare CR.
+fn bare_cr(s: &str) -> String {
+    s.replace('\n', "\r")
+}
+/// Line endings in rotation: LF, CRLF, CR, LF, …
+fn rotating(s: &str) -> String {
+    s.split_inclusive('\n')
+        .enumerate()
+        .map(|(i, line)| match i % 3 {
+            0 => line.to_string(),
+            1 => line.replace('\n', "\r\n"),
+            _ => line.replace('\n', "\r"),
+        })
+        .collect()
+}
+/// Bare CRs on the first lines, LF on the rest.
+fn some_cr(s: &str) -> String {
+    s.split_inclusive('\n')
+        .enumerate()
+        .map(|(i, line)| {
+            if i < 3 {
+                line.replace('\n', "\r")
+            } else {
+                line.to_string()
+            }
+        })
+        .collect()
+}
+
+fn count(s: &str, c: char) -> usize {
+    s.matches(c).count()
+}
+
 fn bare_lf(s: &str) -> usize {
     let b = s.as_bytes();
     (0..b.len())
@@ -146,7 +179,6 @@ fn property(source: &str) -> usize {
     let probe = open(source);
     let mut all = Vec::new();
     titles(&probe.document_map_nodes(), &mut all);
-    let uses_crlf = source.contains("\r\n");
     let mut checked = 0;
     for title in all {
         let mut s = open(source);
@@ -192,8 +224,13 @@ fn property(source: &str) -> usize {
                 .count()
                 .min(view.chars().count() - head)
                 .min(draft.chars().count() - head);
+            // The one exception: a lone CR (or a run of them) right before the
+            // edit, where the edit puts a line break the CR would fuse with into a
+            // CRLF, is written as the document's newline.
+            let head_bytes = &original[..source_len_of_view_head(&original, head)];
             assert!(
-                after_body.starts_with(&original[..source_len_of_view_head(&original, head)]),
+                after_body.starts_with(head_bytes)
+                    || after_body.starts_with(head_bytes.trim_end_matches('\r')),
                 "the unchanged head of the body changed: {ctx} -> {after_body:?}"
             );
             assert!(
@@ -211,14 +248,29 @@ fn property(source: &str) -> usize {
                 after.ends_with(&source[body_start + original.len()..]),
                 "bytes after the body changed: {ctx}"
             );
-            // Inserted newlines are the document's.
-            if uses_crlf {
-                assert!(
+            // Inserted newlines are the document's (RFC-084 §10.3: its newline is
+            // CRLF if it has any CRLF, else CR if its breaks are bare CRs only,
+            // else LF).
+            match omriss_core::document_newline(source) {
+                "\r\n" => assert!(
                     bare_lf(&after) <= bare_lf(source),
                     "a bare LF was inserted into a CRLF file: {ctx} -> {after:?}"
-                );
-            } else {
-                assert!(!after.contains('\r'), "a CR appeared in an LF file: {ctx}");
+                ),
+                "\r" => assert!(
+                    !after.contains('\n'),
+                    "an LF was inserted into a bare-CR file: {ctx} -> {after:?}"
+                ),
+                _ if !source.contains('\r') => {
+                    assert!(!after.contains('\r'), "a CR appeared in an LF file: {ctx}")
+                }
+                // LF beside lone CRs: the edit may rewrite a lone CR beside the
+                // text it touches, and writes at most one CR itself — the first
+                // newline after a heading ended by a lone CR, which an LF would
+                // fuse with (the heading's ending would change).
+                _ => assert!(
+                    count(&after, '\r') <= count(source, '\r') + 1,
+                    "CRs were inserted into an LF file: {ctx} -> {after:?}"
+                ),
             }
             // Undo is byte-exact.
             s.undo().unwrap();
@@ -245,9 +297,80 @@ fn a_mixed_file_keeps_each_untouched_ending_and_inserts_crlf() {
 }
 
 #[test]
+fn a_bare_cr_file_keeps_its_bytes_outside_the_edit_and_inserts_cr() {
+    // Task 028 D6: a file whose lines end in a bare CR (classic Mac OS).
+    assert!(property(&bare_cr(&lf_doc())) > 500);
+}
+
+#[test]
+fn a_file_rotating_lf_crlf_and_cr_keeps_each_untouched_ending() {
+    assert!(property(&rotating(&lf_doc())) > 500);
+}
+
+#[test]
+fn a_file_with_some_bare_crs_keeps_each_untouched_ending() {
+    assert!(property(&some_cr(&lf_doc())) > 500);
+}
+
+#[test]
+fn task_028s_minimal_example_keeps_the_headings_cr_and_the_blank_line() {
+    // `# A\rb\r`, the body `b\r`; the user types a line break at its start. The
+    // heading's CR stays, the typed line break is a CR, the blank line exists.
+    let mut s = open("# A\rb\r");
+    focus(&mut s, "A");
+    commit(&mut s, "\nb\n");
+    assert_eq!(s.source(), "# A\r\rb\r");
+    s.undo().unwrap();
+    assert_eq!(s.source(), "# A\rb\r");
+
+    // The same where the document also has LFs, so its newline is LF and an LF
+    // after the heading's lone CR would have fused with it into a CRLF.
+    let doc = "# A\rb\n\n# C\nc\n";
+    let mut s = open(doc);
+    focus(&mut s, "A");
+    commit(&mut s, "\nb\n\n");
+    assert_eq!(s.source(), "# A\r\rb\n\n# C\nc\n");
+    s.undo().unwrap();
+    assert_eq!(s.source(), doc);
+}
+
+#[test]
+fn deleting_the_text_between_a_lone_cr_and_an_lf_does_not_fuse_them() {
+    // The heading's `\r` and the body's `\n`s would become one CRLF if the `x`
+    // between them went: the heading's ending stays, and the body still shows its
+    // two breaks. (The body's own breaks are read as `\r` to keep it so.)
+    let doc = "# A\rx\n\n# C\nc\n";
+    let mut s = open(doc);
+    focus(&mut s, "A");
+    commit(&mut s, "\n\n");
+    assert!(s.source().starts_with("# A\r"), "{:?}", s.source());
+    assert_eq!(as_shown_in_a_text_area(&body(&s)), "\n\n");
+    assert!(!s.source().starts_with("# A\r\n"));
+    s.undo().unwrap();
+    assert_eq!(s.source(), doc);
+}
+
+#[test]
+fn a_bare_cr_files_inserted_newlines_are_cr() {
+    let doc = "# A\ra\r\r# B\rb\r";
+    let mut s = open(doc);
+    focus(&mut s, "A");
+    commit(&mut s, "a\nmore\n\n");
+    assert_eq!(s.source(), "# A\ra\rmore\r\r# B\rb\r");
+    assert!(!s.source().contains('\n'));
+}
+
+#[test]
 fn a_file_without_a_final_newline_and_with_nested_sections() {
     let doc = "# A\nintro\n\n## B\nbee\n\n# C\nsea";
-    for doc in [doc.to_string(), crlf(doc), mixed(doc)] {
+    for doc in [
+        doc.to_string(),
+        crlf(doc),
+        mixed(doc),
+        bare_cr(doc),
+        rotating(doc),
+        some_cr(doc),
+    ] {
         assert!(property(&doc) > 300);
     }
 }

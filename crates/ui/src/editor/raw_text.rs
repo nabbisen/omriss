@@ -46,6 +46,22 @@ pub fn raw_edit(source: &str, draft: &str) -> Option<RawEdit> {
 /// no line break in it (a one-line JSON array, an empty body) still belongs to a
 /// CRLF document, and a newline the user types into it must be CRLF.
 pub fn text_area_edit(original: &str, draft: &str, newline: &str) -> Option<RawEdit> {
+    text_area_edit_after("", original, draft, newline)
+}
+
+/// [`text_area_edit`] for a stretch that does not begin the document: `before` is
+/// the document's text just ahead of `original` (all of it, or its tail).
+///
+/// Only its last byte matters. A body that follows a heading ended by a lone
+/// `\r` must not start with a bare `\n` the edit inserted: the two would fuse
+/// into one CRLF, the heading's ending would change and the line break the user
+/// typed would vanish (RFC-084 §10.3, D6).
+pub fn text_area_edit_after(
+    before: &str,
+    original: &str,
+    draft: &str,
+    newline: &str,
+) -> Option<RawEdit> {
     let source = original;
     let shown = as_shown_in_a_text_area(source);
     let wanted = as_shown_in_a_text_area(draft);
@@ -59,23 +75,55 @@ pub fn text_area_edit(original: &str, draft: &str, newline: &str) -> Option<RawE
     let tail = common_suffix_len(&shown[head..], &wanted[head..]);
 
     let mut start = source_offset_from_start(source, head);
-    let end = source.len() - source_len_of_tail(source, tail);
-    let mut middle = wanted[head..wanted.len() - tail].to_string();
+    let mut end = source.len() - source_len_of_tail(source, tail);
+    let middle = wanted[head..wanted.len() - tail].to_string();
+    let mut replacement = with_newline(newline, &middle);
 
-    // A lone `\r` just before the edit would fuse with an inserted `\n` into
-    // one CRLF, so the document would show one newline where the draft has two.
-    // (A `\r` that is part of a CRLF is never here: the head ends after the
-    // pair.) Take that newline into the edit; it is rewritten in the document's
-    // own style, which for a lone `\r` is the only byte the edit may touch
-    // beyond the span the user changed.
-    if start > 0 && source.as_bytes()[start - 1] == b'\r' && middle.starts_with('\n') {
-        start -= 1;
-        middle.insert(0, '\n');
+    // A lone `\r` meeting a `\n` becomes one CRLF, and a text area would then show
+    // one line break where the draft has two. That happens when the edit puts a
+    // `\n` (typed, or the tail's own) right after a lone `\r`: the user typed a
+    // line break there, or deleted the text between a `\r` and a `\n`.
+    //
+    // * If the `\r` is inside `original`, the edit takes it in and writes it as the
+    //   document's newline — the one byte beside the user's span an edit may
+    //   rewrite, and again for each lone `\r` before it (a run of them).
+    // * If it is outside — a heading's, ahead of a body — it cannot be taken in.
+    //   The edit writes its own leading line breaks as `\r`, the neighbour's
+    //   style, which cannot fuse; where it deleted all of them, the tail's lone
+    //   `\n` run is read as `\r` too (RFC-084 §10.3, D6).
+    loop {
+        let left = if start > 0 {
+            source.as_bytes().get(start - 1).copied()
+        } else if source.starts_with('\n') {
+            None // the outside `\r` and this `\n` are one CRLF, not a lone `\r`
+        } else {
+            before.as_bytes().last().copied()
+        };
+        let right = source.as_bytes().get(end).copied();
+        if left == Some(b'\r') && replacement.as_bytes().first().or(right.as_ref()) == Some(&b'\n')
+        {
+            if start > 0 {
+                start -= 1;
+                replacement.insert_str(0, newline);
+            } else if replacement.starts_with('\n') {
+                let run = replacement.bytes().take_while(|&b| b == b'\n').count();
+                replacement.replace_range(..run, &"\r".repeat(run));
+            } else {
+                end += 1;
+                replacement.push('\r');
+            }
+            continue;
+        }
+        if replacement.ends_with('\r') && right == Some(b'\n') {
+            end += 1;
+            replacement.push('\r');
+            continue;
+        }
+        break;
     }
-
     Some(RawEdit {
         range: start..end,
-        replacement: with_newline(newline, &middle),
+        replacement,
     })
 }
 
@@ -83,7 +131,18 @@ pub fn text_area_edit(original: &str, draft: &str, newline: &str) -> Option<RawE
 /// text of that stretch of the document, every byte outside the changed span
 /// exactly as it was. `None` when the draft changes nothing.
 pub fn apply_text_area_draft(original: &str, draft: &str, newline: &str) -> Option<String> {
-    let edit = text_area_edit(original, draft, newline)?;
+    apply_text_area_draft_after("", original, draft, newline)
+}
+
+/// [`apply_text_area_draft`] for a stretch that follows `before` in the document
+/// (see [`text_area_edit_after`]).
+pub fn apply_text_area_draft_after(
+    before: &str,
+    original: &str,
+    draft: &str,
+    newline: &str,
+) -> Option<String> {
+    let edit = text_area_edit_after(before, original, draft, newline)?;
     let mut merged = String::with_capacity(original.len() + edit.replacement.len());
     merged.push_str(&original[..edit.range.start]);
     merged.push_str(&edit.replacement);
@@ -91,23 +150,16 @@ pub fn apply_text_area_draft(original: &str, draft: &str, newline: &str) -> Opti
     Some(merged)
 }
 
-/// The newline the document `source` uses for text written into it: CRLF if it
-/// contains any `\r\n`, else LF — the same preference core applies
-/// (`document_newline`), so a newline inserted by an edit here and one inserted by
-/// a structural operation there always agree.
-pub fn newline_of(source: &str) -> &'static str {
-    if source.contains("\r\n") {
-        "\r\n"
-    } else {
-        "\n"
-    }
-}
+/// The newline the document `source` uses for text written into it. One rule for
+/// core's structural edits and for every text area (RFC-084 §10.3): core's
+/// `document_newline`, not a second copy.
+pub use omriss_core::document_newline as newline_of;
 
 fn with_newline(newline: &str, text_area_text: &str) -> String {
-    if newline == "\r\n" {
-        text_area_text.replace('\n', "\r\n")
-    } else {
+    if newline == "\n" {
         text_area_text.to_string()
+    } else {
+        text_area_text.replace('\n', newline)
     }
 }
 

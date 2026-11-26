@@ -165,3 +165,24 @@ fn structural_body_edit_that_adds_headings_reindexes() {
     assert_eq!(children.len(), 1);
     assert_eq!(children[0].title, "New Child");
 }
+
+// ── a file whose lines end in a bare CR (RFC-084 §10.3) ─────────────────────
+
+#[test]
+fn a_bare_cr_file_gets_cr_where_core_writes_a_newline() {
+    // The heading's terminator and the break before the next heading are both
+    // written in the document's newline — CR — not LF.
+    let source = "# A\rA body\r\r# B\rB body\r";
+    let mut document = doc(source);
+    let a = document.outline().root().children[0];
+    replace(&mut document, a, "NEW").unwrap();
+    assert_eq!(document.source(), "# A\rNEW\r# B\rB body\r");
+    assert!(!document.source().contains('\n'));
+
+    // A body that begins right after a heading with no break gets one.
+    let source = "# A\rA body\r\r# B\rB body\r";
+    let mut document = doc(source);
+    let a = document.outline().root().children[0];
+    replace(&mut document, a, "NEW\r\r").unwrap();
+    assert_eq!(document.source(), "# A\rNEW\r\r# B\rB body\r");
+}

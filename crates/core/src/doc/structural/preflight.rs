@@ -195,32 +195,20 @@ fn leading_break_count(s: &str) -> usize {
 }
 
 /// A blank line built from the document's own newline sequence: `"\n\n"`
-/// for LF, `"\r\n\r\n"` for CRLF.
+/// for LF, `"\r\n\r\n"` for CRLF, `"\r\r"` for CR.
 fn blank_line(newline: &str) -> &'static str {
-    if newline == "\r\n" {
-        "\r\n\r\n"
-    } else {
-        "\n\n"
+    match newline {
+        "\r\n" => "\r\n\r\n",
+        "\r" => "\r\r",
+        _ => "\n\n",
     }
 }
 
-/// The document's own newline sequence, for splice sites that need to
-/// insert one (RFC-065 §4.4: derive it from the document, never assume
-/// `"\n"`). `"\r\n"` if it appears anywhere in `source`, else `"\n"` — a
-/// single sequence to insert, not the three-way `NewlinePolicy` label the
-/// UI layer tracks for display; a splice site only ever needs to know what
-/// to *write*, and a document with any CRLF at all should get CRLF
-/// insertions rather than an LF that would itself create a mixed-ending
-/// file (matching `plain_heading_replacement`'s existing per-line technique
-/// at `delete_split_merge.rs`, generalized to whole-document detection for
-/// sites that have no single nearby line to sample).
-pub(crate) fn document_newline(source: &str) -> &'static str {
-    if source.contains("\r\n") {
-        "\r\n"
-    } else {
-        "\n"
-    }
-}
+/// The document's own newline sequence, for splice sites that need to insert
+/// one (RFC-065 §4.4: derive it from the document, never assume `"\n"`). The
+/// one rule lives in [`crate::text_area::document_newline`], shared with the
+/// application's text areas (RFC-084 §10.3).
+pub(crate) use crate::text_area::document_newline;
 
 /// The title span of a single ATX heading line (e.g. `"## Title ##"`),
 /// excluding the opening marker and any optional closing `#` run —
@@ -312,6 +300,7 @@ mod tests {
     fn blank_line_inserted_when_neither_side_has_any_break_before_non_atx_right() {
         assert_eq!(joining_separator("body", "next", "\n"), "\n\n");
         assert_eq!(joining_separator("body", "next", "\r\n"), "\r\n\r\n");
+        assert_eq!(joining_separator("body", "next", "\r"), "\r\r");
     }
 
     #[test]
