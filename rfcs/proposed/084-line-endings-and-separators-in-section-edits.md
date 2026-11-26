@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, taken into the frozen scope by the owner on 2026-11-26 as a file-integrity exception)
-**Status.** Proposed — §4.1–§4.5 landed on `main` for 0.18.0 (`5fa86b7`, `83fe573`, `1a89eb4`), with the CHANGELOG notice of §5. **Open:** the owner's Windows check (§7), and Task 028's investigation of two neighbouring cases (§9).
+**Status.** Proposed — §4.1–§4.5 landed on `main` for 0.18.0 (`5fa86b7`, `83fe573`, `1a89eb4`), with the CHANGELOG notice of §5. **Open:** the owner's Windows check (§7), and §10 — the JSON string value and bare-CR files, measured by Task 028 and designed 2026-11-26.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-065, RFC-076
@@ -123,3 +123,48 @@ happened).
    is not covered by the property; inside a body it is.
 
 Both are measured by Task 028 before anything is decided.
+
+## 10. Task 028's findings, and the design (2026-11-26)
+
+Measured by Task 028 (`.git-exclude/review-request/028-json-value-newlines-and-lone-cr/`).
+
+### Findings
+
+| # | Defect | Measured |
+|---|---|---|
+| D4 | **A JSON string value loses its line breaks when edited.** The field is a one-line `input` showing the decoded text; a browser strips line breaks from it, so the first keystroke drops them, silently. A line break can be neither shown, kept nor typed | `"line1\nline2"` + `x` → `"line1line2x"`; `"a\r\nb"` → `"abx"` |
+| D5 | **An edit re-spells escapes the user did not touch.** A commit re-encodes the whole string (`core/src/formats/json.rs:144`, `scalar::encode_string`), so any escape the encoder would not itself write changes form. `docs/src/file-formats.md` promises "every edit changes only the bytes you touched" | `"café"` + `x` → `"caféx"`; `"a\/b"` → `"a/bx"` |
+| D6 | **A file whose lines end in a bare CR** (classic Mac OS): (1) a line break typed at the start of a section body fuses with the heading's CR into a CRLF — the heading's ending changes and the typed blank line vanishes; (2) every newline omriss writes into it is LF, because the newline rule knows only CRLF and LF (`raw_text::newline_of`, core's `document_newline`) | `"# A\rb\r"`, draft `"\nb\n"` → `"# A\r\nb\r"` |
+
+Not defects: leaving any value untouched changes nothing (all six cases byte-
+identical); tabs and literal non-ASCII survive edits; files mixing CR with LF or
+CRLF pass the property (over 1,400 edits each).
+
+### Design
+
+1. **One principle, one more layer: replace only what changed — also inside
+   an encoded string.** A JSON string edit compares the draft with the
+   decoded original, finds the changed span **in the decoded text**, maps that
+   span back to the original literal's bytes, and replaces only those bytes
+   with the encoded new text. Untouched escapes keep their spelling (D5). This
+   is §4.1's rule — the same compare-and-splice — applied through the JSON
+   string codec; the decoder gains offsets for that, in `omriss-core`.
+2. **A string value is edited in a text area** (D4), so a line break can be
+   shown, kept and typed. Its line breaks go through §4.1 like any text area:
+   untouched ones keep their encoded form (`\n` or `\r\n`); a typed one is
+   written in the style the string already uses, or `\n` if it has none.
+   Numbers stay in a one-line field. The text area starts one line high and
+   grows with its content, so a one-line value looks as it does today.
+3. **Bare-CR files** (D6): the document's newline becomes **CR** when the file
+   has bare CRs and neither CRLF nor LF — in core's `document_newline` and the
+   UI's `newline_of`, which must stay one rule (one function, used by both). The
+   section commit computes its edit against the document, not the body alone,
+   so the lone-CR rule can see the heading's CR before the body.
+4. **The property covers all of it:** bare-CR documents join the line-ending
+   property; a JSON string property — every value × every span × the snippets —
+   asserts that bytes outside the changed span of the literal are unchanged,
+   escapes included, and undo restores the original.
+
+`docs/src/file-formats.md`'s promise becomes true; the CHANGELOG entry gains a
+sentence for JSON string values (edits in 0.17.0 dropped line breaks inside a
+value and re-spelled escapes).
