@@ -1,6 +1,6 @@
 # RFC-059 — Acceptance and QA Checklist
 
-Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
+Related RFC: `../../done/059-keyboard-focus-follow-up-controls.md`
 
 Lifecycle status: inherited from RFC-059.
 

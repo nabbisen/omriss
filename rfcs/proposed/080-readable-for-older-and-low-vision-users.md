@@ -125,7 +125,9 @@ than about five main choices overload [COGA 4.6.3]. Presented by RFC-083.
    when a view is left and re-entered (plain file text, preview): the caret
    returns where it was and the focused section stays in view [LV 3.6.1].
    Found on Windows, 2026-11-26: leaving plain file text puts the caret at
-   the end of the section.
+   the end of the section. Likewise, reopening the search panel keeps the
+   last query, so stepping through results does not mean retyping it.
+   Committing an edit keeps the caret where the user left it (RFC-084).
 10. **Words mean one thing** [COGA 4.4.1]. Owner decision 2026-11-26: the
     word **"zoom" is used for nothing**. Moving into and out of a section is
     "Open section" / "Up one level"; size is "Text size". The UI vocabulary

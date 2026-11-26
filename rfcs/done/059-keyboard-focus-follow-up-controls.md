@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M10 follow-up hardening (proposed)
-**Status.** Proposed — the 0.18.0 slice (§6.2 containment, §6.2a, §6.2b, RFC-060 F-4) has an accepted design (§12); §12.1–§12.3 landed on `main` for 0.18.0 (scopes and containment; restoration after removal, at launch and after choosing a search result). §12.4, Windows, awaits the owner's run. Handoff: `rfcs/handoffs/059-keyboard-focus-follow-up-controls/`. §6.1, §6.3, §6.4 and §6.5 remain open.
+**Status.** Implemented (0.18.0) — the 0.18.0 slice: §6.2 containment (with RFC048-QA-019), §6.2a, §6.2b and RFC-060 F-4, by the design in §12 (PR 1 `481092f`/`ab96585`, PR 2 `64fc36c`, PR 3 `0786c7d`); verified on Linux and by the owner on Windows (§12.4). **Not built here, and carried:** §6.1, §6.3 and §6.5 by RFC-081; §6.4 by RFC-080 (§11a).
 **Document type:** Follow-up RFC design seed
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-049, RFC-050, RFC-051
@@ -458,9 +458,10 @@ Consequences:
 - **Focus lost inside an open `contain` scope** (an element in it removed by
   a re-render) goes to that scope's first control. Until now step 2 did
   nothing while a `contain` scope was open, which left focus on `<body>`.
-- Choosing a search result keeps focus in the panel, so the user can step
-  through results; Esc closes it and §12.2 step 2 restores focus to the
-  editor of the section now shown. **The one explicit call (`focus_primary`)
+- Choosing a search result **closes the panel** — the behaviour the panel
+  already had — and §12.2 step 2 restores focus to the editor of the section
+  now shown. (Corrected 2026-11-26 on PR 3's review: the first version of this
+  line said the panel stays open, which no code ever did.) **The one explicit call (`focus_primary`)
   is removed** — nothing needs it any more.
 - The settings popover's `role="menu"` is wrong — it holds a label and a
   `select`, not menu items — and so is the gear button's

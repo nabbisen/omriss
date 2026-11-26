@@ -1,6 +1,6 @@
 # RFC-059 — Task Breakdown and PR Plan
 
-Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
+Related RFC: `../../done/059-keyboard-focus-follow-up-controls.md`
 
 Lifecycle status: inherited from RFC-059.
 

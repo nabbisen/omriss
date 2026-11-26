@@ -1,6 +1,6 @@
 # RFC-059 — Phase A design output
 
-Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
+Related RFC: `../../done/059-keyboard-focus-follow-up-controls.md`
 
 Phase A of `task-breakdown-pr-plan.md`. **No product code changed**: the probes
 were throwaway builds (a patched `app.rs`, reverted before every commit, binary

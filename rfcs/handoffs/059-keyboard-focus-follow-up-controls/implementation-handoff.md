@@ -1,6 +1,6 @@
 # RFC-059 — Implementation Handoff (§6.2, §6.2a, §6.2b, F-4)
 
-Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
+Related RFC: `../../done/059-keyboard-focus-follow-up-controls.md`
 
 Lifecycle status: inherited from RFC-059.
 

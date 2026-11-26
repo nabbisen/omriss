@@ -44,3 +44,21 @@ crumb does.
 
 - `omriss-core` unchanged; `omriss-ui` only for the catalog key.
 - No new dependency.
+
+## 5. Correction (2026-11-26) — which crumb gives way first
+
+PR 1 implemented §3.2 as written, and the capture showed the spec was wrong:
+with a long current title, everything shrank, and the root came out as
+"Doc…" / "ド…".
+
+§3.2 put the current section last to be cut. **The current section's full
+title is already the heading directly below the breadcrumb**; what only the
+breadcrumb shows is the path. So the order is reversed:
+
+1. **The current section gives way first** — down to nothing but its
+   ellipsis if it must.
+2. **Ancestors give way only after it**, each still capped at `12em`.
+3. **The root ("Document" / 「ドキュメント」) never shrinks** — it is a short,
+   fixed label, and a cut one says nothing.
+
+The accessible names stay the full titles (already true).

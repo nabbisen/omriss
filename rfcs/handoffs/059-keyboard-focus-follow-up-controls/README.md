@@ -1,6 +1,6 @@
 # Handoff: RFC-059 — Keyboard Focus Follow-Up Controls
 
-Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
+Related RFC: `../../done/059-keyboard-focus-follow-up-controls.md`
 
 Lifecycle status: inherited from RFC-059.
 
@@ -28,12 +28,8 @@ Windows checklist — reported in `design-output.md`. The architect made the
 design decisions from those findings and recorded them in §12. The report's
 own recommendations are input to that, not decisions.
 
-**State:** Phase A done; PR 1 and PR 2 landed. **Next: PR 3** — the owner's
-Windows check (2026-11-26) found that the search panel and the settings
-popover let Tab reach controls hidden under them (RFC-059 §12.3a). The report
-goes to `.git-exclude/review-request/059-focus-pr3-contained-overlays/README.md`.
-The owner's Windows run (W1–W3, 2026-11-26) passed: **no PR 4**. After PR 3,
-the closing step in `task-breakdown-pr-plan.md`.
+**State: closed.** PR 1–3 landed; the owner's Windows run passed; RFC-059 is
+in `done/`. Nothing further here.
 
 Files:
 

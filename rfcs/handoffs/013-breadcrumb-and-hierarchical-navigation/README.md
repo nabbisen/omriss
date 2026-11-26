@@ -9,8 +9,9 @@ goals — "display the path", "define overflow behavior" — not new design.
 in equal gaps instead of reading from the left; and long paths are a
 question.
 
-**State:** ready. One PR. The report goes to
-`.git-exclude/review-request/013-breadcrumb-layout/README.md`.
+**State:** PR 1 landed (`c1fdf3f`). **Next: PR 2, a correction to the
+cutting order** — the architect's spec was wrong (`task-breakdown-pr-plan.md`).
+The report goes to `.git-exclude/review-request/013-breadcrumb-cut-order/README.md`.
 
 Files:
 

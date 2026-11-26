@@ -86,7 +86,7 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 056 | [YAML Feasibility Spike](./proposed/056-yaml-feasibility-spike.md) | M12 |
 | 057 | [Multi-Document Workspace and Tabs](./proposed/057-multi-document-workspace-and-tabs.md) | M13 |
 | 058 | [Document Map Placement-Complete Creation Controls](./proposed/058-document-map-placement-complete-creation-controls.md) | M14 |
-| 059 | [Keyboard Focus Follow-Up Controls](./proposed/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
+| 059 | [Keyboard Focus Follow-Up Controls](./done/059-keyboard-focus-follow-up-controls.md) | M10 follow-up |
 | 060 | [Accessibility and Screen-Reader Validation Plan](./proposed/060-accessibility-screen-reader-validation-plan.md) | M15 |
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
 | 068 | [Durable File Writes and Path Integrity](./proposed/068-durable-file-writes-and-path-integrity.md) | M13 |
@@ -105,11 +105,12 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 081 | [Keyboard Compatibility and the Quick Actions Utility](./proposed/081-keyboard-compatibility-and-quick-actions-utility.md) | M16 |
 | 082 | [Right-to-Left Readiness](./proposed/082-right-to-left-readiness.md) | M17 |
 | 083 | [User Settings](./proposed/083-user-settings.md) | M16 |
+| 084 | [Line Endings and Separators in Section Edits](./proposed/084-line-endings-and-separators-in-section-edits.md) | M13 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **084**.
+Next free RFC number: **085**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.
