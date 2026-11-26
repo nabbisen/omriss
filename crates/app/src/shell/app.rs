@@ -24,7 +24,7 @@ use omriss_components::{
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
     SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar,
     StructureDialog, StructureRequest, Toolbar, UnsavedChoice, UnsavedDialog, WelcomeScreen,
-    focus_primary, use_focus_script, use_structure_requests,
+    use_focus_script, use_structure_requests,
 };
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -278,9 +278,6 @@ pub fn App() -> Element {
                         }
                         let _ = session.write().focus(id);
                         draft_sync::sync(&session, &mut draft);
-                        // A deliberate move to another section: focus its primary
-                        // surface (RFC-059 §12.3, the one explicit call).
-                        focus_primary();
                     },
                 }
             }

@@ -8,7 +8,7 @@
 //! | Markup | Meaning |
 //! |---|---|
 //! | `data-focus-scope="contain"` | a dialog, Quick Actions or a menu: takes initial focus, keeps Tab and Shift+Tab inside |
-//! | `data-focus-scope="panel"` | the search panel, the preview: takes initial focus, does **not** contain Tab |
+//! | `data-focus-scope="panel"` | the preview: takes its own place in the layout, takes initial focus, does **not** contain Tab. Anything drawn *over* other content is `contain` instead (§12.3a) |
 //! | `data-focus-arrows` | on a scope: arrow keys, Home and End move between its controls |
 //! | `autofocus` | the control a scope focuses first; otherwise its first focusable control |
 //! | `data-focus-return="ID"` | on a control that opens a scope: focus returns to element `ID`, not to the control |
@@ -105,15 +105,22 @@ const FOCUS_SCRIPT: &str = r#"
   const returnTarget = (s) => (s.retId ? document.getElementById(s.retId) : s.opener);
 
   // Focus left on <body>, one frame after a batch of mutations, and only while
-  // this window is the active one: the first of (a) where the scope that just
-  // closed was opened from, if it is still in the document; (b) the view's
-  // primary surface; (c) div.app. An open `contain` scope takes its own focus.
+  // this window is the active one. While a `contain` scope is open, focus goes to
+  // that scope's first control (§12.3a: an element in it was removed by a
+  // re-render). Otherwise the first of (a) where the scope that just closed was
+  // opened from, if it is still in the document; (b) the view's primary surface;
+  // (c) div.app.
   const check = () => {
     const closed = justClosed;
     justClosed = null;
     const active = document.activeElement;
     if (active && active !== document.body) return;
-    if (!document.hasFocus() || topmost()) return;
+    if (!document.hasFocus()) return;
+    const scope = topmost();
+    if (scope) {
+      (firstControl(scope) || scope).focus();
+      return;
+    }
     const targets = [
       closed && returnTarget(closed),
       document.querySelector('[data-focus-primary]'),
@@ -154,16 +161,6 @@ const FOCUS_SCRIPT: &str = r#"
   document.querySelectorAll('[data-focus-scope]').forEach(adopt);
   window.addEventListener('focus', scheduleCheck);
   scheduleCheck();
-
-  // The one explicit call: after a deliberate move (choosing a search result),
-  // focus the new view's primary surface. Two frames, so it lands after the
-  // restoration check the same change triggers and is not overridden by it.
-  window.__omrissFocus.primary = () => {
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const target = document.querySelector('[data-focus-primary]') || document.querySelector('.app');
-      if (target) target.focus();
-    }));
-  };
 
   const ARROWS = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Home', 'End'];
 
@@ -217,17 +214,6 @@ const FOCUS_SCRIPT: &str = r#"
   }, true);
 })()
 "#;
-
-/// The one explicit focus call (RFC-059 §12.3): after a deliberate move such as
-/// choosing a search result, focus the new view's primary surface. Everything
-/// else is the script's own rule.
-pub fn focus_primary() {
-    spawn(async move {
-        let _ = document::eval(
-            "window.__omrissFocus && window.__omrissFocus.primary && window.__omrissFocus.primary()",
-        );
-    });
-}
 
 /// Installs the focus script, once, when the calling component first renders.
 /// The host calls it from its root component.

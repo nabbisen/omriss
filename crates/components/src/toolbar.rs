@@ -111,9 +111,12 @@ pub fn Toolbar(
                     class: "toolbar-settings",
                     button {
                         class: "toolbar-icon-btn",
+                        id: "toolbar-settings-btn",
+                        // Esc closes the popover and focus returns here, even
+                        // where a click does not focus a button (§12.2 step 2).
+                        "data-focus-return": "toolbar-settings-btn",
                         title: t(lang, "menu.settings"),
                         "aria-label": t(lang, "menu.settings"),
-                        "aria-haspopup": "menu",
                         "aria-expanded": "{settings_expanded}",
                         onclick: move |_| {
                             let open = *settings_open.read();
@@ -122,37 +125,50 @@ pub fn Toolbar(
                         "\u{2699}"
                     }
                     if settings_expanded {
-                        div {
-                            class: "toolbar-settings-menu",
-                            role: "menu",
-                            "aria-label": t(lang, "menu.settings"),
-                            tabindex: 0,
-                            onclick: move |event| event.stop_propagation(),
-                            onkeydown: move |event| {
-                                if event.data().key() == Key::Escape {
-                                    event.stop_propagation();
-                                    event.prevent_default();
-                                    settings_open.set(false);
-                                }
-                            },
-                            label { class: "toolbar-settings-label", {t(lang, "menu.language")} }
-                            select {
-                                class: "toolbar-locale",
-                                "aria-label": t(lang, "menu.language"),
-                                onchange: move |event| {
-                                    if let Some(picked) = Locale::from_tag(&event.value()) {
-                                        locale.set(picked);
-                                    }
-                                },
-                                for entry in Locale::ALL {
-                                    option {
-                                        value: entry.tag(),
-                                        selected: *entry == lang,
-                                        {entry.native_name()}
-                                    }
-                                }
-                            }
-                        }
+                        SettingsPopover { locale, on_close: move |()| settings_open.set(false) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The settings popover: language choice. Drawn over the toolbar and the page,
+/// so it is a contained focus scope (RFC-059 §12.3a); Esc closes it.
+///
+/// Not a menu: it holds a label and a `select`, so it is a labelled group, not
+/// `role="menu"`, and the button that opens it does not say `aria-haspopup`.
+#[component]
+pub(crate) fn SettingsPopover(locale: Signal<Locale>, on_close: EventHandler<()>) -> Element {
+    let lang = *locale.read();
+    rsx! {
+        div {
+            class: "toolbar-settings-menu",
+            "data-focus-scope": "contain",
+            role: "group",
+            "aria-label": t(lang, "menu.settings"),
+            onclick: move |event| event.stop_propagation(),
+            onkeydown: move |event| {
+                if event.data().key() == Key::Escape {
+                    event.stop_propagation();
+                    event.prevent_default();
+                    on_close.call(());
+                }
+            },
+            label { class: "toolbar-settings-label", {t(lang, "menu.language")} }
+            select {
+                class: "toolbar-locale",
+                "aria-label": t(lang, "menu.language"),
+                onchange: move |event| {
+                    if let Some(picked) = Locale::from_tag(&event.value()) {
+                        locale.set(picked);
+                    }
+                },
+                for entry in Locale::ALL {
+                    option {
+                        value: entry.tag(),
+                        selected: *entry == lang,
+                        {entry.native_name()}
                     }
                 }
             }

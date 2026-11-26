@@ -126,22 +126,6 @@ actions normally.
 
 ## Navigation Limitations
 
-### After Saving on Windows the Keyboard May Need a Click
-
-On Windows, after Ctrl+S the file is written and the status says "Saved", but the
-next keyboard shortcut may do nothing until you click in the window or press
-Tab. The document is saved correctly; only the keyboard stops responding.
-
-This was reported on Windows in 0.17.0 and has **not been re-checked** since
-omriss began returning focus to a sensible place whenever the element that held
-it goes away (RFC-059). On Linux the cause that remained — focus left on the
-page background after a dialog, Quick Actions or a view change — is fixed, and
-saving never moved focus there.
-
-**Owner:** RFC-059 §6.2a.
-
-**Workaround:** Click once anywhere in the window, or press Tab.
-
 ### Closing the Window Does Not Warn About Unsaved Changes
 
 Closing the window while an edit is unsaved discards that edit without asking.

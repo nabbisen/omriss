@@ -44,6 +44,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Tab no longer reaches controls hidden under the search panel or the settings
+  popover** (RFC-059 §12.3a, found on Windows). Both are drawn over the window, so
+  Tab used to walk out of them into the toolbar and Document Map underneath; they
+  now keep Tab and Shift+Tab inside until closed with Esc, which returns focus to
+  where they were opened. The settings popover is no longer announced as a menu: it
+  holds a language choice, not menu items.
 - **The welcome screen fills the window.** Its block was content-sized, so the
   status bar sat directly under it with empty space below; the status bar is now at
   the bottom and the welcome block is centred in the free space, as its styling

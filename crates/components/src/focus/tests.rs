@@ -11,6 +11,7 @@ use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::Locale;
 
+use crate::toolbar::SettingsPopover;
 use crate::{
     CommandPalette, ConfirmDeleteDialog, ErrorDialog, ExtModifiedDialog, PreviewPane, SearchPanel,
     SectionTitleAction, SectionTitleDialog, UnsavedDialog,
@@ -171,7 +172,7 @@ fn quick_actions_contains_focus_but_keeps_its_arrows_for_the_active_result() {
 }
 
 #[test]
-fn the_search_panel_takes_initial_focus_but_does_not_contain_tab() {
+fn the_search_panel_is_drawn_over_the_page_so_it_contains_focus() {
     fn host() -> Element {
         let session = use_signal(|| EditorSession::open("# One\nbody\n".into(), None).unwrap());
         rsx! {
@@ -183,7 +184,21 @@ fn the_search_panel_takes_initial_focus_but_does_not_contain_tab() {
             }
         }
     }
-    assert_eq!(scope_of(host), (Some("panel".into()), false));
+    // RFC-059 §12.3a: `.search-overlay` is `position: fixed` over the page, so
+    // Tab out of it would reach controls hidden underneath. No arrows: they are
+    // the results' own.
+    assert_eq!(scope_of(host), (Some("contain".into()), false));
+}
+
+#[test]
+fn the_settings_popover_is_drawn_over_the_page_so_it_contains_focus() {
+    fn host() -> Element {
+        rsx! { SettingsPopover { locale: use_signal(Locale::default), on_close: |_| {} } }
+    }
+    let attrs = overlay_attrs(host);
+    assert_eq!(attr(&attrs, "data-focus-scope").as_deref(), Some("contain"));
+    // It holds a label and a select, not menu items.
+    assert_ne!(attr(&attrs, "role").as_deref(), Some("menu"));
 }
 
 #[test]

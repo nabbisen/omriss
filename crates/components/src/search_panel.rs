@@ -31,7 +31,7 @@ pub fn SearchPanel(
     rsx! {
         div {
             class: "search-overlay",
-            "data-focus-scope": "panel",
+            "data-focus-scope": "contain",
             role: "search",
             "aria-label": t(lang, "search.title"),
             div { class: "search-header",
