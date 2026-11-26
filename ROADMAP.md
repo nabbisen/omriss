@@ -118,6 +118,27 @@ That is the right shape after a feature release whose own validation produced
 this much — but it should be called what it is, so nobody opens the changelog
 expecting a headline.
 
+## 0.19.0 and 0.20.0 — planned (owner approval, 2026-11-26)
+
+From the owner's request to serve older and visually impaired users, improve
+keyboard compatibility, and prepare for right-to-left languages. Studied
+against W3C, Microsoft, GNOME and Nielsen Norman Group sources; the sources
+are listed in RFC-080 §9.
+
+**0.19.0 — M16, "Readable and operable":** RFC-079 (presentation foundation
+and the layout check), RFC-083 (user settings), RFC-081 (keyboard
+compatibility and Quick Actions as the help utility), RFC-080 except its
+large-size layout, and RFC-064 H4 (already promised below).
+
+**0.20.0 — M17, "Ready for every direction":** RFC-082 (RTL readiness), RFC-073
+§4.2 redesigned for CLDR plural categories, RFC-080 §5.6 (large-size layout),
+RFC-060 F-1 if `dioxus-swdir-tree` is ready.
+
+Principles the owner set for this work: no look is best for everyone — follow
+the system, let people adjust, keep today's look as the default; new keys are
+chosen by study, never on instinct; real-user validation with older and
+low-vision participants (RFC-061), which the owner is arranging.
+
 ## After 0.18.0
 
 Only work that 0.18.0 deliberately leaves alone. Anything already in its scope
@@ -140,7 +161,8 @@ table is not repeated here.
   (placement-complete Document Map creation controls). A recent-files
   reachability RFC would belong here too if the owner takes it up.
 - **Localization:** RFC-073 §4.2, §4.4 and §4.5 — plurals, the screen-reader
-  labels and locale persistence. §4.1 and §4.3 are in 0.18.0 because a raw OS
+  labels and locale persistence (§4.5 now with RFC-083 in 0.19.0, §4.2 with
+  RFC-082 in 0.20.0). §4.1 and §4.3 are in 0.18.0 because a raw OS
   error reaching the user is a conformance failure; the rest is a theme of its
   own.
 - **Accessibility:** RFC-060's remaining findings and RFC-061. **RFC-060 §9.2

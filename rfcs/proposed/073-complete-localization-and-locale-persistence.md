@@ -133,6 +133,12 @@ gains this check.
 
 ### 4.2 Plurals
 
+> **To be redesigned before it is built (2026-11-26).** The two-category
+> selector below cannot express Arabic's six plural categories. RFC-082 §3.5
+> replaces it with CLDR categories and a hand-written rule per locale, still
+> without an ICU dependency; it lands with RFC-082 in 0.20.0. §4.5 (locale
+> persistence) moves to **RFC-083**, 0.19.0.
+
 `"1 subsections"` is the kind of detail that reads as unfinished, so the
 mechanism has to handle it, and the smallest thing that does is a two-category
 selector:

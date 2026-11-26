@@ -100,11 +100,16 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 076 | [Editable Plain File Text](./proposed/076-editable-plain-file-text.md) | M13 |
 | 077 | [Search Covers Heading Text](./proposed/077-search-covers-heading-text.md) | M13 |
 | 078 | [Setext Heading Level Changes](./proposed/078-setext-heading-level-changes.md) | M13 |
+| 079 | [Presentation Foundation — Language, Direction, Scalable CSS, Layout Check](./proposed/079-presentation-foundation.md) | M16 |
+| 080 | [Readable for Older and Low-Vision Users](./proposed/080-readable-for-older-and-low-vision-users.md) | M16 |
+| 081 | [Keyboard Compatibility and the Quick Actions Utility](./proposed/081-keyboard-compatibility-and-quick-actions-utility.md) | M16 |
+| 082 | [Right-to-Left Readiness](./proposed/082-right-to-left-readiness.md) | M17 |
+| 083 | [User Settings](./proposed/083-user-settings.md) | M16 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **079**.
+Next free RFC number: **084**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.

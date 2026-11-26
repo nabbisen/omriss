@@ -325,6 +325,13 @@ Manual QA must cover:
 4. Should header reachability be solved through direct focus, command coverage,
    or tab-order redesign?
 
+## 11a. Where the open sections go (2026-11-26)
+
+§6.1 (header reachability), §6.3 (pending-draft undo) and §6.5 (direct focus
+commands) are carried by **RFC-081** (§3.4, §3.6); §6.4 (dirty indicators) by
+**RFC-080** §5.4 rule 1. When this RFC's 0.18.0 slice is complete it moves to
+`done/` with those sections recorded as carried, not as built.
+
 ## 12. Accepted Design for 0.18.0 (architect, 2026-11-14)
 
 Scope: §6.2 containment, §6.2a, §6.2b and RFC-060 F-4. §6.1, §6.3, §6.4 and
