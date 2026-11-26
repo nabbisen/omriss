@@ -338,19 +338,40 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
 .breadcrumb {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0;
   color: var(--muted);
   margin-bottom: 10px;
   justify-content: space-between;
 }
+/* The path: one line, from the left. Ancestors are cut at 12em and give way
+   first; the current section is cut last. A cut crumb carries its full title
+   as `title` (RFC-013). */
 .breadcrumb-crumbs {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
+.breadcrumb-crumbs .crumb-btn {
+  max-width: 12em;
+  min-width: 0;
+  flex: 0 4 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.breadcrumb-crumbs .here {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.breadcrumb-crumbs .sep,
+.breadcrumb-crumbs .ellipsis { flex: 0 0 auto; white-space: pre; }
 /* Up one level — icon button at the right edge of the breadcrumb */
 .breadcrumb-up {
   border: none;

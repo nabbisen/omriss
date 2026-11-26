@@ -8,6 +8,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("aria.document_map", "ドキュメントマップ"),
     ("aria.editor", "セクションテキストを編集"),
     ("aria.outline", "ドキュメントのアウトライン"),
+    ("breadcrumb.collapsed", "省略されたセクション"),
     ("breadcrumb.root", "ドキュメント"),
     (
         "capability.disabled.experimental_format",

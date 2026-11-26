@@ -7,6 +7,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("aria.document_map", "Document Map"),
     ("aria.editor", "Edit section text"),
     ("aria.outline", "Document outline"),
+    ("breadcrumb.collapsed", "Collapsed sections"),
     ("breadcrumb.root", "Document"),
     (
         "capability.disabled.experimental_format",

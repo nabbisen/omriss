@@ -44,6 +44,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **The section path reads from the left, on one line** (RFC-013). It was spread
+  across the full width in equal gaps, and one long heading pushed it onto two or
+  three lines. The path now starts at the left with the *up* button at the right
+  edge; each ancestor is cut with an ellipsis (hover shows its full title) and the
+  current section is cut last. The "…" for a collapsed path is translated for screen
+  readers (English and Japanese).
 - **Tab no longer reaches controls hidden under the search panel or the settings
   popover** (RFC-059 §12.3a, found on Windows). Both are drawn over the window, so
   Tab used to walk out of them into the toolbar and Document Map underneath; they

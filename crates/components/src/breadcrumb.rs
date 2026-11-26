@@ -38,52 +38,58 @@ pub fn Breadcrumb(
         nav {
             class: "breadcrumb",
             "aria-label": t(lang, "aria.breadcrumb"),
-            for (item_idx , is_current) in display.iter() {
-                {
-                    let item_idx = *item_idx;
-                    let is_current = *is_current;
-                    if item_idx == usize::MAX {
-                        rsx! {
-                            span { class: "sep", "aria-hidden": "true", " › " }
-                            span { class: "ellipsis", "aria-label": "collapsed sections", "…" }
-                        }
-                    } else {
-                        let item = path[item_idx].clone();
-                        let label = if item.title.is_empty() {
-                            t(lang, "breadcrumb.root").to_string()
-                        } else {
-                            item.title.clone()
-                        };
-                        rsx! {
-                            if item_idx > 0 {
+            // The path reads from the left, on one line, cut with an ellipsis
+            // (RFC-013); the up button stays outside it, at the right edge.
+            div { class: "breadcrumb-crumbs",
+                for (item_idx , is_current) in display.iter() {
+                    {
+                        let item_idx = *item_idx;
+                        let is_current = *is_current;
+                        if item_idx == usize::MAX {
+                            rsx! {
                                 span { class: "sep", "aria-hidden": "true", " › " }
+                                span { class: "ellipsis", "aria-label": t(lang, "breadcrumb.collapsed"), "…" }
                             }
-                            if is_current {
-                                span {
-                                    class: "here",
-                                    "aria-current": "page",
-                                    "{label}"
-                                }
+                        } else {
+                            let item = path[item_idx].clone();
+                            let label = if item.title.is_empty() {
+                                t(lang, "breadcrumb.root").to_string()
                             } else {
-                                button {
-                                    class: "crumb-btn",
-                                    onclick: move |_| {
-                                        if !commit_or_block(&mut session, &mut draft, &mut status) {
-                                            return;
-                                        }
-                                        if item.level.is_none() {
-                                            session.write().show_outline();
-                                            draft.set(String::new());
-                                        } else {
-                                            let _ = session.write().focus(item.id);
-                                            let body = session.read()
-                                                .current_snapshot()
-                                                .map(|s| s.body)
-                                                .unwrap_or_default();
-                                            draft.set(body);
-                                        }
-                                    },
-                                    "{label}"
+                                item.title.clone()
+                            };
+                            rsx! {
+                                if item_idx > 0 {
+                                    span { class: "sep", "aria-hidden": "true", " › " }
+                                }
+                                if is_current {
+                                    span {
+                                        class: "here",
+                                        title: "{label}",
+                                        "aria-current": "page",
+                                        "{label}"
+                                    }
+                                } else {
+                                    button {
+                                        class: "crumb-btn",
+                                        title: "{label}",
+                                        onclick: move |_| {
+                                            if !commit_or_block(&mut session, &mut draft, &mut status) {
+                                                return;
+                                            }
+                                            if item.level.is_none() {
+                                                session.write().show_outline();
+                                                draft.set(String::new());
+                                            } else {
+                                                let _ = session.write().focus(item.id);
+                                                let body = session.read()
+                                                    .current_snapshot()
+                                                    .map(|s| s.body)
+                                                    .unwrap_or_default();
+                                                draft.set(body);
+                                            }
+                                        },
+                                        "{label}"
+                                    }
                                 }
                             }
                         }
@@ -112,3 +118,6 @@ pub fn Breadcrumb(
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
