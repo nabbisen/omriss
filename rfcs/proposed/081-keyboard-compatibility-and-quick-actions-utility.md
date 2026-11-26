@@ -77,6 +77,48 @@ disagree:
   Enter, Esc, Tab — styled and announced as information, not as actions;
 - its own keys are stated in a visible footer.
 
+### 3.3a Finding Quick Actions and the keys — visible and hidden
+
+*Added 2026-11-26 on the owner's finding: Ctrl+P opens Quick Actions, and
+nothing in the visible app says so — the welcome screen, the toolbar and the
+status bar never mention it.*
+
+A help utility nobody can find is not help [COGA 4.3.4, 4.8.5]. What is
+visible and what waits is decided by one question: **does a user who knows
+nothing need it to get started?**
+
+**Always visible**
+
+| What | Where | Why |
+|---|---|---|
+| A **Quick Actions button**, word and icon | the toolbar, at a fixed place beside Settings | it is the door to every action and to the keys; a door must be visible. When the toolbar runs out of room (large text, narrow window), other buttons move into Quick Actions first — **this one is the last to go** |
+| Its key, in words | the welcome screen's start line ("…or press Ctrl+P to find any action"), and the Quick Actions footer | the one key worth learning, shown where a new user looks first |
+| Each command's keys | beside the command, inside Quick Actions | the place a user goes to find an action is the place to learn its key |
+
+**One step away — hidden until asked for**
+
+| What | How it is reached | Why not visible |
+|---|---|---|
+| **"Keys here"** — the keys that work where the user is | Quick Actions with an empty search (§3.3) | useful once the user wants to go faster, noise before |
+| **All keyboard shortcuts**, grouped by area | a Quick Actions command | a reference, not a starting point |
+
+**Not added**
+
+- **Key hints on every toolbar button.** They would change today's look for
+  everyone (RFC-080 §4 rule 3) and crowd the toolbar at large sizes. Instead,
+  every control with a key carries **`aria-keyshortcuts`** from the binding
+  table, so screen readers announce the key without anyone seeing clutter.
+- **A Quick Actions entry inside Settings.** Settings is where settings are
+  (RFC-083); a door hidden inside a dialog is not a door. The toolbar button
+  is always visible, which Settings is not.
+- **Tooltips as the only place a key is written** — hover is not for
+  essential information (RFC-080 §5.4 rule 3).
+
+The button's label is part of RFC-080's vocabulary audit (§5.4 rule 10):
+"Quick Actions" is this application's own term, and the audit decides whether
+a plainer word ("All actions") serves first-time users better, in both
+languages.
+
 ### 3.4 Moving between areas — RFC-059 §6.1 and §6.5
 
 Commands "Go to toolbar", "Go to Document Map" (the active node, not the
