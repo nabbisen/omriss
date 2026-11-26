@@ -4,8 +4,8 @@ Related RFC: `../../proposed/059-keyboard-focus-follow-up-controls.md`
 
 Lifecycle status: inherited from RFC-059.
 
-The design is RFC-059 §12. PR 1 and PR 2 in order; PR 3 only if the owner's
-Windows run requires it.
+The design is RFC-059 §12. PR 1, PR 2 and PR 3 in order; PR 4 only if the
+owner's Windows run requires it.
 
 ---
 
@@ -62,7 +62,28 @@ owned by §6.5).
 
 **Landed** (`64fc36c`, harness `634bbea`).
 
-## PR 3 — Windows, only if needed
+## PR 3 — overlays are contained (§12.3a)
+
+From the owner's Windows check, 2026-11-26.
+
+- `.search-overlay`: `data-focus-scope="contain"`. Remove `focus_primary` and
+  its call in `app.rs`'s search `on_navigate`; choosing a result keeps focus
+  on the result.
+- The settings popover (`toolbar.rs`): `data-focus-scope="contain"`; remove
+  its `role="menu"`, `tabindex: 0` on the container if nothing needs it, and
+  the gear button's `aria-haspopup="menu"`. Its own Esc handler stays.
+- §12.2 step 2: focus left on `<body>` while a `contain` scope is open goes to
+  that scope's first control (§12.3a). Choosing a result may re-render the
+  list; this is what keeps focus in the panel then.
+- The level-2 scope test expects `contain` for both, and covers the settings
+  popover if it does not yet. No new guard: the rule is RFC-059 §12.3a.
+
+GUI, `en_US`, once: from the search field, 20 Tabs and 20 Shift+Tabs never
+leave the panel; choose a result → focus stays on it; Esc → the editor of the
+section shown. The same containment for the settings popover; Esc → the gear
+button.
+
+## PR 4 — Windows, only if needed
 
 Opened only if the owner's checklist, run against PR 2's build, shows the
 symptom remains on WebView2. If it shows the web view itself losing the

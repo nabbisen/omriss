@@ -350,8 +350,8 @@ per-overlay or per-transition focus code exists.
 
 | Markup | Meaning |
 |---|---|
-| `data-focus-scope="contain"` | a dialog, Quick Actions or a menu: takes initial focus, keeps Tab and Shift+Tab inside |
-| `data-focus-scope="panel"` | the search panel, the preview: takes initial focus, does **not** contain Tab |
+| `data-focus-scope="contain"` | a dialog, Quick Actions, a menu, the search panel, the settings popover: takes initial focus, keeps Tab and Shift+Tab inside |
+| `data-focus-scope="panel"` | the preview: takes initial focus, does **not** contain Tab |
 | `data-focus-arrows` | on a scope: arrow keys, Home and End move between its controls (dialogs and menus today; not Quick Actions, whose arrows move the active result) |
 | `autofocus` | the control a scope focuses first; otherwise its first focusable control |
 | `data-focus-return="ID"` | on a control that opens a scope: focus returns to element `ID`, not to the control (a row-menu item returns to its row's "Section actions" button, since the menu closes when its dialog opens) |
@@ -425,11 +425,40 @@ keymap duplicated in JavaScript (handoff §3, confirmed by the measurements).
 | plain file text, read-only | the `<pre>`, made `tabindex="0"` with a translated accessible name, so a keyboard user can scroll it |
 | outline, welcome | none — `div.app` |
 
-Choosing a search result moves the user to a section on purpose; the host then
-focuses that section's primary surface through `focus.rs`'s one explicit call.
+Choosing a search result keeps focus in the search panel (§12.3a); closing the
+panel restores it.
 
 Document Map rows are not focusable today, so outline mode falls back to
 `div.app`. Making them focusable is §6.5; the table gains a row when it lands.
+
+### 12.3a Which scope (amended 2026-11-26, on the owner's check)
+
+**Anything drawn over other content is `contain`; `panel` is only for
+something that takes its own place in the layout.** The rule is geometric, so
+it can be read from the stylesheet: `position: fixed` or `absolute` over the
+page means `contain`.
+
+The first version made the search panel `panel`, on the reasoning that it is
+a landmark beside the document. It is not beside it: `.search-overlay` is
+`position: fixed` over the right 380 px of the window, toolbar included. Tab
+out of it therefore reached controls hidden underneath — the owner found it
+on Windows, 2026-11-26, together with the same leak from the settings
+popover. Both become `contain`. The preview stays `panel`: it is in the flow
+(`.preview-pane { flex: 1 }`) and replaces the editor rather than covering it.
+
+Consequences:
+
+- **Focus lost inside an open `contain` scope** (an element in it removed by
+  a re-render) goes to that scope's first control. Until now step 2 did
+  nothing while a `contain` scope was open, which left focus on `<body>`.
+- Choosing a search result keeps focus in the panel, so the user can step
+  through results; Esc closes it and §12.2 step 2 restores focus to the
+  editor of the section now shown. **The one explicit call (`focus_primary`)
+  is removed** — nothing needs it any more.
+- The settings popover's `role="menu"` is wrong — it holds a label and a
+  `select`, not menu items — and so is the gear button's
+  `aria-haspopup="menu"`. Both are removed: it is a disclosure (button with
+  `aria-expanded`) whose content is a contained scope.
 
 ### 12.4 Windows
 

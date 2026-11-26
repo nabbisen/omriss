@@ -28,16 +28,16 @@ Windows checklist — reported in `design-output.md`. The architect made the
 design decisions from those findings and recorded them in §12. The report's
 own recommendations are input to that, not decisions.
 
-**State:** Phase A done; PR 1 and PR 2 landed. **Next: the owner's Windows
-run** (`design-output.md` §5, W1–W3) on the Windows build of PR 2's commit —
-the `omriss-windows-exe` artifact of the manual
-`Windows build` workflow (`.github/workflows/windows-build.yml`), run on `main`. PR 3 only if that run calls for it; the
-dev team waits until then.
+**State:** Phase A done; PR 1 and PR 2 landed. **Next: PR 3** — the owner's
+Windows check (2026-11-26) found that the search panel and the settings
+popover let Tab reach controls hidden under them (RFC-059 §12.3a). The report
+goes to `.git-exclude/review-request/059-focus-pr3-contained-overlays/README.md`.
+The owner's W1–W3 run is still open; PR 4 only if it calls for one.
 
 Files:
 
 - `implementation-handoff.md` — the cause, and what the investigation was asked
 - `design-output.md` — the investigation's findings (Phase A, done)
-- `task-breakdown-pr-plan.md` — three PRs, the third only if Windows needs it
+- `task-breakdown-pr-plan.md` — four PRs, the fourth only if Windows needs it
 - `acceptance-qa-checklist.md` — gates and proofs, including the owner's
   Windows check

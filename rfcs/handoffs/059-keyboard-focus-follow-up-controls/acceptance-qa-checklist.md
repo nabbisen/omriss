@@ -50,7 +50,9 @@ Through `scripts/gui/`, on X11/WebKitGTK, both `en_US` and `ja_JP` once.
       confirm → §12.2 step 2's fallback (delete especially: the opener is gone)
 - [ ] A dialog opened from a row menu: Cancel → the row's "Section actions"
       button (`data-focus-return`)
-- [ ] A search result chosen → that section's primary surface
+- [ ] A search result chosen → focus stays on the result; Esc → the editor of
+      the section shown (§12.3a)
+- [ ] Search panel and settings popover: Tab and Shift+Tab never leave them
 - [ ] Launch, with a file and without → primary surface or `div.app`, and the
       first shortcut works
 - [ ] Read-only plain file text: the `<pre>` takes focus and is announced by
