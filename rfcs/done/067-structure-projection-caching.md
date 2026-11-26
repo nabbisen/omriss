@@ -10,7 +10,7 @@ for.
 
 Three deliberate exclusions, each recorded: **C2** (skipping `build_outline` for
 non-Markdown) is deferred to 0.18.0 — §3.2's "never read" premise is false and
-the correction is recorded inline, and the deferred scope is carried by RFC-085; **C5** (splice inversion) and **C6** (the
+the correction is recorded inline, and the deferred scope is carried by RFC-085, which measured C2 and closed it as not adopted (RFC-085 §7.5); **C5** (splice inversion) and **C6** (the
 search hot loop) were always 0.18.0. One measurement is honestly short of the
 others: `document_map_nodes` on a warm cache is ~9 ms, because the
 `DocumentStructure` → `DocumentMapNode` projection is a second layer this RFC

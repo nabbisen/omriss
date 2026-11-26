@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, item 7: RFC-067 §3.2's deferred scope)
-**Status.** Proposed
+**Status.** Proposed — PR 1–3 on `main` for 0.18.0 (`da66f4a`, `362462d`, `173d561`); PR 4 measured. **Open:** PR 5 (§7).
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053, RFC-054, RFC-067
@@ -149,3 +149,44 @@ user is told becomes true, says what to do, and does not blame them
 4. An unreadable `.json` opens in plain file text, with a message that says
    so and what makes the structure appear.
 5. Markdown behaviour unchanged: its existing tests pass unmodified.
+
+## 7. Decisions on PR 1–4 (2026-11-27)
+
+**F2 was real.** 0.17.0 added a newline (a CRLF in a CRLF file) to a JSON file
+that ends in one, after the "Document" card was clicked and the user went
+anywhere else. Undo restored it. It is fixed, and the CHANGELOG tells users.
+
+Accepted as built:
+
+1. **"Current Section" search includes the sections under the focused one, in
+   Markdown too.** §3.3 item 5's rule. A section contains its subsections, so
+   searching it should find them. This is the one deliberate change to Markdown
+   behaviour, and the CHANGELOG says so.
+2. A document with nothing under its root opens on the root. One rule, and
+   what a Markdown file without headings has always done.
+3. **Every format whose structure cannot be shown opens in plain file text:**
+   unreadable JSON, TOML and YAML (no reader yet) and plain text. Each has its
+   own sentence.
+4. The guard covers the session's snapshot methods as well as `.outline()`.
+   They read the same outline, so the wider list is the right one.
+5. **Not building the Markdown outline for JSON (§4) is closed, not adopted.**
+   Measured: 0.6–0.9 ms per build on a 374 KiB JSON file, under a fifth of a
+   committed edit. Changing core's public `Document` API is not worth that.
+   The guard makes the outline unreadable for JSON, so it cannot mislead.
+   RFC-067's acceptance criterion 2 is answered by this measurement.
+
+### PR 5
+
+1. **No dead end beside an unreadable file.** "Back to editor" from plain file
+   text still leads to one empty "Document" card, which opens an empty view
+   (F8's remainder). Outside plain file text, the Writing Area of a file whose
+   structure cannot be shown shows the Document Map's sentence (the same
+   catalog key, not a copy) and a button to plain file text. It never shows an
+   empty card or an empty view. The button stays where it is (RFC-080 §5.4
+   rule 11).
+2. **Measure the whole-document view of a large list.** A root array of 8,000
+   items now renders 8,000 overview cards when the user climbs to the whole
+   document. Measure that render and the Document Map's on the 374 KiB fixture,
+   in a release build, and report. The architect decides from the numbers.
+3. `overview.card.subsections_one`: "1 subsection", like `items_one`. In both
+   locales.

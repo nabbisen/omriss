@@ -34,8 +34,21 @@ In order.
   members); the Markdown text for Markdown only.
 - Docs, and the GUI run (checklist).
 
+**PR 1–3 landed** (`da66f4a`, `362462d`, `173d561`).
+
 ## PR 4 — the measurement for RFC-085 §4
 
 Report only, no code: building the Markdown outline over the 374 KB JSON
 fixture, per commit, in a release build, the same way RFC-067 §2 measured.
 The architect decides from it.
+
+**Done**: 0.6–0.9 ms per build; §4 closed (RFC-085 §7.5).
+
+## PR 5 — RFC-085 §7
+
+1. The Writing Area beside an unreadable file: the map's sentence (same key)
+   and a button to plain file text; never an empty card or view. Level 2, and
+   in the GUI: open the unreadable `.json`, choose "Back to editor".
+2. The measurement of the whole-document view and the Document Map on the
+   8,000-item array, release build. Report only.
+3. `overview.card.subsections_one`, both locales.
