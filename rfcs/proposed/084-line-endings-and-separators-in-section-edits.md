@@ -1,7 +1,7 @@
 # RFC-084: Line Endings and Separators in Section Edits
 
 **Project:** omriss — Omriss Editor
-**Milestone:** M13 — defect (0.18.0, pending the owner's scope decision)
+**Milestone:** M13 — defect (0.18.0, taken into the frozen scope by the owner on 2026-11-26 as a file-integrity exception)
 **Status.** Proposed
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer

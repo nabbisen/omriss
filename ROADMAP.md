@@ -63,6 +63,12 @@ That rule is the scope's only defence when something else asks to join.
 | 10 | **RFC-060 P-1 and P-2** | A screen reader entering the editor announces the document as **"Dioxus app"**, and two landmarks have no name at all. Both are small, both tell the user something untrue, and neither has the cross-repository problem that keeps F-1 out |
 | 11 | **RFC-070** + **RFC-066 §3.1b's P4** | The one `#[ignore]`d property, and the rename/join byte invariant no property covers. Both small; both close test debt this release created |
 
+### Added after the freeze — file integrity
+
+| # | Work | Why |
+|---|---|---|
+| 12 | **RFC-084** line endings and separators in section edits | Editing a section in a CRLF file rewrote that section's line endings to LF — lines the user never touched — breaking the documented promise to keep line endings exactly as found. Shipped in 0.17.0. Taken in by the owner on 2026-11-26 under the same file-integrity exception 0.17.0 used for Task 023 |
+
 ### Stretch — taken only if the core lands early
 
 **RFC-072** (Linux artifacts and AUR), **RFC-068** (durable file writes),

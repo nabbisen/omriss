@@ -7,9 +7,8 @@ Lifecycle status: inherited from RFC-084.
 A defect against omriss's central promise, from your Task 027 report. The RFC
 is the design; this handoff only orders it.
 
-**State:** ready, **pending the owner's decision to take it into 0.18.0**
-(the scope is frozen; this is a data-integrity defect, the exception 0.17.0
-used for Task 023). Start only when the owner has decided.
+**State:** ready. The owner took it into 0.18.0 on 2026-11-26 — a
+file-integrity exception to the scope freeze, as 0.17.0 made for Task 023.
 
 The report goes to
 `.git-exclude/review-request/084-line-endings/README.md`.
