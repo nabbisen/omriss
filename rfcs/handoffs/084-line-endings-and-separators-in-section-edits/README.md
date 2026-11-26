@@ -7,11 +7,9 @@ Lifecycle status: inherited from RFC-084.
 A defect against omriss's central promise, from your Task 027 report. The RFC
 is the design; this handoff only orders it.
 
-**State:** PR 1–6 landed. **Next: PR 7** (RFC-084 §11). Open as well: the
-owner's Windows check.
-
-The report goes to
-`.git-exclude/review-request/084-line-endings-3/README.md` for PR 7.
+**State:** PR 1–7 landed. Nothing further for the dev team. Open: the
+owner's Windows check (RFC-084 §12); then the architect moves RFC-084 to
+`done/`.
 
 Files:
 

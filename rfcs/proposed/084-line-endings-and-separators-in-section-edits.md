@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, taken into the frozen scope by the owner on 2026-11-26 as a file-integrity exception)
-**Status.** Proposed — §4.1–§4.5 landed on `main` for 0.18.0 (`5fa86b7`, `83fe573`, `1a89eb4`), with the CHANGELOG notice of §5. **Open:** the owner's Windows check (§7), and §10 — the JSON string value and bare-CR files, measured by Task 028 and designed 2026-11-26.
+**Status.** Proposed — implemented on `main` for 0.18.0: §4 (`5fa86b7`, `83fe573`, `1a89eb4`), §10 (`8a1cf23`, `485c331`, `bc36acb`), §11 (`f4bf739`). **Open:** the owner's Windows check (§12); then `done/`.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-065, RFC-076
@@ -190,3 +190,22 @@ value and re-spelled escapes).
    ends by `\n` alone (`delete_split_merge.rs`, `rename.rs`); every one on an
    edit path uses the same three-ending rule, each with a bare-CR test. If the
    search finds more than a handful, stop and report.
+
+## 12. PR 7 landed (2026-11-26)
+
+- Core's names: `normalize_to_lf` and `document_newline`, in the `newline`
+  module; `omriss-ui` uses them with no alias. Neither name was ever released,
+  so this is an addition to core's API, not a rename for anyone.
+- `source-preservation.md` names §11.1's exception.
+- The search over core found two line-splitting sites, both now
+  `newline::split_first_line`. One was **a further defect, D7: renaming a
+  section in a CRLF file turned the heading's ending into LF** — the same harm
+  as D1, shipped in 0.17.0, now in the CHANGELOG entry. The other refused to
+  join a setext heading in a bare-CR file. Rename, join, delete and split are
+  tested in LF, CRLF and CR, with undo; the rename and join tests fail on the
+  old code.
+
+**The owner's Windows check, with a CRLF file:** (1) type at the end of a
+middle section, Ctrl+S — one CRLF added, caret after the typed text; (2) rename
+a heading; (3) edit a JSON text value containing `\n`. After each, the file has
+no LF without a CR before it. A build of `main` from `f4bf739` or later.

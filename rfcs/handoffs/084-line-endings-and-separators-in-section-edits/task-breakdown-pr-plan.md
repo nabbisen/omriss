@@ -63,3 +63,5 @@ CHANGELOG: the RFC-084 entry gains the JSON sentence (§10, last paragraph).
    the three already known. Each on an edit path: the three-ending rule and a
    bare-CR test (join, delete, split, rename at least). More than a handful:
    stop and report.
+
+**Landed** (`f4bf739`). The search found two sites; one was D7 (RFC-084 §12).

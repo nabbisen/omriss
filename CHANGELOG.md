@@ -32,6 +32,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
   (RFC-073 §4.1), with a test that every key has the same placeholder set in
   English and Japanese. `t` is unchanged.
 
+- **`omriss-core` exports its line-ending rule** (RFC-084): `normalize_to_lf`
+  (text with every CRLF and lone CR as LF) and `document_newline` (the newline a
+  document's own text uses). Every edit in core and in the application uses this
+  one rule.
+
 ### Changed
 
 - **The Dioxus components moved into a new crate, `omriss-components`**
@@ -64,9 +69,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   (classic Mac OS) now keep that ending for everything omriss writes into them.
   **Renaming a section in a CRLF file** used to turn that heading's line ending into
   LF (the same mixed-endings result as above); it no longer does, and joining a
-  heading in a bare-CR file, which was refused, now works. For library users:
-  `omriss-core` exports `normalize_to_lf` and `document_newline`, and its
-  line-ending rule is one function for every edit.
+  heading in a bare-CR file, which was refused, now works.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

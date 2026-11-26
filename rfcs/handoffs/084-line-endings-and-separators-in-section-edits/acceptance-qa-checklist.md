@@ -22,7 +22,7 @@ Lifecycle status: inherited from RFC-084.
 - [ ] A CRLF JSON file: a raw-text edit keeps untouched endings
 - [ ] GUI: middle section, type at the end, Ctrl+S — one document newline
       added, caret after the typed text (`gui_bytes`, the page's selection)
-- [ ] Owner, Windows: the same with a CRLF file
+- [ ] Owner, Windows: RFC-084 §12's three steps with a CRLF file
 - [ ] CHANGELOG entry tells affected users, per RFC-084 §5
 
 ## Report
