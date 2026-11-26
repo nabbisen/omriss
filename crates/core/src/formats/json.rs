@@ -28,6 +28,7 @@ mod error_mapping;
 mod projection;
 mod scalar;
 mod scanner;
+mod string_edit;
 mod string_literal;
 
 use error_mapping::map_edit_error;
@@ -138,10 +139,19 @@ impl DocumentFormatAdapter for JsonAdapter {
         let range = node
             .editable_range
             .ok_or(StructureErrorKind::InternalInvariantFailed)?;
+        let mut range = range;
         let replacement_text = match node.kind {
             StructureNodeKind::Value => match scalar::classify(source, range) {
                 ScalarKind::NoValue => return Err(StructureErrorKind::UnsupportedFeature.into()),
-                ScalarKind::Text => scalar::encode_string(draft),
+                // Only the bytes of the characters the draft changed (RFC-084
+                // §10.1); an unchanged draft replaces the literal by itself.
+                ScalarKind::Text => match string_edit::string_edit(source, range, draft) {
+                    Some((span, text)) => {
+                        range = span;
+                        text
+                    }
+                    None => source[range.as_range()].to_string(),
+                },
                 ScalarKind::Number => {
                     if scalar::is_valid_number(draft) {
                         draft.to_string()

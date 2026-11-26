@@ -57,12 +57,12 @@ pub(super) fn decode_string(source: &str, range: ByteRange) -> String {
         .unwrap_or_default()
 }
 
-/// Encodes raw user text into a JSON string literal — quotes plus escapes
-/// — per RFC-054 §8.1: "The UI may allow plain text entry and the adapter
-/// will JSON-escape it." The inverse of `decode_string`.
-pub(super) fn encode_string(raw: &str) -> String {
-    let mut out = String::with_capacity(raw.len() + 2);
-    out.push('"');
+/// The escaped text of a string literal's content, without its quotes — raw
+/// user text turned into JSON escapes per RFC-054 §8.1 ("The UI may allow
+/// plain text entry and the adapter will JSON-escape it"). The inverse of
+/// `decode_string` for the characters the user typed.
+pub(super) fn encode_string_body(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
     for ch in raw.chars() {
         match ch {
             '"' => out.push_str("\\\""),
@@ -76,7 +76,6 @@ pub(super) fn encode_string(raw: &str) -> String {
             c => out.push(c),
         }
     }
-    out.push('"');
     out
 }
 

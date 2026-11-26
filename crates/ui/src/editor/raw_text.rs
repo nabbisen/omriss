@@ -19,23 +19,7 @@
 
 use std::ops::Range;
 
-/// What a browser text area shows for `text`: every `\r\n` and lone `\r`
-/// becomes `\n`. This is also what a draft is compared against.
-pub fn as_shown_in_a_text_area(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    let mut chars = text.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c == '\r' {
-            if chars.peek() == Some(&'\n') {
-                chars.next();
-            }
-            out.push('\n');
-        } else {
-            out.push(c);
-        }
-    }
-    out
-}
+pub use omriss_core::as_shown_in_a_text_area;
 
 /// A single replacement of `range` of the source by `replacement`.
 #[derive(Debug, Clone, PartialEq, Eq)]

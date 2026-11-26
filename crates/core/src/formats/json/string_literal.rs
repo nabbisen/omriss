@@ -65,6 +65,75 @@ pub(super) fn parse_string(
     Ok((decoded, ByteRange { start, end: cur }, cur))
 }
 
+/// One character of a decoded string and the source bytes that spell it: a
+/// plain character is its own bytes, an escape (`\n`, `\u00e9`, a surrogate
+/// pair `\ud83d\ude00`) is the whole escape.
+pub(super) type SpelledChar = (char, ByteRange);
+
+/// Like [`parse_string`], but keeps where every decoded character came from.
+/// The decoder with offsets (RFC-084 §10.1): an edit that touches only some
+/// characters can then touch only their bytes and leave every other escape
+/// spelled as the file had it.
+pub(super) fn parse_string_spans(
+    source: &str,
+    bytes: &[u8],
+    pos: usize,
+) -> Result<(Vec<SpelledChar>, ByteRange), JsonParseError> {
+    let start = pos;
+    let mut cur = pos + 1;
+    let mut spelled = Vec::new();
+    loop {
+        match bytes.get(cur).copied() {
+            None => {
+                return Err(JsonParseError {
+                    at: cur,
+                    reason: "unterminated string literal",
+                });
+            }
+            Some(b'"') => {
+                cur += 1;
+                break;
+            }
+            Some(b'\\') => {
+                let (ch, next) = parse_escape(bytes, cur)?;
+                spelled.push((
+                    ch,
+                    ByteRange {
+                        start: cur,
+                        end: next,
+                    },
+                ));
+                cur = next;
+            }
+            Some(b) if b < 0x20 => {
+                return Err(JsonParseError {
+                    at: cur,
+                    reason: "unescaped control character in string",
+                });
+            }
+            Some(b) => {
+                let len = utf8_char_len(b);
+                let ch = source[cur..cur + len]
+                    .chars()
+                    .next()
+                    .ok_or(JsonParseError {
+                        at: cur,
+                        reason: "invalid UTF-8 in string",
+                    })?;
+                spelled.push((
+                    ch,
+                    ByteRange {
+                        start: cur,
+                        end: cur + len,
+                    },
+                ));
+                cur += len;
+            }
+        }
+    }
+    Ok((spelled, ByteRange { start, end: cur }))
+}
+
 /// `backslash_pos` is the byte offset of the `\`. Returns the decoded
 /// character and the position just past the whole escape sequence.
 fn parse_escape(bytes: &[u8], backslash_pos: usize) -> Result<(char, usize), JsonParseError> {

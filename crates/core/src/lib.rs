@@ -33,6 +33,7 @@
 // ── Cross-cutting primitives (depended on by both doc/ and index/) ──────────
 mod error;
 mod range;
+mod text_area;
 
 // ── Domain modules ───────────────────────────────────────────────────────────
 //
@@ -75,3 +76,4 @@ pub use formats::structure::{
 pub use formats::unsupported::{TomlAdapter, YamlExperimentalAdapter};
 pub use index::outline::{HeadingLevel, NodeId, Outline, SectionNode};
 pub use range::{ByteRange, RangeError};
+pub use text_area::as_shown_in_a_text_area;
