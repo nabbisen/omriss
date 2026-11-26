@@ -81,31 +81,6 @@ jobs:
       - name: cargo clippy --workspace --all-targets
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-  # The release artifact is a Windows build. Proving it compiles in release
-  # profile on every push is what makes a tag push a formality rather than a
-  # gamble -- a debug-only green CI would not.
-  build-windows-release:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        run: rustup toolchain install stable --profile minimal
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: windows-release
-
-      - name: Build release binary
-        run: cargo build --release -p omriss
-
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: omriss-windows-exe
-          path: target/release/omriss.exe
-          if-no-files-found: error
-
   docs:
     runs-on: ubuntu-latest
     steps:

@@ -30,7 +30,8 @@ own recommendations are input to that, not decisions.
 
 **State:** Phase A done; PR 1 and PR 2 landed. **Next: the owner's Windows
 run** (`design-output.md` §5, W1–W3) on the Windows build of PR 2's commit —
-CI's `omriss-windows-exe` artifact. PR 3 only if that run calls for it; the
+the `omriss-windows-exe` artifact of the manual
+`Windows build` workflow (`.github/workflows/windows-build.yml`), run on `main`. PR 3 only if that run calls for it; the
 dev team waits until then.
 
 Files:
