@@ -52,8 +52,11 @@ value to edit it in place:
 Every edit changes only the bytes you touched: indentation, key order, and
 line endings elsewhere in the file are untouched, and Undo restores the
 exact original bytes. Only strict JSON (RFC 8259) opens as structured; a
-file with comments or trailing commas opens with its exact source text
-preserved and a plain-text fallback, not silently reinterpreted.
+file with comments or trailing commas opens in the plain file text view with
+its exact source preserved, not silently reinterpreted, and the Document Map
+says the file could not be read as JSON and what makes the structure appear. A
+valid JSON file opens on its first top-level member; one with no members
+(`{}`, `[]`) says so.
 
 **Not yet supported:** adding, deleting, renaming, or reordering
 keys/items. Editing changes what a value *is*, not the document's shape —

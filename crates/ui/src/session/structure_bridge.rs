@@ -1,6 +1,5 @@
-//! Builds a `DocumentMapNode` tree from a `DocumentFormatAdapter`'s
-//! `DocumentStructure`, for every format except Markdown (RFC-054 J3;
-//! `document_map_bridge` handles Markdown, unchanged).
+//! The session's `DocumentStructure`, for every format (RFC-085 §3.1): the cache
+//! every pane reads, and the `DocumentMapNode` tree built from it (RFC-054 J3).
 //!
 //! When the active format's own adapter fails to build structure — today,
 //! only JSON has a real one; TOML/YAML are still stubs that always fail —

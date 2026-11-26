@@ -283,3 +283,118 @@ impl IntoNodeId for u64 {
         crate::interface::document_map::node_id_from_raw(self)
     }
 }
+
+// ── opening and empty states (RFC-085 §3.3 items 1–2, §3.4) ─────────────────
+
+use crate::session::EmptyMap;
+
+fn opened(source: &str, format: DocumentFormat) -> EditorSession {
+    let mut s = EditorSession::open_detected(
+        source.to_string(),
+        Some("x".into()),
+        FileTextProfile::detect(source, false),
+        format,
+    )
+    .unwrap();
+    s.settle_on_open();
+    s
+}
+
+/// The Document Map's selected row and the Writing Area's node: the same node.
+fn highlighted(s: &EditorSession) -> Option<u64> {
+    fn find(n: &crate::DocumentMapNode) -> Option<u64> {
+        if n.is_selected {
+            return Some(n.id);
+        }
+        n.children.iter().find_map(find)
+    }
+    find(&s.document_map_nodes())
+}
+
+#[test]
+fn a_valid_json_file_opens_on_its_first_member_and_the_map_highlights_that_row() {
+    let s = opened(JSON, DocumentFormat::Json);
+    let focused = match s.view_mode() {
+        ViewMode::Focus(id) => id,
+        other => panic!("expected a focused node, got {other:?}"),
+    };
+    assert_eq!(s.focused_path().last().unwrap().title, "name");
+    assert_eq!(highlighted(&s), Some(focused.0));
+    assert!(!s.is_raw());
+}
+
+#[test]
+fn a_markdown_file_opens_as_before() {
+    let s = opened("# One\nx\n\n# Two\ny\n", DocumentFormat::Markdown);
+    assert_eq!(s.focused_path().last().unwrap().title, "One");
+    let headingless = opened("just text\n", DocumentFormat::Markdown);
+    // The whole document is one layer; the root is that layer.
+    assert!(matches!(headingless.view_mode(), ViewMode::Focus(_)));
+    assert_eq!(headingless.empty_map(), Some(EmptyMap::NoHeadings));
+}
+
+#[test]
+fn a_json_container_with_no_members_opens_on_the_whole_document() {
+    for source in ["{}\n", "[]\n"] {
+        let s = opened(source, DocumentFormat::Json);
+        assert_eq!(s.empty_map(), Some(EmptyMap::NoMembers), "{source:?}");
+        assert!(!s.is_raw(), "readable: not plain file text");
+        // The root is not a row, so nothing is highlighted.
+        assert_eq!(
+            highlighted(&s).filter(|&id| id != s.document_map_nodes().id),
+            None
+        );
+    }
+}
+
+#[test]
+fn an_unreadable_file_opens_in_plain_file_text_and_the_map_says_why() {
+    for (source, format) in [
+        ("{\"a\": ", DocumentFormat::Json),
+        ("not json at all", DocumentFormat::Json),
+        ("", DocumentFormat::Json),
+        ("a = 1\n", DocumentFormat::Toml),
+        ("a: 1\n", DocumentFormat::YamlExperimental),
+        ("plain\n", DocumentFormat::PlainText),
+    ] {
+        let s = opened(source, format);
+        assert!(s.is_raw(), "{format:?} {source:?} opens in plain file text");
+        assert_eq!(s.empty_map(), Some(EmptyMap::Unreadable), "{format:?}");
+        // Lossless: opening changed nothing, and nothing is pending.
+        assert_eq!(s.source(), source);
+        assert!(!s.is_dirty());
+    }
+}
+
+#[test]
+fn a_valid_json_file_is_never_told_to_add_headings() {
+    for source in [JSON, "{}\n", "[]\n", "3\n", "\"x\"\n"] {
+        let s = opened(source, DocumentFormat::Json);
+        assert_ne!(s.empty_map(), Some(EmptyMap::NoHeadings), "{source:?}");
+    }
+    assert_eq!(opened(JSON, DocumentFormat::Json).empty_map(), None);
+}
+
+#[test]
+fn the_empty_map_messages_exist_in_both_locales() {
+    use crate::i18n::{Locale, t, t_args};
+    for locale in [Locale::En, Locale::Ja] {
+        for key in ["document_map.no_members", "document_map.plain_text"] {
+            assert_ne!(t(locale, key), key, "{key} is in the catalog");
+        }
+        for key in ["document_map.unreadable", "document_map.unsupported_format"] {
+            let out = t_args(locale, key, &[("format", "JSON")]);
+            assert!(out.contains("JSON") && !out.contains('{'), "{key}: {out}");
+        }
+    }
+    // The English sentence of RFC-085 §3.4, word for word.
+    assert_eq!(
+        t_args(Locale::En, "document_map.unreadable", &[("format", "JSON")]),
+        "This file could not be read as JSON, so its structure cannot be shown. Its text is \
+         open in Plain file text. When it is valid JSON, the structure appears here."
+    );
+    assert_eq!(
+        t(Locale::En, "document_map.no_members"),
+        "This JSON has no keys or items to show."
+    );
+}

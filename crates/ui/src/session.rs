@@ -97,6 +97,7 @@ pub struct EditorSession {
 mod document_map_bridge;
 mod focus_bridge;
 mod pane_structure;
+pub use pane_structure::EmptyMap;
 mod raw_edit;
 mod structural;
 mod structure_bridge;

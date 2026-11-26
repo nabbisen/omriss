@@ -20,6 +20,19 @@ use crate::editor::search::{SearchMatch, search_texts};
 use crate::editor::stats::{DocumentStats, compute_stats};
 use crate::interface::node_item::NodeItem;
 
+/// Why a Document Map shows no rows (RFC-085 §3.4). Which words say it depends on
+/// the format; the panes choose them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EmptyMap {
+    /// A Markdown document with no headings.
+    NoHeadings,
+    /// The file's structure could not be read (not valid JSON; a format with no
+    /// reader yet; plain text, which has none).
+    Unreadable,
+    /// Readable, with nothing in it: `{}`, `[]`, a lone value.
+    NoMembers,
+}
+
 impl super::EditorSession {
     /// `node` as a pane lists it.
     fn node_item(&self, structure: &DocumentStructure, node: &StructureNode) -> NodeItem {
@@ -89,6 +102,39 @@ impl super::EditorSession {
             }
             None => self.outline_items(),
         }
+    }
+
+    /// The one opening rule, for every format (RFC-085 §3.3 item 1): when the
+    /// file's structure cannot be read, open it in plain file text, the one view
+    /// that can show it; otherwise focus the first top-level node. A document with
+    /// nothing under its root is one layer, and the root is that layer.
+    ///
+    /// The highlighted Document Map row is the focused node, so on opening the
+    /// map and the Writing Area show the same node.
+    pub fn settle_on_open(&mut self) {
+        if !self.structure_readable() {
+            self.show_raw();
+            return;
+        }
+        if let Some(first) = self.outline_items().first().map(|i| i.id) {
+            let _ = self.focus(first);
+        }
+    }
+
+    /// Why the Document Map has no rows, or `None` when it has some.
+    pub fn empty_map(&self) -> Option<EmptyMap> {
+        let (structure, index) = self.pane_view();
+        let root = &structure.nodes[index[&structure.root_id]];
+        if !root.children.is_empty() {
+            return None;
+        }
+        Some(if self.format == DocumentFormat::Markdown {
+            EmptyMap::NoHeadings
+        } else if !self.structure_readable() {
+            EmptyMap::Unreadable
+        } else {
+            EmptyMap::NoMembers
+        })
     }
 
     /// The path from the document's root to the focused node, both included;

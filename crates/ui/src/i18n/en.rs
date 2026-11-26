@@ -120,7 +120,23 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "document_map.no_headings_hint",
         "Add headings with # to begin organizing.",
     ),
+    (
+        "document_map.no_members",
+        "This JSON has no keys or items to show.",
+    ),
+    (
+        "document_map.plain_text",
+        "This file has no structure to show. Its text is open in Plain file text.",
+    ),
     ("document_map.title", "Document Map"),
+    (
+        "document_map.unreadable",
+        "This file could not be read as {format}, so its structure cannot be shown. Its text is open in Plain file text. When it is valid {format}, the structure appears here.",
+    ),
+    (
+        "document_map.unsupported_format",
+        "omriss cannot show the structure of {format} files yet. Its text is open in Plain file text.",
+    ),
     (
         "editor.body.placeholder",
         "Write the body of this section\u{2026}",

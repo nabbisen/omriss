@@ -46,7 +46,7 @@ pub use interface::commands::{COMMANDS, CommandSpec, filter_commands};
 pub use interface::document_map::{CapabilityReasonCatalogKey, DocumentMapNode, node_id_from_raw};
 pub use interface::errors::StructureErrorKindCatalogKey;
 pub use interface::node_item::NodeItem;
-pub use session::{EditorSession, RawCommit};
+pub use session::{EditorSession, EmptyMap, RawCommit};
 // Structural editing and capability types re-exported for the desktop crate
 // (RFC-053: capability vocabulary and DraftState now live in omriss-core).
 pub use omriss_core::{

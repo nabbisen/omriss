@@ -21,8 +21,8 @@ use dioxus::prelude::*;
 use dioxus_swdir_tree::item_tree::node::NodeId as SwNodeId;
 use dioxus_swdir_tree::{ItemTree, ItemTreeEvent, SelectionMode};
 use omriss_core::DocumentFormat;
-use omriss_ui::i18n::{Locale, t};
-use omriss_ui::{DocumentMapNode, EditorSession, ViewMode, node_id_from_raw};
+use omriss_ui::i18n::{Locale, t, t_args};
+use omriss_ui::{DocumentMapNode, EditorSession, EmptyMap, ViewMode, node_id_from_raw};
 
 use crate::draft_sync::open_node;
 use crate::structure_request::StructureRequest;
@@ -81,16 +81,13 @@ pub fn DocumentMapPane(
         // The root itself is never rendered as a row (the caller renders
         // `root.children`), but `set_tree` starts every node collapsed
         // (`is_expanded: false`), including the root -- so its children stay
-        // invisible until something expands it. For Markdown this was always
-        // masked by the auto-focus-on-open below expanding the focused node's
-        // ancestors (root among them); a format with nothing to focus (RFC-054
-        // J3: JSON/PlainText opt out of auto-focus entirely, see
-        // `crates/app/src/shell/actions.rs::handle_load`) never took that path
-        // and rendered an empty Document Map despite a correctly computed,
-        // non-empty structure -- found live, not by a unit test, since
-        // `document_map_nodes()` itself was already correct. Expand the root
-        // unconditionally so top-level rows are visible on open regardless of
-        // format or focus state.
+        // invisible until something expands it. Focusing a node expands its
+        // ancestors (root among them), but a document with nothing focused (a
+        // file opened in plain file text, say, or the whole-document view)
+        // never takes that path and would render an empty Document Map despite
+        // a correctly computed, non-empty structure -- found live, not by a unit
+        // test. Expand the root unconditionally so top-level rows are visible
+        // on open regardless of format or focus state.
         let root_sw_id = SwNodeId(root_node.id);
         if item_tree.read().is_expanded(root_sw_id) == Some(false) {
             item_tree.write().on_toggled(root_sw_id);
@@ -117,14 +114,13 @@ pub fn DocumentMapPane(
             item_tree
                 .write()
                 .on_selected(focused_sw, SelectionMode::Replace);
-        } else if format == DocumentFormat::Markdown {
-            // Whole-document outline: nothing is focused, so nothing may look
-            // focused. After a plain-text commit (RFC-076 §4.2) focus is reset
-            // to the outline, and the previous row would otherwise stay
-            // highlighted -- implying a focus the application does not hold.
-            // The root is never rendered as a row, so selecting it shows no
-            // row as selected. Markdown only: for other formats a row
-            // selection is not a focus and is left to the user.
+        } else {
+            // Whole-document view: nothing is focused, so nothing may look
+            // focused (RFC-085 §3.3 item 2) — in every format. After a
+            // plain-text commit (RFC-076 §4.2) focus is reset to the whole
+            // document, and the previous row would otherwise stay highlighted,
+            // implying a focus the application does not hold. The root is never
+            // rendered as a row, so selecting it shows no row as selected.
             item_tree
                 .write()
                 .on_selected(root_sw_id, SelectionMode::Replace);
@@ -178,6 +174,8 @@ pub fn DocumentMapPane(
         .and_then(|id| map_root.as_ref().and_then(|root| find_node(root, id)))
         .cloned();
     let is_raw = *is_raw_sig.read();
+    let empty_map = session.read().empty_map();
+    let unreadable_text = unreadable_message(lang, session.read().format());
     // (view_mode is read only via session signal in use_effect; in_focus not needed here)
 
     rsx! {
@@ -229,8 +227,21 @@ pub fn DocumentMapPane(
             }
 
             if is_empty {
-                p { class: "document-map-empty", {t(lang, "document_map.empty")} }
-                p { class: "document-map-hint", {t(lang, "document_map.no_headings_hint")} }
+                // What the map says depends on why it is empty, and on the format:
+                // a Markdown hint tells a Markdown user to add headings, and no JSON
+                // file is ever told to (RFC-085 §3.4).
+                match empty_map {
+                    Some(EmptyMap::NoHeadings) | None => rsx! {
+                        p { class: "document-map-empty", {t(lang, "document_map.empty")} }
+                        p { class: "document-map-hint", {t(lang, "document_map.no_headings_hint")} }
+                    },
+                    Some(EmptyMap::NoMembers) => rsx! {
+                        p { class: "document-map-empty", {t(lang, "document_map.no_members")} }
+                    },
+                    Some(EmptyMap::Unreadable) => rsx! {
+                        p { class: "document-map-empty", "{unreadable_text}" }
+                    },
+                }
             } else {
                 // Render rows directly from item_tree so each row contains
                 // both the tree content, the action trigger, and any open menu.
@@ -457,3 +468,29 @@ pub fn DocumentMapPane(
         }
     }
 }
+
+/// The sentence for a map with no rows because the file's structure cannot be
+/// shown. It says what happened, where the text is, and what makes the
+/// structure appear; it does not blame the user (RFC-080 §5.4 rule 8). The
+/// words follow the format (RFC-085 §3.4).
+fn unreadable_message(lang: Locale, format: DocumentFormat) -> String {
+    match format {
+        DocumentFormat::Json => t_args(lang, "document_map.unreadable", &[("format", "JSON")]),
+        DocumentFormat::Toml => t_args(
+            lang,
+            "document_map.unsupported_format",
+            &[("format", "TOML")],
+        ),
+        DocumentFormat::YamlExperimental => t_args(
+            lang,
+            "document_map.unsupported_format",
+            &[("format", "YAML")],
+        ),
+        DocumentFormat::Markdown | DocumentFormat::PlainText | DocumentFormat::Unsupported => {
+            t(lang, "document_map.plain_text").to_string()
+        }
+    }
+}
+
+#[cfg(test)]
+mod empty_tests;

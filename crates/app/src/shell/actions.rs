@@ -4,7 +4,6 @@
 //! Extracting them here keeps `app.rs` to signal wiring and the render tree.
 
 use dioxus::prelude::*;
-use omriss_core::DocumentFormat;
 use omriss_ui::EditorSession;
 
 use crate::file::file_dialog::{self, OpenOutcome, SaveOutcome};
@@ -44,27 +43,12 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
                 Ok(opened) => {
                     ctx.session.set(opened);
                     ctx.selected_card.set(0);
-                    // Auto-focus the first section so the editor is
-                    // immediately ready -- Markdown only. `outline_items`/
-                    // `focus` both still read the Markdown heading parse
-                    // `Document::parse` builds over any text (RFC-054
-                    // §0.1); for a non-Markdown format that parse is
-                    // meaningless, so auto-focusing would show garbage
-                    // content instead of the Document Map this slice
-                    // exists to render. Right-panel content for non-Markdown
-                    // formats is out of scope until later RFC-054 slices.
-                    if format == DocumentFormat::Markdown {
-                        let first_id = ctx
-                            .session
-                            .read()
-                            .outline_items()
-                            .into_iter()
-                            .next()
-                            .map(|i| i.id);
-                        if let Some(id) = first_id {
-                            let _ = ctx.session.write().focus(id);
-                        }
-                    }
+                    // One opening rule for every format (RFC-085 §3.3): a file
+                    // whose structure cannot be read opens in plain file text;
+                    // otherwise the first top-level node is focused, so the
+                    // editor is ready and the Document Map's highlighted row is
+                    // the node the Writing Area shows.
+                    ctx.session.write().settle_on_open();
                     sync_draft(ctx);
                     ctx.saved_mtime.set(mtime);
                     ctx.status.set("status.ready".into());

@@ -91,6 +91,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
   statistics message and the cards' counts are now translated into Japanese.
   Markdown behaves as before, except that the "Current Section" search scope
   now also covers the sections under the focused one.
+- **A JSON file that cannot be read opens in plain file text, and the Document
+  Map says why** (RFC-085). It used to open on an empty "Document" card while the
+  Document Map told you to "Add headings with # to begin organizing" — advice for
+  Markdown, and nothing said the file could not be read. Now the text is open (you
+  can edit it with **Edit**), and the Document Map says: this file could not be
+  read as JSON, its text is open in plain file text, and the structure appears
+  once it is valid JSON. Valid JSON with no members (`{}`, `[]`) says "This JSON
+  has no keys or items to show." Every format now opens the same way — on its
+  first top-level node, with the Document Map's highlighted row the node the
+  Writing Area shows (a JSON file used to open with the first row highlighted
+  and a different thing in the Writing Area). English and Japanese.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

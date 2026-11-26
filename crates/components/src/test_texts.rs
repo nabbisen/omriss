@@ -52,3 +52,18 @@ pub(crate) fn texts_of(app: fn() -> Element) -> Vec<String> {
     collect(&dom, dom.base_scope().root_node(), &mut out);
     out
 }
+
+/// [`texts_of`] after the effects have run: mounted, rendered again, mounted
+/// text read. Components that fill their state in `use_effect` need this.
+pub(crate) fn texts_of_settled(app: fn() -> Element) -> Vec<String> {
+    use dioxus::dioxus_core::NoOpMutations;
+    let mut dom = VirtualDom::new(app);
+    dom.rebuild_in_place();
+    // Effects queued by the first render run, and what they set renders.
+    for _ in 0..3 {
+        dom.render_immediate(&mut NoOpMutations);
+    }
+    let mut out = Vec::new();
+    collect(&dom, dom.base_scope().root_node(), &mut out);
+    out
+}

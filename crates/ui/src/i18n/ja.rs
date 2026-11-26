@@ -124,7 +124,23 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "document_map.no_headings_hint",
         "# で見出しを追加して整理を始めましょう。",
     ),
+    (
+        "document_map.no_members",
+        "このJSONには、表示できるキーや項目がありません。",
+    ),
+    (
+        "document_map.plain_text",
+        "このファイルには表示できる構造がありません。テキストは「プレーンファイルテキスト」で開いています。",
+    ),
     ("document_map.title", "ドキュメントマップ"),
+    (
+        "document_map.unreadable",
+        "このファイルを{format}として読み取れなかったため、構造を表示できません。テキストは「プレーンファイルテキスト」で開いています。有効な{format}になると、ここに構造が表示されます。",
+    ),
+    (
+        "document_map.unsupported_format",
+        "omrissはまだ{format}ファイルの構造を表示できません。テキストは「プレーンファイルテキスト」で開いています。",
+    ),
     ("editor.body.placeholder", "このセクションの本文を入力…"),
     ("editor.preview", "プレビュー"),
     ("editor.source", "ソース"),
