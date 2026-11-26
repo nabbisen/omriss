@@ -14,8 +14,9 @@ const SITES: &[(&str, usize)] = &[
     ("focused_content_pane.rs", 1),
     // The plain file text.
     ("raw_source.rs", 1),
-    // The JSON scalar's one-line input and the JSON container's raw-text editor.
-    ("structured.rs", 2),
+    // The JSON string's text area, a number's one-line input, and the JSON
+    // container's raw-text editor.
+    ("structured.rs", 3),
 ];
 
 #[test]

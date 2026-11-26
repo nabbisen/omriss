@@ -7,17 +7,20 @@
 
 use omriss_core::{
     DocumentFormat, DocumentFormatAdapter, DraftState, EditResult, FocusedContent, JsonAdapter,
-    StructureErrorKind, StructureNodeKind,
+    StructureErrorKind, StructureNodeKind, ValueKind,
 };
 
-use crate::editor::raw_text::{apply_text_area_draft, newline_of, text_area_edit};
+use crate::editor::raw_text::{
+    apply_text_area_draft, as_shown_in_a_text_area, newline_of, text_area_edit,
+};
 
 impl super::EditorSession {
     /// The text a structured `draft` means for the focused JSON node, as source:
     /// for a container's raw-text editor (a text area, which only ever delivers
     /// `\n`) the original text with just the user's change applied and inserted
-    /// newlines in the document's style (RFC-084); for a scalar's one-line input
-    /// the draft itself. `None` when a container's draft changes nothing.
+    /// newlines in the document's style (RFC-084); for a scalar the draft itself
+    /// (a string's text area is compared with the string inside core's
+    /// `validate_focused_edit`, which splices only the changed characters). `None` when a container's draft changes nothing.
     fn structured_draft_source(&self, draft: &str) -> Option<String> {
         match self.focused_structured_raw_text() {
             Some(original) => {
@@ -56,6 +59,14 @@ impl super::EditorSession {
     /// Markdown's `current_snapshot().body` comparison.
     pub fn structured_draft_differs(&self, draft: &str) -> bool {
         match self.focused_structured_content() {
+            // A string value is edited in a text area, which shows a line break
+            // as `\n` whatever the string spells it with (RFC-084 §10.2): compared
+            // in that view, so an untouched `\r\n` is not a change.
+            Some(FocusedContent::StructuredValue {
+                value_kind: ValueKind::Text,
+                editable_text,
+                ..
+            }) => as_shown_in_a_text_area(draft) != as_shown_in_a_text_area(&editable_text),
             Some(FocusedContent::StructuredValue { editable_text, .. }) => draft != editable_text,
             Some(FocusedContent::StructuredGroup { .. }) => {
                 // In the text-area view, so a CRLF container the user has not

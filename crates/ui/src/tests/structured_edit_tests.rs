@@ -295,3 +295,89 @@ fn structured_draft_state_reflects_each_draft_without_committing() {
     );
     assert_eq!(session.structured_draft_state("1"), DraftState::Clean);
 }
+
+// ── a string value is edited in a text area (RFC-084 §10.2) ─────────────────
+
+mod string_values {
+    use super::*;
+    use omriss_core::FocusedContent;
+
+    const TASK_028: &str = r#"{
+  "nl": "line1\nline2",
+  "crlf": "a\r\nb",
+  "tab": "col1\tcol2",
+  "eacute": "café",
+  "literal": "naïve café 日本語",
+  "slash": "a\/b"
+}"#;
+
+    /// What the string's text area shows for it, as the page delivers it.
+    fn shown(session: &EditorSession) -> String {
+        let Some(FocusedContent::StructuredValue { editable_text, .. }) =
+            session.focused_structured_content()
+        else {
+            panic!("a value");
+        };
+        crate::editor::raw_text::as_shown_in_a_text_area(&editable_text)
+    }
+
+    #[test]
+    fn task_028_six_values_keep_their_bytes_when_one_character_is_typed() {
+        let cases = [
+            ("nl", r#"  "nl": "line1\nline2x","#),
+            ("crlf", r#"  "crlf": "a\r\nbx","#),
+            ("tab", r#"  "tab": "col1\tcol2x","#),
+            ("eacute", r#"  "eacute": "caféx","#),
+            ("literal", r#"  "literal": "naïve café 日本語x","#),
+            ("slash", r#"  "slash": "a\/bx""#),
+        ];
+        for (key, line) in cases {
+            let mut s = open_json(TASK_028);
+            focus_child(&mut s, key);
+            let draft = format!("{}x", shown(&s));
+            assert!(s.structured_draft_differs(&draft), "{key}");
+            s.commit_structured_draft(&draft).unwrap();
+            let before = TASK_028
+                .lines()
+                .find(|l| l.trim_start().starts_with(&format!("\"{key}\"")))
+                .unwrap();
+            assert_eq!(s.source(), TASK_028.replace(before, line), "{key}");
+            s.undo().unwrap();
+            assert_eq!(s.source(), TASK_028, "{key}: undo");
+        }
+    }
+
+    #[test]
+    fn a_string_nobody_touched_is_not_pending_and_commits_nothing() {
+        for key in ["nl", "crlf", "tab", "eacute", "literal", "slash"] {
+            let mut s = open_json(TASK_028);
+            focus_child(&mut s, key);
+            let as_delivered = shown(&s);
+            assert!(!s.structured_draft_differs(&as_delivered), "{key}");
+            assert_eq!(
+                s.structured_draft_state(&as_delivered),
+                DraftState::Clean,
+                "{key}"
+            );
+            // Even forced through, the bytes are the original's.
+            s.commit_structured_draft(&as_delivered).unwrap();
+            assert_eq!(s.source(), TASK_028, "{key}");
+        }
+    }
+
+    #[test]
+    fn the_field_shows_the_line_break_and_a_typed_one_lands_as_an_escape() {
+        let mut s = open_json(TASK_028);
+        focus_child(&mut s, "nl");
+        assert_eq!(shown(&s), "line1\nline2");
+        s.commit_structured_draft("line1\nline2\nline3").unwrap();
+        assert!(s.source().contains(r#""nl": "line1\nline2\nline3","#));
+
+        // A string that spells its breaks `\r\n` gets `\r\n` for a typed one.
+        let mut s = open_json(TASK_028);
+        focus_child(&mut s, "crlf");
+        assert_eq!(shown(&s), "a\nb");
+        s.commit_structured_draft("a\nb\nc").unwrap();
+        assert!(s.source().contains(r#""crlf": "a\r\nb\r\nc","#));
+    }
+}

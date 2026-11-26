@@ -964,6 +964,35 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
   font-size: 14px;
 }
 .structured-value-input:focus { outline: none; border-color: var(--accent); }
+/* A string value is a text area that starts one line high and grows with its
+   text (RFC-084 §10.2): a hidden copy of the text in the same grid cell sets the
+   cell's height, so wrapping and line breaks count and no script is needed. */
+.structured-value-grow { display: grid; }
+.structured-value-grow::after,
+.structured-value-grow > .structured-value-input {
+  grid-area: 1 / 1;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+.structured-value-grow::after {
+  content: attr(data-replicated-value) " ";
+  visibility: hidden;
+  pointer-events: none;
+}
+.structured-value-grow > .structured-value-input {
+  border-color: var(--panel-edge);
+  resize: none;
+  overflow: hidden;
+}
+.structured-value-grow > .structured-value-input:focus { border-color: var(--accent); }
 .structured-value-input.invalid,
 .structured-raw-editor.invalid { border-color: var(--danger); }
 .structured-error {

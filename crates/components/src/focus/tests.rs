@@ -360,9 +360,42 @@ fn the_preview_has_no_primary_surface() {
 }
 
 #[test]
-fn a_focused_json_text_value_has_its_input_as_primary() {
+fn a_focused_json_text_value_has_its_text_area_as_primary() {
     fn host() -> Element {
         let mut session = use_signal(json_session);
+        let id = find_kind(
+            &session.read().document_map_nodes(),
+            StructureNodeKind::Value,
+        )
+        .unwrap();
+        use_hook(|| session.write().focus(node_id_from_raw(id)).unwrap());
+        rsx! {
+            FocusedContentPane {
+                session,
+                locale: use_signal(Locale::default),
+                draft: use_signal(String::new),
+                status: use_signal(String::new),
+                preview_open: use_signal(|| false),
+            }
+        }
+    }
+    // A string value is a text area since RFC-084 §10.2 (it was a one-line input).
+    assert_eq!(primaries(host), ["textarea.structured-value-input"]);
+}
+
+#[test]
+fn a_focused_json_number_has_its_one_line_input_as_primary() {
+    fn host() -> Element {
+        let mut session = use_signal(|| {
+            let text = "{\"count\": 3}\n";
+            EditorSession::open_detected(
+                text.into(),
+                Some("x.json".into()),
+                FileTextProfile::detect(text, false),
+                DocumentFormat::Json,
+            )
+            .unwrap()
+        });
         let id = find_kind(
             &session.read().document_map_nodes(),
             StructureNodeKind::Value,

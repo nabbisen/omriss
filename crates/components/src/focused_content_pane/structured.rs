@@ -15,7 +15,7 @@
 //! — a toggle click commits immediately, matching §4.6's mockup exactly.
 
 use dioxus::prelude::*;
-use omriss_core::{FocusedContent, ValueKind};
+use omriss_core::{FocusedContent, ValueKind, as_shown_in_a_text_area};
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{EditorSession, StructureErrorKindCatalogKey};
 
@@ -69,6 +69,26 @@ pub fn StructuredFocusView(
                             }
                         }
                     },
+                    // A string is edited in a text area, so a line break in it
+                    // can be shown, kept and typed (RFC-084 §10.2). It starts one
+                    // line high and grows with its content: the wrapper holds a
+                    // hidden copy of the text that gives the grid cell its height.
+                    ValueKind::Text => rsx! {
+                        div {
+                            class: "structured-value-grow",
+                            "data-replicated-value": "{as_shown_in_a_text_area(&draft.read())}",
+                            textarea {
+                                "data-focus-primary": "true",
+                                class: "structured-value-input",
+                                rows: "1",
+                                "aria-label": "{kind_label(lang, value_kind)}",
+                                value: "{draft}",
+                                oninput: move |ev| draft.set(ev.value()),
+                                onblur: do_blur,
+                            }
+                        }
+                    },
+                    // A number keeps its one-line field.
                     _ => rsx! {
                         input {
                             r#type: "text",
@@ -235,3 +255,6 @@ fn value_error_key(kind: ValueKind) -> &'static str {
         _ => "focused_content.json.error.invalid_raw_value",
     }
 }
+
+#[cfg(test)]
+mod tests;
