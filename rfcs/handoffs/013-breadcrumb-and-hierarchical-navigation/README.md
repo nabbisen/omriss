@@ -9,9 +9,9 @@ goals — "display the path", "define overflow behavior" — not new design.
 in equal gaps instead of reading from the left; and long paths are a
 question.
 
-**State:** PR 1 landed (`c1fdf3f`). **Next: PR 2, a correction to the
-cutting order** — the architect's spec was wrong (`task-breakdown-pr-plan.md`).
-The report goes to `.git-exclude/review-request/013-breadcrumb-cut-order/README.md`.
+**State: closed.** PR 1 (`c1fdf3f`) and PR 2 (`1202748`) landed. The cutting
+order's second phase (ancestors shrinking once the current crumb is spent) is
+held by RFC-079's layout check when it exists.
 
 Files:
 

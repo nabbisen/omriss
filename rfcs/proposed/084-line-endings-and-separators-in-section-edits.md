@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, taken into the frozen scope by the owner on 2026-11-26 as a file-integrity exception)
-**Status.** Proposed
+**Status.** Proposed — §4.1–§4.5 landed on `main` for 0.18.0 (`5fa86b7`, `83fe573`, `1a89eb4`), with the CHANGELOG notice of §5. **Open:** the owner's Windows check (§7), and Task 028's investigation of two neighbouring cases (§9).
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-065, RFC-076
@@ -112,3 +112,14 @@ happened).
 - The caret does not move on commit.
 - `docs/src/source-preservation.md`'s line-ending promise is true, and the
   CHANGELOG tells affected users.
+
+## 9. Found during implementation (2026-11-26)
+
+1. **The JSON value field is a one-line `input`** showing the decoded string.
+   A browser strips line breaks from such a field's value, so a JSON string
+   that decodes to text containing a line break would lose it as soon as the
+   user edits that field — the same class as D1. Not yet measured.
+2. **A lone `\r` at the edge of a section body** (a heading ended by a bare CR)
+   is not covered by the property; inside a body it is.
+
+Both are measured by Task 028 before anything is decided.
