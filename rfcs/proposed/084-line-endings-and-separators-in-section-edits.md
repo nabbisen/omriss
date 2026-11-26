@@ -170,3 +170,23 @@ CRLF pass the property (over 1,400 edits each).
 `docs/src/file-formats.md`'s promise becomes true; the CHANGELOG entry gains a
 sentence for JSON string values (edits in 0.17.0 dropped line breaks inside a
 value and re-spelled escapes).
+
+## 11. Decisions on PR 4–6 (2026-11-26)
+
+1. **The lone-CR rule as built is accepted.** Where an edit would put a lone
+   CR next to an LF, the two would read as one CRLF — one line break where the
+   file had two. No byte sequence keeps both breaks without changing one of
+   them, so the narrowest rewrite is the right one: only a lone CR at the edge
+   of an edit, only in a file that mixes bare CRs with LFs. Files that are all
+   CR, all LF, or contain CRLF never have a byte beside the edit rewritten —
+   the property pins it. **The documentation says so**, so the promise stays
+   true: `source-preservation.md` names this one exception.
+2. **`omriss-core`'s public names must not name a browser widget.** Core is a
+   published library; "text area" is the UI's concept. The function becomes a
+   name for what it does — LF-normalised text — and its module a newline
+   module; `omriss-ui` uses core's name, with no second alias.
+3. **Line splitting in core, by construction.** The dev team found by reading
+   that `split_first_line` splits on `\n` only. Three sites in core find line
+   ends by `\n` alone (`delete_split_merge.rs`, `rename.rs`); every one on an
+   edit path uses the same three-ending rule, each with a bare-CR test. If the
+   search finds more than a handful, stop and report.

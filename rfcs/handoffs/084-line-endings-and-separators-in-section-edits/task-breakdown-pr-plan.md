@@ -48,3 +48,18 @@ reverted from Task 028 — bring them back for good). Task 028's minimal
 example becomes a test.
 
 CHANGELOG: the RFC-084 entry gains the JSON sentence (§10, last paragraph).
+
+**PR 4–6 landed** (`8a1cf23`, `485c331`, `bc36acb`).
+
+## PR 7 — names, the documented exception, line splitting in core (§11)
+
+1. Rename core's `as_shown_in_a_text_area` and the `text_area` module to names
+   that describe LF-normalised text and newlines; `omriss-ui` uses core's
+   name directly (no alias). Public API of `omriss-core` changes — say so in
+   the CHANGELOG's crate notes if it has them.
+2. `docs/src/source-preservation.md`: one plain sentence for §11.1's exception.
+3. Every site in `omriss-core` that finds a line end — search by construction
+   (`find('\n')`, `split('\n')`, `.lines()`, byte scans for `b'\n'`), not from
+   the three already known. Each on an edit path: the three-ending rule and a
+   bare-CR test (join, delete, split, rename at least). More than a handful:
+   stop and report.
