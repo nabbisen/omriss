@@ -142,6 +142,8 @@ CRLF pass the property (over 1,400 edits each).
 
 ### Design
 
+*Taken into 0.18.0 in full — D4, D5 and D6 — by the owner, 2026-11-26.*
+
 1. **One principle, one more layer: replace only what changed — also inside
    an encoded string.** A JSON string edit compares the draft with the
    decoded original, finds the changed span **in the decoded text**, maps that

@@ -67,7 +67,7 @@ That rule is the scope's only defence when something else asks to join.
 
 | # | Work | Why |
 |---|---|---|
-| 12 | **RFC-084** line endings and separators in section edits | Editing a section in a CRLF file rewrote that section's line endings to LF — lines the user never touched — breaking the documented promise to keep line endings exactly as found. Shipped in 0.17.0. Taken in by the owner on 2026-11-26 under the same file-integrity exception 0.17.0 used for Task 023 |
+| 12 | **RFC-084** line endings and separators in section edits | Editing a section in a CRLF file rewrote that section's line endings to LF — lines the user never touched — breaking the documented promise to keep line endings exactly as found. Shipped in 0.17.0. Taken in by the owner on 2026-11-26 under the same file-integrity exception 0.17.0 used for Task 023. **Widened the same day (§10):** a JSON string value lost its line breaks and had untouched escapes re-spelled on any edit; bare-CR files took LF |
 
 ### Stretch — taken only if the core lands early
 
