@@ -32,7 +32,8 @@ own recommendations are input to that, not decisions.
 Windows check (2026-11-26) found that the search panel and the settings
 popover let Tab reach controls hidden under them (RFC-059 §12.3a). The report
 goes to `.git-exclude/review-request/059-focus-pr3-contained-overlays/README.md`.
-The owner's W1–W3 run is still open; PR 4 only if it calls for one.
+The owner's Windows run (W1–W3, 2026-11-26) passed: **no PR 4**. After PR 3,
+the closing step in `task-breakdown-pr-plan.md`.
 
 Files:
 

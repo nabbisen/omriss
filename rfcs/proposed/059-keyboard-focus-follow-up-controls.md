@@ -474,3 +474,16 @@ WebView2 is measured by the owner, with the checklist in `design-output.md`
 focus sits on `<body>` — then a page-side script cannot fix it, and a
 host-side focus call is a design change that comes back to the architect. It
 is not built speculatively.
+
+**Result — owner, Windows, 2026-11-26, build of `6fce8e9` (PR 2): W1, W2 and
+W3 pass.** After Ctrl+S the typed character landed in the text and Tab moved
+on from the editor (to Preview), so focus never left it; Quick Actions then
+Esc, and Ctrl+\` there and back, left the keyboard working; a fast Ctrl+S,
+Ctrl+F opened search. §6.2a's Windows symptom does not reproduce with §12 in
+place. **No host-side change and no PR 4.**
+
+Noted, not a defect of §12: returning from plain file text puts the caret at
+the end of the section text, not where it was. That is RFC-080 §5.4 rule 9's
+"keep the user's place", which now covers view changes as well as display
+settings. Also from W1, tracked separately: Ctrl+S at the end of a section's
+text added a line break (Task 027).

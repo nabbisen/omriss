@@ -121,8 +121,11 @@ than about five main choices overload [COGA 4.6.3]. Presented by RFC-083.
    beside the work it concerns and stays until dismissed or acted on.
    **Messages never blame the user** and say how to fix the problem [NNG;
    COGA 4.5.10].
-9. **Keep the user's place** when text size, colours or spacing change: the
-   caret and the focused section stay in view [LV 3.6.1].
+9. **Keep the user's place** when text size, colours or spacing change, and
+   when a view is left and re-entered (plain file text, preview): the caret
+   returns where it was and the focused section stays in view [LV 3.6.1].
+   Found on Windows, 2026-11-26: leaving plain file text puts the caret at
+   the end of the section.
 10. **Words mean one thing** [COGA 4.4.1]. Owner decision 2026-11-26: the
     word **"zoom" is used for nothing**. Moving into and out of a section is
     "Open section" / "Up one level"; size is "Text size". The UI vocabulary

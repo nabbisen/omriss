@@ -83,9 +83,18 @@ leave the panel; choose a result → focus stays on it; Esc → the editor of th
 section shown. The same containment for the settings popover; Esc → the gear
 button.
 
-## PR 4 — Windows, only if needed
+## PR 4 — not needed
 
-Opened only if the owner's checklist, run against PR 2's build, shows the
-symptom remains on WebView2. If it shows the web view itself losing the
-keyboard (`design-output.md` §5, W1 step 4, second outcome), stop: that is a
-design change for the architect (RFC-059 §12.4), not this PR.
+The owner's Windows run against PR 2's build passed W1–W3 (RFC-059 §12.4).
+
+## Closing — after PR 3
+
+In PR 3, or right after it:
+
+- `docs/src/known-limitations.md`: delete "After Saving on Windows the
+  Keyboard May Need a Click". Its only basis was the 0.17.0 report, and the
+  owner's run of 2026-11-26 no longer reproduces it.
+- CHANGELOG: nothing further — PR 2's entry already describes the fix.
+
+The architect then moves RFC-059 to `done/` with §6.1, §6.3, §6.4 and §6.5
+recorded as carried by RFC-081 and RFC-080 (§11a).
