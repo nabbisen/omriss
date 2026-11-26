@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, taken into the frozen scope by the owner on 2026-11-26 as a file-integrity exception)
-**Status.** Proposed — implemented on `main` for 0.18.0: §4 (`5fa86b7`, `83fe573`, `1a89eb4`), §10 (`8a1cf23`, `485c331`, `bc36acb`), §11 (`f4bf739`). **Open:** the owner's Windows check (§12); then `done/`.
+**Status.** Implemented (0.18.0) — §4 (`5fa86b7`, `83fe573`, `1a89eb4`), §10 (`8a1cf23`, `485c331`, `bc36acb`), §11 (`f4bf739`); defects D1–D7. Accepted by the owner on 2026-11-26, which closes the Windows check of §12.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-065, RFC-076

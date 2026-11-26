@@ -1,6 +1,6 @@
 # RFC-084 — Task Breakdown and PR Plan
 
-Related RFC: `../../proposed/084-line-endings-and-separators-in-section-edits.md`
+Related RFC: `../../done/084-line-endings-and-separators-in-section-edits.md`
 
 Lifecycle status: inherited from RFC-084.
 

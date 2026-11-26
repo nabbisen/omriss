@@ -105,7 +105,7 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 081 | [Keyboard Compatibility and the Quick Actions Utility](./proposed/081-keyboard-compatibility-and-quick-actions-utility.md) | M16 |
 | 082 | [Right-to-Left Readiness](./proposed/082-right-to-left-readiness.md) | M17 |
 | 083 | [User Settings](./proposed/083-user-settings.md) | M16 |
-| 084 | [Line Endings and Separators in Section Edits](./proposed/084-line-endings-and-separators-in-section-edits.md) | M13 |
+| 084 | [Line Endings and Separators in Section Edits](./done/084-line-endings-and-separators-in-section-edits.md) | M13 |
 
 ## Archive
 

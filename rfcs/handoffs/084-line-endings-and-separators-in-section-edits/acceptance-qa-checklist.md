@@ -1,6 +1,6 @@
 # RFC-084 — Acceptance and QA Checklist
 
-Related RFC: `../../proposed/084-line-endings-and-separators-in-section-edits.md`
+Related RFC: `../../done/084-line-endings-and-separators-in-section-edits.md`
 
 Lifecycle status: inherited from RFC-084.
 
@@ -22,7 +22,7 @@ Lifecycle status: inherited from RFC-084.
 - [ ] A CRLF JSON file: a raw-text edit keeps untouched endings
 - [ ] GUI: middle section, type at the end, Ctrl+S — one document newline
       added, caret after the typed text (`gui_bytes`, the page's selection)
-- [ ] Owner, Windows: RFC-084 §12's three steps with a CRLF file
+- [x] Owner, Windows: RFC-084 §12's three steps with a CRLF file — closed by the owner's acceptance, 2026-11-26
 - [ ] CHANGELOG entry tells affected users, per RFC-084 §5
 
 ## Report
