@@ -344,9 +344,13 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
   margin-bottom: 10px;
   justify-content: space-between;
 }
-/* The path: one line, from the left. Ancestors are cut at 12em and give way
-   first; the current section is cut last. A cut crumb carries its full title
-   as `title` (RFC-013). */
+/* The path: one line, from the left. The current section's full title is the
+   heading directly below, so it gives way FIRST (down to little more than its
+   ellipsis, then the ancestors, each capped at 12em); the root crumb never
+   shrinks -- a cut "Document" says nothing. The shrink factors are lopsided on
+   purpose: a flex item that reaches its min-width is frozen and the remainder
+   goes to the others, so ancestors shrink only once the current crumb has
+   nothing left to give. Cut crumbs carry their full title as `title` (RFC-013). */
 .breadcrumb-crumbs {
   display: flex;
   align-items: center;
@@ -358,14 +362,15 @@ textarea.body-editor:focus { outline: none; border-color: var(--accent); }
 .breadcrumb-crumbs .crumb-btn {
   max-width: 12em;
   min-width: 0;
-  flex: 0 4 auto;
+  flex: 0 1 auto;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.breadcrumb-crumbs > .crumb-btn:first-child { max-width: none; flex: 0 0 auto; }
 .breadcrumb-crumbs .here {
-  min-width: 0;
-  flex: 0 1 auto;
+  min-width: 1.5em;
+  flex: 0 1000 auto;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

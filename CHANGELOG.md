@@ -60,8 +60,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right
-  edge; each ancestor is cut with an ellipsis (hover shows its full title) and the
-  current section is cut last. The "…" for a collapsed path is translated for screen
+  edge; when it does not fit, the current section's title is cut first (its full
+  title is the heading just below), then the ancestors, each with an ellipsis and its
+  full title on hover; the root crumb is never cut. The "…" for a collapsed path is translated for screen
   readers (English and Japanese).
 - **Tab no longer reaches controls hidden under the search panel or the settings
   popover** (RFC-059 §12.3a, found on Windows). Both are drawn over the window, so
