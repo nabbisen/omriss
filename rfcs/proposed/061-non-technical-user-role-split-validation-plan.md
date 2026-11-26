@@ -11,6 +11,7 @@
 
 > **2026-11-26:** participants are to include older and low-vision users,
 > to validate RFC-080 and RFC-083 (RFC-080 §7). The owner is arranging them.
+
 ---
 
 ## 1. Summary
