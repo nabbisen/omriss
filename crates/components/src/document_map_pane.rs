@@ -21,11 +21,12 @@ use dioxus::prelude::*;
 use dioxus_swdir_tree::item_tree::node::NodeId as SwNodeId;
 use dioxus_swdir_tree::{ItemTree, ItemTreeEvent, SelectionMode};
 use omriss_core::DocumentFormat;
-use omriss_ui::i18n::{Locale, t, t_args};
+use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{DocumentMapNode, EditorSession, EmptyMap, ViewMode, node_id_from_raw};
 
-use crate::draft_sync::open_node;
+use crate::draft_sync::{open_node, open_raw};
 use crate::structure_request::StructureRequest;
+use crate::unreadable::unreadable_message;
 use create_buttons::SelectedSectionCreateButtons;
 use draft::{commit_draft_if_dirty, sync_draft};
 use node_tree::{collect_ancestors, find_node, icon_class, to_item_node};
@@ -444,20 +445,19 @@ pub fn DocumentMapPane(
                     // Either direction commits what is pending first: entering
                     // commits the section draft, leaving commits a raw draft
                     // (RFC-076 §3.3), so two drafts are never live at once.
-                    if !commit_draft_if_dirty(
-                        &mut session.clone(),
-                        &mut draft.clone(),
-                        &mut status.clone(),
-                    ) {
-                        return;
-                    }
                     if is_raw {
+                        if !commit_draft_if_dirty(
+                            &mut session.clone(),
+                            &mut draft.clone(),
+                            &mut status.clone(),
+                        ) {
+                            return;
+                        }
                         session.write().leave_raw();
                         sync_draft(&session, &mut draft.clone());
                         return;
                     }
-                    sync_draft(&session, &mut draft.clone());
-                    session.write().show_raw();
+                    open_raw(&mut session.clone(), &mut draft.clone(), &mut status.clone());
                 },
                 if is_raw {
                     {t(lang, "raw.back")}
@@ -465,29 +465,6 @@ pub fn DocumentMapPane(
                     {t(lang, "document_map.action.show_plain_text")}
                 }
             }
-        }
-    }
-}
-
-/// The sentence for a map with no rows because the file's structure cannot be
-/// shown. It says what happened, where the text is, and what makes the
-/// structure appear; it does not blame the user (RFC-080 §5.4 rule 8). The
-/// words follow the format (RFC-085 §3.4).
-fn unreadable_message(lang: Locale, format: DocumentFormat) -> String {
-    match format {
-        DocumentFormat::Json => t_args(lang, "document_map.unreadable", &[("format", "JSON")]),
-        DocumentFormat::Toml => t_args(
-            lang,
-            "document_map.unsupported_format",
-            &[("format", "TOML")],
-        ),
-        DocumentFormat::YamlExperimental => t_args(
-            lang,
-            "document_map.unsupported_format",
-            &[("format", "YAML")],
-        ),
-        DocumentFormat::Markdown | DocumentFormat::PlainText | DocumentFormat::Unsupported => {
-            t(lang, "document_map.plain_text").to_string()
         }
     }
 }

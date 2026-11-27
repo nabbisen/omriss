@@ -48,7 +48,9 @@ pub fn OverviewPane(
                             let is_markdown = item.level.is_some()
                                 || item.kind == StructureNodeKind::MarkdownSection
                                 || item.kind == StructureNodeKind::DocumentRoot;
-                            let meta = if is_markdown {
+                            let meta = if is_markdown && count == 1 {
+                                "overview.card.subsections_one"
+                            } else if is_markdown {
                                 "overview.card.subsections"
                             } else if count == 1 {
                                 "overview.card.items_one"

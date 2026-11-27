@@ -7,7 +7,7 @@ use std::time::SystemTime;
 
 use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
-use omriss_ui::{EditorSession, ViewMode};
+use omriss_ui::{EditorSession, EmptyMap, ViewMode};
 
 use crate::file::file_dialog;
 use crate::input::keyboard;
@@ -23,8 +23,8 @@ use omriss_components::{
     CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
     ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
     SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar,
-    StructureDialog, StructureRequest, Toolbar, UnsavedChoice, UnsavedDialog, WelcomeScreen,
-    use_focus_script, use_structure_requests,
+    StructureDialog, StructureRequest, Toolbar, UnreadablePane, UnsavedChoice, UnsavedDialog,
+    WelcomeScreen, use_focus_script, use_structure_requests,
 };
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -203,6 +203,7 @@ pub fn App() -> Element {
 
     let is_welcome = !session.read().document_open();
     let is_raw = session.read().is_raw();
+    let unreadable = session.read().empty_map() == Some(EmptyMap::Unreadable);
     let mode = session.read().view_mode();
 
     // ── render tree ───────────────────────────────────────────────────────────
@@ -246,6 +247,10 @@ pub fn App() -> Element {
                             draft,
                             status,
                         }
+                    } else if unreadable {
+                        // A file whose structure cannot be shown has no card and no view
+                        // to open: the map's sentence, and the way to the text (RFC-085 §7).
+                        UnreadablePane { session, locale, draft, status }
                     } else {
                         match mode {
                             ViewMode::Outline | ViewMode::RawSource => rsx! {

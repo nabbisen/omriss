@@ -101,7 +101,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
   has no keys or items to show." Every format now opens the same way — on its
   first top-level node, with the Document Map's highlighted row the node the
   Writing Area shows (a JSON file used to open with the first row highlighted
-  and a different thing in the Writing Area). English and Japanese.
+  and a different thing in the Writing Area). English and Japanese. Choosing
+  **Back to editor** from such a file's plain file text no longer lands on an
+  empty "Document" card: the editor area says the same sentence and has a button
+  back to the text. A section with one subsection now says "1 subsection" (it said
+  "1 subsections").
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

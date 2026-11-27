@@ -254,6 +254,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("overview.card.items", "{count} items"),
     ("overview.card.items_one", "1 item"),
     ("overview.card.subsections", "{count} subsections"),
+    ("overview.card.subsections_one", "1 subsection"),
     ("palette.no_results", "No matching commands."),
     ("palette.placeholder", "Search actions\u{2026}"),
     ("palette.title", "Quick Actions"),

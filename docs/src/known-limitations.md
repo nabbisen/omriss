@@ -44,8 +44,8 @@ which is a structure change rather than a value edit — the same reason as abov
 ### Strict JSON Only
 
 Comments (`//`, `/* */`) and trailing commas are not accepted. A file using them
-opens in the plain file text view, and the Document Map says the file could not
-be read as JSON — this includes most `tsconfig.json`-style and VS Code
+opens in the plain file text view, and the Document Map (and the editor area, if
+you leave the text view) says the file could not be read as JSON — this includes most `tsconfig.json`-style and VS Code
 configuration files, which are JSONC rather than JSON.
 
 **Why:** JSONC is a different format with no single agreed specification.

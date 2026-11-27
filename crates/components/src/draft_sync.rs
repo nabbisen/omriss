@@ -170,6 +170,22 @@ pub fn open_overview(
     true
 }
 
+/// Opens the plain file text view, committing a pending section draft first
+/// (RFC-076 §3.3: two drafts are never live at once). The one way every button
+/// that opens that view does it.
+pub fn open_raw(
+    session: &mut Signal<EditorSession>,
+    draft: &mut Signal<String>,
+    status: &mut Signal<String>,
+) -> bool {
+    if !commit_or_block(session, draft, status) {
+        return false;
+    }
+    sync(session, draft);
+    session.write().show_raw();
+    true
+}
+
 /// Zooms out one level (Up, Esc), by the same sequence as [`open_node`].
 pub fn zoom_out(
     session: &mut Signal<EditorSession>,

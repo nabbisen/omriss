@@ -385,3 +385,39 @@ fn f2_crlf_object() {
 fn f2_array_with_a_final_newline() {
     f2("[1, 2]\n");
 }
+
+// ── RFC-085 §7 PR 5: the button beside an unreadable file ───────────────────
+
+#[test]
+fn the_button_to_the_text_opens_plain_file_text_and_changes_nothing() {
+    in_runtime(|| {
+        let source = "{\"a\": ";
+        let mut session = Signal::new(
+            EditorSession::open_detected(
+                source.to_string(),
+                None,
+                FileTextProfile::detect(source, false),
+                DocumentFormat::Json,
+            )
+            .unwrap(),
+        );
+        let mut draft = Signal::new(String::new());
+        let mut status = Signal::new(String::new());
+        // Opened, then back from plain file text: the state the pane is shown in.
+        session.write().settle_on_open();
+        assert!(session.read().is_raw());
+        session.write().leave_raw();
+        assert!(!session.read().is_raw());
+        assert_eq!(
+            session.read().empty_map(),
+            Some(omriss_ui::EmptyMap::Unreadable),
+            "still nothing to open but the text"
+        );
+
+        assert!(super::open_raw(&mut session, &mut draft, &mut status));
+
+        assert!(session.read().is_raw());
+        assert_eq!(session.read().source(), source);
+        assert!(!session.read().can_undo());
+    });
+}

@@ -82,6 +82,10 @@ button.primary:hover:not(:disabled) { color: var(--on-accent); filter: brightnes
 
 .main-pane { flex: 1; overflow-y: auto; padding: 18px 22px; }
 
+/* A file whose structure cannot be shown (RFC-085 §7): the map's sentence, in the
+   reading colour, and the one button to the text. */
+.unreadable-sentence { max-width: 60ch; line-height: 1.5; margin: 0 0 12px; }
+
 .breadcrumb { color: var(--muted); margin-bottom: 10px; }
 .breadcrumb button {
   border: none;

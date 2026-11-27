@@ -39,6 +39,7 @@ mod split_dialog;
 mod status_bar;
 mod structure_request;
 mod toolbar;
+mod unreadable;
 mod unsaved_dialog;
 mod welcome;
 
@@ -60,5 +61,6 @@ pub use structure_request::{
     StructureDialog, StructureRequest, dialog_for, use_structure_requests,
 };
 pub use toolbar::Toolbar;
+pub use unreadable::UnreadablePane;
 pub use unsaved_dialog::{UnsavedChoice, UnsavedDialog};
 pub use welcome::WelcomeScreen;

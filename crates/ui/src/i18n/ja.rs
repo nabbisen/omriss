@@ -258,6 +258,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("overview.card.items", "{count}件"),
     ("overview.card.items_one", "1件"),
     ("overview.card.subsections", "小見出し{count}件"),
+    ("overview.card.subsections_one", "小見出し1件"),
     ("palette.no_results", "該当するコマンドがありません。"),
     ("palette.placeholder", "アクションを検索…"),
     ("palette.title", "クイックアクション"),

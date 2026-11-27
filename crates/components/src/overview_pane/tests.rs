@@ -51,7 +51,7 @@ fn has(texts: &[String], wanted: &str) -> bool {
 #[test]
 fn markdown_cards_are_unchanged() {
     let t = cards(MD, DocumentFormat::Markdown, Locale::En);
-    for wanted in ["H1", "One", "Two", "1 subsections"] {
+    for wanted in ["H1", "One", "Two", "1 subsection"] {
         assert!(has(&t, wanted), "{wanted:?} in {t:?}");
     }
     assert!(!has(&t, "Child"), "a child is not a top-level card: {t:?}");
