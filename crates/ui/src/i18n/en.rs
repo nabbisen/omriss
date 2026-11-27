@@ -7,6 +7,8 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("aria.document_map", "Document Map"),
     ("aria.editor", "Edit section text"),
     ("aria.outline", "Document outline"),
+    ("aria.status_bar", "Status bar"),
+    ("aria.toolbar", "Toolbar"),
     ("breadcrumb.collapsed", "Collapsed sections"),
     ("breadcrumb.root", "Document"),
     (
@@ -266,7 +268,6 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "keyboard.overview.hint",
         "\u{2191}/\u{2193} select  \u{00b7}  Enter zoom in  \u{00b7}  Esc return",
     ),
-    ("menu.file", "File"),
     ("menu.file.new", "New"),
     ("menu.file.open", "Open\u{2026}"),
     ("menu.file.save", "Save"),

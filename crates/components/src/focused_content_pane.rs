@@ -57,7 +57,7 @@ pub fn FocusedContentPane(
     }
 
     let Some(snapshot) = session.read().current_snapshot() else {
-        return rsx! { main { class: "focused-content-pane" } };
+        return rsx! { main { class: "focused-content-pane", "aria-label": t(lang, "focused_content.title") } };
     };
 
     let local_dirty = session.read().body_draft_differs(&draft.read());

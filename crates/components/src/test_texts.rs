@@ -67,3 +67,100 @@ pub(crate) fn texts_of_settled(app: fn() -> Element) -> Vec<String> {
     collect(&dom, dom.base_scope().root_node(), &mut out);
     out
 }
+
+/// An element a mounted component renders: its tag and its attributes, static and
+/// dynamic, as text. What a test that asks "does this landmark have a name" reads.
+#[derive(Debug, Clone)]
+pub(crate) struct Rendered {
+    pub tag: String,
+    pub attrs: Vec<(String, String)>,
+}
+
+impl Rendered {
+    pub(crate) fn attr(&self, name: &str) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v.as_str())
+    }
+}
+
+fn attribute_text(value: &dioxus::dioxus_core::AttributeValue) -> Option<String> {
+    use dioxus::dioxus_core::AttributeValue as V;
+    match value {
+        V::Text(s) => Some(s.clone()),
+        V::Float(f) => Some(f.to_string()),
+        V::Int(i) => Some(i.to_string()),
+        V::Bool(b) => Some(b.to_string()),
+        _ => None,
+    }
+}
+
+fn walk_elements(dom: &VirtualDom, node: &VNode, t: &TemplateNode, out: &mut Vec<Rendered>) {
+    use dioxus::dioxus_core::TemplateAttribute;
+    match t {
+        TemplateNode::Text { .. } => {}
+        TemplateNode::Element {
+            tag,
+            attrs,
+            children,
+            ..
+        } => {
+            let mut found = Vec::new();
+            for a in attrs.iter() {
+                match a {
+                    TemplateAttribute::Static { name, value, .. } => {
+                        found.push((name.to_string(), value.to_string()));
+                    }
+                    TemplateAttribute::Dynamic { id } => {
+                        for attr in node.dynamic_attrs[*id].iter() {
+                            if let Some(v) = attribute_text(&attr.value) {
+                                found.push((attr.name.to_string(), v));
+                            }
+                        }
+                    }
+                }
+            }
+            out.push(Rendered {
+                tag: tag.to_string(),
+                attrs: found,
+            });
+            for child in children.iter() {
+                walk_elements(dom, node, child, out);
+            }
+        }
+        TemplateNode::Dynamic { id } => match &node.dynamic_nodes[*id] {
+            DynamicNode::Component(c) => {
+                if let Some(scope) = c.mounted_scope(*id, node, dom) {
+                    collect_elements(dom, scope.root_node(), out);
+                }
+            }
+            DynamicNode::Fragment(children) => {
+                for child in children {
+                    collect_elements(dom, child, out);
+                }
+            }
+            DynamicNode::Text(_) | DynamicNode::Placeholder(_) => {}
+        },
+    }
+}
+
+fn collect_elements(dom: &VirtualDom, node: &VNode, out: &mut Vec<Rendered>) {
+    for root in node.template.roots.iter() {
+        walk_elements(dom, node, root, out);
+    }
+}
+
+/// Mounts `app` after its effects have run and returns every element it renders,
+/// in document order, with its attributes.
+pub(crate) fn elements_of_settled(app: fn() -> Element) -> Vec<Rendered> {
+    use dioxus::dioxus_core::NoOpMutations;
+    let mut dom = VirtualDom::new(app);
+    dom.rebuild_in_place();
+    for _ in 0..3 {
+        dom.render_immediate(&mut NoOpMutations);
+    }
+    let mut out = Vec::new();
+    collect_elements(&dom, dom.base_scope().root_node(), &mut out);
+    out
+}

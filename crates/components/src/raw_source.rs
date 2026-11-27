@@ -58,7 +58,7 @@ pub fn RawSourceView(
     };
 
     rsx! {
-        main { class: "main-pane raw-source",
+        main { class: "main-pane raw-source", "aria-label": t(lang, "focused_content.title"),
             div { class: "raw-toolbar",
                 h2 { {t(lang, "raw.title")} }
                 button {

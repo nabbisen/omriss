@@ -49,7 +49,7 @@ pub fn StatusBar(
                 span { "{sentence}" }
             }
         }
-        footer { class: "statusbar",
+        footer { class: "statusbar", "aria-label": t(lang, "aria.status_bar"),
             if is_error {
                 span {
                     "aria-live": "assertive",

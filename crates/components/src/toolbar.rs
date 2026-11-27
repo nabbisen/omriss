@@ -71,7 +71,7 @@ pub fn Toolbar(
     };
 
     rsx! {
-        header { class: "toolbar", role: "toolbar", "aria-label": t(lang, "menu.file"),
+        header { class: "toolbar", role: "toolbar", "aria-label": t(lang, "aria.toolbar"),
             if settings_expanded {
                 div {
                     class: "toolbar-menu-backdrop",

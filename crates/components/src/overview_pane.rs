@@ -26,7 +26,7 @@ pub fn OverviewPane(
     let sel = *selected_card.read();
 
     rsx! {
-        main { class: "main-pane",
+        main { class: "main-pane", "aria-label": t(lang, "focused_content.title"),
             if items.is_empty() {
                 p { class: "outline-empty", {t(lang, "outline.empty")} }
                 p { class: "outline-hint", {t(lang, "outline.no-headings.hint")} }

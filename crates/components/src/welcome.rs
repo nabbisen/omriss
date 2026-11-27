@@ -21,7 +21,7 @@ pub fn WelcomeScreen(
     let recents = recent_files.read().clone();
 
     rsx! {
-        main { class: "welcome",
+        main { class: "welcome", "aria-label": t(lang, "focused_content.title"),
             div { class: "welcome-inner",
                 h1 { class: "welcome-title", "Omriss" }
                 p { class: "welcome-tagline", {t(lang, "welcome.tagline")} }

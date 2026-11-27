@@ -18,6 +18,8 @@ mod draft_set_tests;
 #[cfg(test)]
 mod focus_path_tests;
 #[cfg(test)]
+mod landmark_tests;
+#[cfg(test)]
 mod source_scan;
 #[cfg(test)]
 mod test_texts;

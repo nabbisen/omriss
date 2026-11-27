@@ -8,6 +8,8 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("aria.document_map", "ドキュメントマップ"),
     ("aria.editor", "セクションテキストを編集"),
     ("aria.outline", "ドキュメントのアウトライン"),
+    ("aria.status_bar", "ステータスバー"),
+    ("aria.toolbar", "ツールバー"),
     ("breadcrumb.collapsed", "省略されたセクション"),
     ("breadcrumb.root", "ドキュメント"),
     (
@@ -270,7 +272,6 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "keyboard.overview.hint",
         "↑/↓ で選択  ·  Enter でズームイン  ·  Esc で戻る",
     ),
-    ("menu.file", "ファイル"),
     ("menu.file.new", "新規作成"),
     ("menu.file.open", "開く…"),
     ("menu.file.save", "保存"),

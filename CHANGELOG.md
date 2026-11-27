@@ -55,6 +55,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **A screen reader can tell the regions apart** (RFC-060). The toolbar was
+  announced as "File", a menu that does not exist; it is now "Toolbar" /
+  「ツールバー」. The footer had no name and is now "Status bar" /
+  「ステータスバー」, and the main region is "Writing Area" /
+  「ライティングエリア」 in every view — the welcome screen, the overview, plain
+  file text and a file that cannot be shown — not only when a section is
+  focused. English and Japanese.
 - **Editing a section no longer rewrites line endings you did not touch, and Ctrl+S
   no longer moves the caret** (RFC-084). **If you edited a file with Windows (CRLF)
   line endings in omriss 0.17.0 or earlier, that file may now have mixed line

@@ -46,7 +46,7 @@ pub fn UnreadablePane(
     let lang = *locale.read();
     let message = unreadable_message(lang, session.read().format());
     rsx! {
-        main { class: "main-pane unreadable-pane",
+        main { class: "main-pane unreadable-pane", "aria-label": t(lang, "focused_content.title"),
             p { class: "unreadable-sentence", "{message}" }
             button {
                 class: "unreadable-show-raw",

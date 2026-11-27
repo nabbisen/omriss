@@ -151,15 +151,17 @@ so the before/after source can be diffed exactly by the undo machinery.
 
 ## Accessibility Architecture (RFC-027..030)
 
-The component-to-landmark mapping:
+The component-to-landmark mapping. Every landmark has an accessible name from
+the catalog, in both languages, in every view; a test mounts each view and
+fails for a landmark without one.
 
-| HTML element | Component | ARIA |
+| HTML element | Component | Accessible name |
 |---|---|---|
-| `<header role="toolbar">` | `Toolbar` | groups file + edit controls |
-| `<aside>` | `DocumentMapPane` | Document Map navigation landmark |
-| `<main>` | `FocusedContentPane` / `OverviewPane` | primary workspace |
-| `<nav>` | `Breadcrumb` | section path navigation |
-| `<footer>` | `StatusBar` | live status region |
+| `<header role="toolbar">` | `Toolbar` | "Toolbar" |
+| `<aside>` | `DocumentMapPane` | "Document Map" |
+| `<main>` | `WelcomeScreen`, `OverviewPane`, `FocusedContentPane`, `RawSourceView`, `UnreadablePane` | "Writing Area", always — the section's own name is its heading, inside |
+| `<nav>` | `Breadcrumb` | "Section path" |
+| `<footer>` | `StatusBar` | "Status bar"; its messages are live regions |
 
 Status updates use `aria-live="polite"` for informational messages and
 `aria-live="assertive"` for errors, so screen readers interrupt for failures
