@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — localization completeness (0.18.0)
-**Status.** Proposed — §4.1 (`t_args` and the placeholder-set parity test) landed on `main` as the first PR of RFC-071's 0.18.0 item, credited here; the rest of this RFC, including §4.3, is outstanding. **The 0.18.0 slice is §8.**
+**Status.** Proposed — §4.1 (`t_args` and the placeholder-set parity test) landed on `main` as the first PR of RFC-071's 0.18.0 item, credited here; the rest of this RFC, including §4.3, is outstanding. **The 0.18.0 slice is §8**: PR 1–3 landed (`ac4f75b`, `7ec5c93`, `420f4bb`); open: PR 4 (§9).
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-036, RFC-043
@@ -339,3 +339,27 @@ variant, in both locales. A GUI run of the permission case that RFC-060 F-5
 measured (`chmod 000`), checking the accessible description through AT-SPI.
 A JSON list in Japanese shows 項目 labels in the map, the breadcrumb and the
 search path.
+
+## 9. Decisions on PR 1–3 (2026-11-27)
+
+Accepted. With a `chmod 000` file, no OS text reaches the screen or the
+accessible tree in either locale. JSON list members read 項目 in Japanese in
+all five places.
+
+- **`OpenFailure::Internal` is accepted.** `open_detected` can fail only on a
+  core indexer bug. That is possible, so it is not unreachable, and a dialog
+  saying "nothing was changed, please report" is better than a panic.
+
+**PR 4. The dialog around the message still reads as it did for raw OS text**
+(screenshot `073-open-failure-ja.png`):
+
+1. **The cause is now the message, so it is shown as one.** Body text at the
+   normal size and the full text colour. Not the 12px monospace box that was
+   made for a "technical cause". `error_dialog.rs`'s doc comment follows.
+2. **The title says what happened, and only that:** "This file could not be
+   opened." What to do is said once, in the cause. Today the title says "Try
+   another file" above a cause that may say "Use Open to choose it again", or
+   speak of command-line options.
+3. **The button is "Close", from its own key.** It borrows
+   `dialog.discard.cancel` from the unsaved-changes dialog, and there is
+   nothing to cancel.

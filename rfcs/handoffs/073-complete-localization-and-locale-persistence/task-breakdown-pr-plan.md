@@ -27,3 +27,11 @@ Small; can travel with PR 1 if that is cleaner.
   used by every place that shows a title.
 - Tests: Japanese labels in the map, cards, breadcrumb, heading and search path;
   "Item" and the numbers still not searchable (RFC-077's tests unmodified).
+
+**PR 1–3 landed** (`ac4f75b`, `7ec5c93`, `420f4bb`).
+
+## PR 4 — the open-failure dialog (RFC-073 §9)
+
+The cause as body text; the title without advice; "Close" from its own key;
+both locales. Level 2 for the three; one GUI screenshot per locale of the
+`chmod 000` case.

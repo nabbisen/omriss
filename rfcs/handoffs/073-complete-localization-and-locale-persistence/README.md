@@ -9,9 +9,9 @@ Lifecycle status: inherited from RFC-073.
 slice is RFC-073 §8: typed open and save failures, the dialog filter labels,
 `from_tag`, and JSON list labels.
 
-**State:** ready. **Next: PR 1.**
+**State:** PR 1–3 landed. **Next: PR 4** (RFC-073 §9), then RFC-073 closes.
 
-The report goes to `.git-exclude/review-request/073-localization/README.md`.
+The report goes to `.git-exclude/review-request/073-localization-2/README.md`.
 
 Files:
 
