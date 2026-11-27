@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0)
-**Status.** Proposed — designed on RFC-085's search (§8), 2026-11-27.
+**Status.** Implemented (0.18.0) — `08da3e1`: Markdown heading titles and JSON keys are searchable in every scope, as their own result kind, on RFC-085's search (§8).
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053
@@ -126,3 +126,12 @@ every format.
 - The "Heading" / "Key" word in the result list, both locales (Level 2).
 - Measured on RFC-085's 8,000-item fixtures: search per call, before and
   after. Titles join the cache, so the change should be small; report it.
+
+## 9. Accepted (2026-11-27)
+
+- A title with several occurrences of the query is **one** result: a title is
+  opened, not searched into.
+- A Markdown title is what the Document Map shows (the flattened text), not
+  its markup.
+- Not this RFC's: a query matching thousands of places draws thousands of
+  result rows. That belongs with RFC-085 §8.4's large structures.

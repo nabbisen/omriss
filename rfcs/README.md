@@ -98,7 +98,7 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 074 | [Flatpak Packaging and Flathub Publishing](./proposed/074-flatpak-packaging-and-flathub-publishing.md) | M13 |
 | 075 | [Component Crate Extraction and Renderer Portability](./done/075-component-crate-extraction-and-renderer-portability.md) | M13 |
 | 076 | [Editable Plain File Text](./proposed/076-editable-plain-file-text.md) | M13 |
-| 077 | [Search Covers Heading Text](./proposed/077-search-covers-heading-text.md) | M13 |
+| 077 | [Search Covers Heading Text](./done/077-search-covers-heading-text.md) | M13 |
 | 078 | [Setext Heading Level Changes](./proposed/078-setext-heading-level-changes.md) | M13 |
 | 079 | [Presentation Foundation — Language, Direction, Scalable CSS, Layout Check](./proposed/079-presentation-foundation.md) | M16 |
 | 080 | [Readable for Older and Low-Vision Users](./proposed/080-readable-for-older-and-low-vision-users.md) | M16 |

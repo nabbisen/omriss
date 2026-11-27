@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — localization completeness (0.18.0)
-**Status.** Proposed — §4.1 (`t_args` and the placeholder-set parity test) landed on `main` as the first PR of RFC-071's 0.18.0 item, credited here; the rest of this RFC, including §4.3, is outstanding.
+**Status.** Proposed — §4.1 (`t_args` and the placeholder-set parity test) landed on `main` as the first PR of RFC-071's 0.18.0 item, credited here; the rest of this RFC, including §4.3, is outstanding. **The 0.18.0 slice is §8.**
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-036, RFC-043
@@ -289,3 +289,53 @@ means existing `settings.toml` files keep working with no migration.
    detection without discarding other settings.
 6. RFC-043's Status is updated: §92's three-step startup order is finally real,
    and follow-up 3 is closed.
+
+## 8. The 0.18.0 slice (2026-11-27)
+
+Where things stand: §4.1 landed with RFC-071. §4.2 moved to RFC-082 (0.20.0)
+and §4.5 to RFC-083 (0.19.0). Both §4.4 labels are gone or translated: the
+Quick Actions sentinels were deleted by RFC-059, and the breadcrumb's
+`aria-label` is `breadcrumb.collapsed` (RFC-013). This slice builds the rest,
+then RFC-073 moves to `done/`.
+
+1. **§4.3, open failures, as designed, checked against today's code.**
+   `OpenOutcome::Failed` and `Modal::OpenError` carry an `OpenFailure`, not a
+   `String`. The dialog maps it to catalog text at render time, exhaustively.
+   Its variants are the failures that can actually happen, found by
+   construction: every `Err` that reaches `OpenOutcome::Failed` or
+   `Modal::OpenError`. That includes the command-line message in `app.rs`
+   ("omriss takes a file path and accepts no options.") and whatever
+   `open_detected` can return. RFC-085 showed that a JSON syntax error is not
+   one of them. **A variant for a failure that cannot happen is not added.**
+   If `open_detected` cannot fail, its `Err` arm is shown to be unreachable,
+   not given a message.
+2. **Messages say what happened and what to do, and never blame the user**
+   (RFC-080 §5.4 rule 8). They fix two current faults. Non-UTF-8 text says
+   "UTF-8 files", not "UTF-8 Markdown files", because JSON is opened too. `Io`
+   maps `PermissionDenied`, `NotFound` and the kinds a desktop user actually
+   meets to their own keys, and every other kind to one general key. No OS
+   text reaches the screen or the accessible description.
+3. **Save failures get the same treatment.** `SaveOutcome::Failed` carries a
+   typed reason, and the status message says it: "You do not have permission
+   to save here", "The disk is full". Today it says only that saving failed,
+   which leaves a user with unsaved work no way to act. Where the message
+   appears is RFC-080's (§5.4 rule 8, 0.19.0); this slice makes it say why.
+4. **§4.4b**, the dialog filter labels. The caller in `shell/` passes resolved
+   strings, so no locale enters `file/`. "Markdown" and "JSON" stay format
+   names.
+5. **§4.4a**, `from_tag` splits on `.` as well.
+6. **JSON list labels** (found 2026-11-27). Core titles a list member
+   `format!("Item {}", n)`, so "Item 3" is English in both locales. Core stays
+   catalog-free (non-goal 2) and must not write English either. A positional
+   title from core is the **number alone** ("3"). The UI adds the word through
+   the catalog, in **one** display-title function used by every place that
+   shows a title: the Document Map, the cards, the breadcrumb, the Writing
+   Area's heading and the search result's path. RFC-077 §8.1's rule is
+   unchanged: positional titles are not searchable. Core's doc comment on
+   `StructureNodeKind::List` follows.
+
+**Validation.** The §6 items for §4.3. A level-2 test of the dialog per
+variant, in both locales. A GUI run of the permission case that RFC-060 F-5
+measured (`chmod 000`), checking the accessible description through AT-SPI.
+A JSON list in Japanese shows 項目 labels in the map, the breadcrumb and the
+search path.

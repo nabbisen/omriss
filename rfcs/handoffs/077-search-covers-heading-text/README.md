@@ -1,6 +1,6 @@
 # Handoff: RFC-077 — Search Covers Heading Text
 
-Related RFC: `../../proposed/077-search-covers-heading-text.md`
+Related RFC: `../../done/077-search-covers-heading-text.md`
 
 Lifecycle status: inherited from RFC-077.
 
@@ -8,7 +8,7 @@ Lifecycle status: inherited from RFC-077.
 the headings the user can see in the Document Map. The design is RFC-077 §4,
 as §8 places it on RFC-085's search.
 
-**State:** ready. **Next: PR 1.**
+**State: closed.** PR 1 landed (`08da3e1`); RFC-077 is in `done/`.
 
 The report goes to `.git-exclude/review-request/077-search-titles/README.md`.
 

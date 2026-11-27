@@ -1,6 +1,6 @@
 # RFC-077 — Implementation Handoff
 
-Related RFC: `../../proposed/077-search-covers-heading-text.md`
+Related RFC: `../../done/077-search-covers-heading-text.md`
 
 Lifecycle status: inherited from RFC-077.
 
