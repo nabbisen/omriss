@@ -36,6 +36,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
   (text with every CRLF and lone CR as LF) and `document_newline` (the newline a
   document's own text uses). Every edit in core and in the application uses this
   one rule.
+- **`DocumentFormatAdapter::node_text`, and `OwnText`** (RFC-085): what a node says
+  itself — a Markdown section's body, a JSON value (decoded), nothing for a JSON
+  group or list, the whole region for plain text — read from the node. The method
+  is required: **an adapter written outside omriss must implement it** (return
+  `None` for a format with no text of its own). The panes' search and statistics use
+  it, so on a 374 KiB JSON file a search takes about 2 ms instead of about 95 ms.
 
 ### Changed
 
@@ -96,8 +102,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
   Document Map told you to "Add headings with # to begin organizing" — advice for
   Markdown, and nothing said the file could not be read. Now the text is open (you
   can edit it with **Edit**), and the Document Map says: this file could not be
-  read as JSON, its text is open in plain file text, and the structure appears
-  once it is valid JSON. Valid JSON with no members (`{}`, `[]`) says "This JSON
+  read as JSON, you can view and edit its text in plain file text, and its
+  structure is shown once it is valid JSON. Valid JSON with no members (`{}`, `[]`) says "This JSON
   has no keys or items to show." Every format now opens the same way — on its
   first top-level node, with the Document Map's highlighted row the node the
   Writing Area shows (a JSON file used to open with the first row highlighted

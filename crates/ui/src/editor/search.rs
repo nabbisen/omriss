@@ -94,8 +94,8 @@ fn make_preview(body: &str, match_start: usize) -> String {
 
 /// Searches `texts` (in document order) for `query`; results are in that order.
 /// Empty query returns no results. `path_of` gives a node's path from the root.
-pub fn search_texts(
-    texts: &[NodeText],
+pub fn search_texts<'a>(
+    texts: impl IntoIterator<Item = &'a NodeText>,
     query: &str,
     path_of: impl Fn(NodeId) -> Vec<NodeItem>,
 ) -> Vec<SearchMatch> {

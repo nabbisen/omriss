@@ -126,16 +126,16 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ),
     (
         "document_map.plain_text",
-        "This file has no structure to show. Its text is open in Plain file text.",
+        "This file has no structure to show. You can view and edit its text in Plain file text.",
     ),
     ("document_map.title", "Document Map"),
     (
         "document_map.unreadable",
-        "This file could not be read as {format}, so its structure cannot be shown. Its text is open in Plain file text. When it is valid {format}, the structure appears here.",
+        "This file could not be read as {format}, so its structure cannot be shown. You can view and edit its text in Plain file text. When it is valid {format}, its structure is shown.",
     ),
     (
         "document_map.unsupported_format",
-        "omriss cannot show the structure of {format} files yet. Its text is open in Plain file text.",
+        "omriss cannot show the structure of {format} files yet. You can view and edit its text in Plain file text.",
     ),
     (
         "editor.body.placeholder",

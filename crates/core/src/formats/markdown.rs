@@ -42,7 +42,8 @@ use crate::formats::error::{
     StructureErrorKind,
 };
 use crate::formats::focused_content::FocusedContent;
-use crate::formats::structure::DocumentStructure;
+use crate::formats::own_text::OwnText;
+use crate::formats::structure::{DocumentStructure, StructureNode};
 use crate::{
     Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, MoveDirection, NodeId,
     ReplaceSectionBody,
@@ -111,6 +112,17 @@ impl DocumentFormatAdapter for MarkdownAdapter {
             title: node.title.clone(),
             body,
             preview_available: true,
+        })
+    }
+
+    /// A section's body: the source between its heading and its first child.
+    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
+        let range = node.editable_range?;
+        Some(OwnText {
+            text: source.get(range.as_range())?.to_string(),
+            range,
+            exact: true,
+            value_kind: None,
         })
     }
 

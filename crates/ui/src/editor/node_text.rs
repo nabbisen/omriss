@@ -2,16 +2,17 @@
 //! (RFC-085 §3.3 items 5–6). Search and statistics both read this, so they cannot
 //! disagree about a node's text.
 //!
-//! A node's *own* text: a Markdown section's body, a JSON value (decoded). A JSON
-//! group or list has none of its own: its members are nodes. Titles (headings,
+//! A node's *own* text, as its format's adapter says it (RFC-085 §8.2): a Markdown
+//! section's body, a JSON value (decoded). A JSON group or list has none of its
+//! own: its members are nodes. Titles (headings,
 //! keys) are not here; RFC-077 adds them as one more kind of result on the same
 //! walk.
 
 use std::collections::HashMap;
 
 use omriss_core::{
-    ByteRange, DocumentFormat, DocumentFormatAdapter, DocumentStructure, FocusedContent,
-    JsonAdapter, NodeId, StructureNodeKind,
+    ByteRange, DocumentFormat, DocumentFormatAdapter, DocumentStructure, JsonAdapter,
+    MarkdownAdapter, NodeId, PlainTextAdapter, TomlAdapter, ValueKind, YamlExperimentalAdapter,
 };
 
 /// One node's own text.
@@ -25,6 +26,8 @@ pub struct NodeText {
     /// the range is the whole value.
     pub range: ByteRange,
     pub exact: bool,
+    /// What a JSON value is; `None` for any other node.
+    pub value_kind: Option<ValueKind>,
 }
 
 /// The ids under `structure`'s root in document order (parents before their
@@ -62,7 +65,10 @@ pub fn subtree(
     out
 }
 
-/// The own text of every node in `ids`, in that order; nodes with none are left out.
+/// The own text of every node in `ids`, in that order; nodes with none are left
+/// out. What a node's own text *is* is its format's to say
+/// (`DocumentFormatAdapter::node_text`, RFC-085 §8.2); this only asks, node by
+/// node, so reading every text is linear in the document.
 pub fn node_texts(
     source: &str,
     structure: &DocumentStructure,
@@ -72,42 +78,22 @@ pub fn node_texts(
     ids.iter()
         .filter_map(|&id| {
             let node = &structure.nodes[*index.get(&id)?];
-            match (structure.format, node.kind) {
-                (DocumentFormat::Json, StructureNodeKind::Value) => {
-                    let range = node.editable_range.or(node.source_range)?;
-                    let text = match JsonAdapter.focused_content(source, structure, id).ok()? {
-                        FocusedContent::StructuredValue { display_text, .. } => display_text,
-                        _ => return None,
-                    };
-                    Some(NodeText {
-                        id,
-                        text,
-                        range,
-                        exact: false,
-                    })
+            let own = match structure.format {
+                DocumentFormat::Markdown => MarkdownAdapter.node_text(source, node),
+                DocumentFormat::Json => JsonAdapter.node_text(source, node),
+                DocumentFormat::PlainText | DocumentFormat::Unsupported => {
+                    PlainTextAdapter.node_text(source, node)
                 }
-                (DocumentFormat::Json, _) => None,
-                (DocumentFormat::Markdown, _) => {
-                    let range = node.editable_range?;
-                    Some(NodeText {
-                        id,
-                        text: source.get(range.as_range())?.to_string(),
-                        range,
-                        exact: true,
-                    })
-                }
-                // The plain-text fallback, and any format with no reader of its own:
-                // its whole text is the one region the structure has.
-                _ => {
-                    let range = node.source_range?;
-                    Some(NodeText {
-                        id,
-                        text: source.get(range.as_range())?.to_string(),
-                        range,
-                        exact: true,
-                    })
-                }
-            }
+                DocumentFormat::Toml => TomlAdapter.node_text(source, node),
+                DocumentFormat::YamlExperimental => YamlExperimentalAdapter.node_text(source, node),
+            }?;
+            Some(NodeText {
+                id,
+                text: own.text,
+                range: own.range,
+                exact: own.exact,
+                value_kind: own.value_kind,
+            })
         })
         .collect()
 }

@@ -15,6 +15,7 @@ mod line_ending_structure_tests;
 mod markdown_adapter_add_tests;
 mod markdown_adapter_move_tests;
 mod markdown_adapter_tests;
+mod own_text_tests;
 mod plain_text_adapter_tests;
 mod range_tests;
 mod replace_range_tests;

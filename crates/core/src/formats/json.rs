@@ -42,7 +42,8 @@ use crate::formats::error::{
     StructureErrorKind,
 };
 use crate::formats::focused_content::FocusedContent;
-use crate::formats::structure::{DocumentStructure, StructureNodeKind};
+use crate::formats::own_text::OwnText;
+use crate::formats::structure::{DocumentStructure, StructureNode, StructureNodeKind};
 use crate::{Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, NodeId};
 
 /// The JSON format adapter (RFC-054).
@@ -87,18 +88,8 @@ impl DocumentFormatAdapter for JsonAdapter {
                 let range = node
                     .source_range
                     .ok_or(StructureErrorKind::InternalInvariantFailed)?;
-                let literal = source
-                    .get(range.as_range())
+                let (kind, text) = scalar::scalar_text(source, range)
                     .ok_or(StructureErrorKind::InternalInvariantFailed)?;
-                let kind = scalar::classify(source, range);
-                let text = match kind {
-                    ScalarKind::Text => scalar::decode_string(source, range),
-                    ScalarKind::Number | ScalarKind::OnOff => literal.to_string(),
-                    // "No value", not the literal "null" -- ValueKind::NoValue's
-                    // own doc comment: distinct from an empty string, and
-                    // there is nothing useful to show as editable text for it.
-                    ScalarKind::NoValue => String::new(),
-                };
                 Ok(FocusedContent::StructuredValue {
                     title: node.title.clone(),
                     value_kind: kind.to_value_kind(),
@@ -122,6 +113,22 @@ impl DocumentFormatAdapter for JsonAdapter {
             }
             _ => Err(StructureErrorKind::InternalInvariantFailed.into()),
         }
+    }
+
+    /// A value's own text, decoded (RFC-085 §8.2); a group or list has none — its
+    /// members are nodes. Shares its decoding with `focused_content`.
+    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
+        if node.kind != StructureNodeKind::Value {
+            return None;
+        }
+        let range = node.source_range?;
+        let (kind, text) = scalar::scalar_text(source, range)?;
+        Some(OwnText {
+            text,
+            range,
+            exact: false,
+            value_kind: Some(kind.to_value_kind()),
+        })
     }
 
     /// Validates a draft per RFC-054 §8 (scalars, J5) and §8.5 (container

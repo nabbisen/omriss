@@ -57,6 +57,23 @@ pub(super) fn decode_string(source: &str, range: ByteRange) -> String {
         .unwrap_or_default()
 }
 
+/// What a scalar literal says as text, with its kind: a string decoded, a number
+/// or an on/off literal as written, nothing for `null`. The one decoder path —
+/// `focused_content` (the editor's view of a value) and `node_text` (search and
+/// statistics) both read through it, so they cannot disagree.
+pub(super) fn scalar_text(source: &str, range: ByteRange) -> Option<(ScalarKind, String)> {
+    let literal = source.get(range.as_range())?;
+    let kind = classify(source, range);
+    let text = match kind {
+        ScalarKind::Text => decode_string(source, range),
+        ScalarKind::Number | ScalarKind::OnOff => literal.to_string(),
+        // "No value", not the literal "null" -- ValueKind::NoValue's own doc
+        // comment: distinct from an empty string.
+        ScalarKind::NoValue => String::new(),
+    };
+    Some((kind, text))
+}
+
 /// The escaped text of a string literal's content, without its quotes — raw
 /// user text turned into JSON escapes per RFC-054 §8.1 ("The UI may allow
 /// plain text entry and the adapter will JSON-escape it"). The inverse of

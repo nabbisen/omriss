@@ -22,6 +22,7 @@
 //! revision — so this is exactly the layer RFC-054 §0.4 always needed
 //! beneath it, not an exception to it.
 
+use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -31,6 +32,7 @@ use omriss_core::{
     YamlExperimentalAdapter,
 };
 
+use crate::editor::node_text::{NodeText, node_texts, preorder};
 use crate::interface::document_map::DocumentMapNode;
 
 /// One cache slot: the active format adapter's own `build_structure`
@@ -47,6 +49,17 @@ pub(super) struct StructureCache {
     /// Node id -> position in `DocumentStructure.nodes`, built with the entry, so a
     /// pane looking up many nodes (cards, crumbs, search paths) does not scan.
     index: Rc<HashMap<NodeId, usize>>,
+    /// Every node's own text, in document order, built the first time something
+    /// reads it and kept as long as the revision stands (RFC-085 §8.3): search per
+    /// keystroke, statistics and a card's kind label decode nothing twice.
+    texts: OnceCell<Rc<PaneTexts>>,
+}
+
+/// Every node's own text, with a position index by node id.
+#[derive(Debug)]
+pub(crate) struct PaneTexts {
+    pub(crate) all: Vec<NodeText>,
+    pub(crate) by_id: HashMap<NodeId, usize>,
 }
 
 impl super::EditorSession {
@@ -85,6 +98,7 @@ impl super::EditorSession {
             revision,
             result: result.clone(),
             index,
+            texts: OnceCell::new(),
         });
         result
     }
@@ -127,6 +141,30 @@ impl super::EditorSession {
         let structure = self.structure_or_fallback();
         let index = Rc::new(index_of(&structure));
         (structure, index)
+    }
+
+    /// Every node's own text for the current revision: cached with the structure
+    /// (a draft never bumps the revision, so typing rebuilds nothing; a commit,
+    /// undo or redo does), or, when the adapter cannot read the source, built
+    /// from the plain-text fallback each time (one node).
+    pub(crate) fn pane_texts(&self) -> Rc<PaneTexts> {
+        let build = |structure: &DocumentStructure, index: &HashMap<NodeId, usize>| {
+            let ids = preorder(structure, index);
+            let all = node_texts(self.document.source(), structure, index, &ids);
+            let by_id = all.iter().enumerate().map(|(i, t)| (t.id, i)).collect();
+            Rc::new(PaneTexts { all, by_id })
+        };
+        if self.structure_result().is_ok()
+            && let Some(cache) = self.structure_cache.borrow().as_ref()
+            && let Ok(structure) = &cache.result
+        {
+            return cache
+                .texts
+                .get_or_init(|| build(structure, &cache.index))
+                .clone();
+        }
+        let (structure, index) = self.pane_view();
+        build(&structure, &index)
     }
 
     /// Whether the active format's adapter could read the source. `false` is an

@@ -15,8 +15,9 @@ use crate::formats::error::{
 use crate::formats::focused_content::FocusedContent;
 use crate::formats::json::JsonAdapter;
 use crate::formats::markdown::MarkdownAdapter;
+use crate::formats::own_text::OwnText;
 use crate::formats::plain_text::PlainTextAdapter;
-use crate::formats::structure::DocumentStructure;
+use crate::formats::structure::{DocumentStructure, StructureNode};
 use crate::formats::unsupported::{TomlAdapter, YamlExperimentalAdapter};
 use crate::{Document, DocumentFormat, DocumentRevision, NodeId};
 
@@ -45,6 +46,13 @@ pub trait DocumentFormatAdapter {
         structure: &DocumentStructure,
         node_id: NodeId,
     ) -> Result<FocusedContent, FocusError>;
+
+    /// What `node` says itself (RFC-085 §8.2): a Markdown section's body, a JSON
+    /// value (decoded), nothing for a group or list (its members are nodes), the
+    /// whole region for plain text. Read from the node, not looked up by id, so
+    /// reading every node's text is linear in the document. Required, with no
+    /// default: each format states what its own text is.
+    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText>;
 
     /// Validates a focused-content draft without applying it.
     fn validate_focused_edit(

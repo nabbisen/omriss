@@ -14,7 +14,8 @@ use crate::formats::error::{
     StructureErrorKind,
 };
 use crate::formats::focused_content::FocusedContent;
-use crate::formats::structure::DocumentStructure;
+use crate::formats::own_text::OwnText;
+use crate::formats::structure::{DocumentStructure, StructureNode};
 use crate::{Document, DocumentFormat, DocumentFormatAdapter, DocumentRevision, NodeId};
 
 /// TOML support is not implemented; see RFC-055.
@@ -45,6 +46,11 @@ impl DocumentFormatAdapter for TomlAdapter {
         _node_id: NodeId,
     ) -> Result<FocusedContent, FocusError> {
         Err(unsupported())
+    }
+
+    /// No structure is ever built, so there is no node to read.
+    fn node_text(&self, _source: &str, _node: &StructureNode) -> Option<OwnText> {
+        None
     }
 
     fn validate_focused_edit(
@@ -95,6 +101,11 @@ impl DocumentFormatAdapter for YamlExperimentalAdapter {
         _node_id: NodeId,
     ) -> Result<FocusedContent, FocusError> {
         Err(unsupported())
+    }
+
+    /// No structure is ever built, so there is no node to read.
+    fn node_text(&self, _source: &str, _node: &StructureNode) -> Option<OwnText> {
+        None
     }
 
     fn validate_focused_edit(

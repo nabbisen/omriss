@@ -24,6 +24,7 @@ use crate::formats::error::{
     StructureErrorKind,
 };
 use crate::formats::focused_content::FocusedContent;
+use crate::formats::own_text::OwnText;
 use crate::formats::structure::{
     DocumentStructure, NodeCapabilities, StructureNode, StructureNodeKind,
 };
@@ -89,6 +90,17 @@ impl DocumentFormatAdapter for PlainTextAdapter {
             title: String::new(),
             reason: StructureErrorKind::UnsupportedFeature,
             raw_text_available: true,
+        })
+    }
+
+    /// The one region: the whole source.
+    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
+        let range = node.source_range?;
+        Some(OwnText {
+            text: source.get(range.as_range())?.to_string(),
+            range,
+            exact: true,
+            value_kind: None,
         })
     }
 

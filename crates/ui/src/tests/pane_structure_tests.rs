@@ -390,11 +390,77 @@ fn the_empty_map_messages_exist_in_both_locales() {
     // The English sentence of RFC-085 §3.4, word for word.
     assert_eq!(
         t_args(Locale::En, "document_map.unreadable", &[("format", "JSON")]),
-        "This file could not be read as JSON, so its structure cannot be shown. Its text is \
-         open in Plain file text. When it is valid JSON, the structure appears here."
+        "This file could not be read as JSON, so its structure cannot be shown. You can view \
+         and edit its text in Plain file text. When it is valid JSON, its structure is shown."
     );
     assert_eq!(
         t(Locale::En, "document_map.no_members"),
         "This JSON has no keys or items to show."
     );
+}
+
+// ── node texts are cached by revision (RFC-085 §8.3) ────────────────────────
+
+#[test]
+fn a_draft_does_not_rebuild_the_node_texts_and_a_commit_does() {
+    use std::rc::Rc;
+    let mut s = json(JSON);
+    let before = s.pane_texts();
+    // Everything that happens while typing, and everything that reads: no new revision, no rebuild.
+    let name = top(&s, "name");
+    s.focus(name).unwrap();
+    for typed in ["o", "om", "omr", "omriss!"] {
+        let _ = s.structured_draft_differs(typed);
+        let _ = s.structured_draft_state(typed);
+        let _ = s.validate_structured_draft(typed);
+        let _ = s.search_document("alpha");
+        let _ = s.stats();
+        let _ = s.current_children();
+    }
+    assert!(
+        Rc::ptr_eq(&before, &s.pane_texts()),
+        "typing and reading must not rebuild the node texts"
+    );
+
+    s.commit_structured_draft("changed").unwrap();
+    let after = s.pane_texts();
+    assert!(
+        !Rc::ptr_eq(&before, &after),
+        "a commit bumps the revision: rebuilt"
+    );
+    assert!(after.all.iter().any(|t| t.text == "changed"));
+    assert!(
+        s.search_document("changed").len() == 1,
+        "search sees the committed text"
+    );
+
+    // Undo is a new revision too; the texts follow the source.
+    s.undo().unwrap();
+    assert!(!Rc::ptr_eq(&after, &s.pane_texts()));
+    assert!(s.search_document("changed").is_empty());
+}
+
+#[test]
+fn a_markdown_draft_does_not_rebuild_the_node_texts_and_a_commit_does() {
+    use std::rc::Rc;
+    let mut s = EditorSession::open("# A\none\n\n# B\ntwo\n".into(), None).unwrap();
+    let a = s.outline_items()[0].id;
+    let snapshot = s.focus(a).unwrap();
+    let before = s.pane_texts();
+    let _ = s.body_draft_differs("one more\n");
+    let _ = s.search_section("one");
+    let _ = s.stats();
+    assert!(Rc::ptr_eq(&before, &s.pane_texts()));
+    s.commit_focused_body(&snapshot, "changed\n\n".into())
+        .unwrap();
+    assert!(!Rc::ptr_eq(&before, &s.pane_texts()));
+    assert_eq!(s.search_document("changed").len(), 1);
+}
+
+#[test]
+fn an_unreadable_file_has_one_text_and_no_cache_to_go_stale() {
+    let s = json("{\"a\": ");
+    let texts = s.pane_texts();
+    assert_eq!(texts.all.len(), 1);
+    assert_eq!(texts.all[0].text, "{\"a\": ");
 }

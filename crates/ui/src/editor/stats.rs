@@ -4,6 +4,8 @@
 //! ASCII text and reasonable approximations for CJK-heavy documents where
 //! space-based word segmentation is conventional enough for a writing aid.
 
+use std::collections::HashSet;
+
 use omriss_core::{DocumentFormat, DocumentStructure, NodeId, StructureNodeKind};
 
 use crate::editor::node_text::NodeText;
@@ -72,6 +74,7 @@ pub fn compute_stats(
         let total = texts.iter().map(|t| word_count(&t.text)).sum();
         let focused = focus
             .map(|(_, ids)| {
+                let ids: HashSet<NodeId> = ids.iter().copied().collect();
                 texts
                     .iter()
                     .filter(|t| ids.contains(&t.id))

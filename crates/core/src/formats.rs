@@ -15,6 +15,7 @@ pub mod error;
 pub mod focused_content;
 pub mod json;
 pub mod markdown;
+pub mod own_text;
 pub mod plain_text;
 pub mod structure;
 pub mod unsupported;

@@ -68,6 +68,7 @@ pub use formats::error::{
 pub use formats::focused_content::{FocusedContent, ValueKind};
 pub use formats::json::JsonAdapter;
 pub use formats::markdown::MarkdownAdapter;
+pub use formats::own_text::OwnText;
 pub use formats::plain_text::PlainTextAdapter;
 pub use formats::structure::{
     Capability, CapabilityReason, DocumentStructure, NodeCapabilities, StructureNode,

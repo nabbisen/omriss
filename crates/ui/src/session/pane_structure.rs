@@ -10,12 +10,11 @@
 //! The Markdown outline is read in exactly one place in this file: a section's
 //! heading level, for the card label "H2" — a Markdown-only label (RFC-085 §3.1).
 
-use omriss_core::{
-    DocumentFormat, DocumentFormatAdapter, DocumentStructure, FocusedContent, JsonAdapter, NodeId,
-    StructureNode, StructureNodeKind,
-};
+use omriss_core::{DocumentFormat, DocumentStructure, NodeId, StructureNode, StructureNodeKind};
 
-use crate::editor::node_text::{node_texts, preorder, subtree};
+use std::collections::HashSet;
+
+use crate::editor::node_text::subtree;
 use crate::editor::search::{SearchMatch, search_texts};
 use crate::editor::stats::{DocumentStats, compute_stats};
 use crate::interface::node_item::NodeItem;
@@ -43,12 +42,14 @@ impl super::EditorSession {
         } else {
             None
         };
+        // What a JSON value is: read from the cached own text, which decoded it once.
         let value_kind =
             if self.format == DocumentFormat::Json && node.kind == StructureNodeKind::Value {
-                match JsonAdapter.focused_content(self.document.source(), structure, node.id) {
-                    Ok(FocusedContent::StructuredValue { value_kind, .. }) => Some(value_kind),
-                    _ => None,
-                }
+                let texts = self.pane_texts();
+                texts
+                    .by_id
+                    .get(&node.id)
+                    .and_then(|&i| texts.all[i].value_kind)
             } else {
                 None
             };
@@ -199,20 +200,25 @@ impl super::EditorSession {
 
     fn search_in(&self, scope: Option<NodeId>, query: &str) -> Vec<SearchMatch> {
         let (structure, index) = self.pane_view();
-        let ids = match scope {
-            Some(id) if index.contains_key(&id) => subtree(&structure, &index, id),
-            _ => preorder(&structure, &index),
+        let texts = self.pane_texts();
+        let scoped: Option<HashSet<NodeId>> = match scope {
+            Some(id) if index.contains_key(&id) => {
+                Some(subtree(&structure, &index, id).into_iter().collect())
+            }
+            _ => None,
         };
-        let texts = node_texts(self.document.source(), &structure, &index, &ids);
-        search_texts(&texts, query, |id| self.path_to(id))
+        let in_scope = texts
+            .all
+            .iter()
+            .filter(|t| scoped.as_ref().is_none_or(|ids| ids.contains(&t.id)));
+        search_texts(in_scope, query, |id| self.path_to(id))
     }
 
     /// Returns document statistics (RFC-046, RFC-085 §3.3 item 6): word counts
     /// and the count of the format's own unit.
     pub fn stats(&self) -> DocumentStats {
         let (structure, index) = self.pane_view();
-        let all = preorder(&structure, &index);
-        let texts = node_texts(self.document.source(), &structure, &index, &all);
+        let texts = self.pane_texts();
         let focus_ids = self
             .view
             .focused()
@@ -220,7 +226,7 @@ impl super::EditorSession {
         compute_stats(
             self.document.source(),
             &structure,
-            &texts,
+            &texts.all,
             focus_ids.as_ref().map(|(id, ids)| (*id, ids.as_slice())),
         )
     }
