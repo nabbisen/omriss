@@ -20,6 +20,17 @@ pub(super) fn check_revision(
     Ok(())
 }
 
+/// The one rule for a title typed by a caller (RFC-070 §4.1): trimmed, not empty,
+/// and on one line. Returns the title as it is to be written. `rename_section` and
+/// `split_section` both call it, so a title one refuses the other refuses.
+pub(super) fn validate_title(title: &str) -> Result<&str, StructuralEditError> {
+    let title = title.trim();
+    if title.is_empty() || title.contains('\n') || title.contains('\r') {
+        return Err(StructuralEditError::InvalidTitle);
+    }
+    Ok(title)
+}
+
 pub(super) fn is_descendant(outline: &Outline, ancestor: NodeId, candidate: NodeId) -> bool {
     outline
         .path(candidate)

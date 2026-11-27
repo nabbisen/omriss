@@ -55,6 +55,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`omriss-core`: `Document::split_section` refuses a title `rename_section` would
+  refuse, and an offset between the CR and LF of one line ending** (RFC-070). A
+  title with a line break (`"Evil\n# Injected H1"` added two outline nodes) or an
+  empty one (a heading line with a trailing space) now returns
+  `StructuralEditError::InvalidTitle`, and the title is trimmed, as `rename_section`
+  has always done. An offset that would cut a CRLF in two returns
+  `InvalidSplitOffset`. The application is not affected: its dialogs already
+  refused these. A library caller that passed such a title now gets an error.
 - **A screen reader can tell the regions apart** (RFC-060). The toolbar was
   announced as "File", a menu that does not exist; it is now "Toolbar" /
   「ツールバー」. The footer had no name and is now "Status bar" /

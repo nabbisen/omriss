@@ -9,7 +9,7 @@ use crate::newline::split_first_line;
 use crate::range::ByteRange;
 
 use super::error::StructuralEditError;
-use super::preflight::{atx_title_range, check_revision, starts_with_atx_heading};
+use super::preflight::{atx_title_range, check_revision, starts_with_atx_heading, validate_title};
 
 pub(crate) fn rename_section(
     doc: &mut Document,
@@ -18,10 +18,7 @@ pub(crate) fn rename_section(
     base_rev: DocumentRevision,
 ) -> Result<EditResult, StructuralEditError> {
     check_revision(doc, base_rev)?;
-    let new_title = new_title.trim();
-    if new_title.is_empty() || new_title.contains('\n') || new_title.contains('\r') {
-        return Err(StructuralEditError::InvalidTitle);
-    }
+    let new_title = validate_title(new_title)?;
 
     let node = doc
         .outline()

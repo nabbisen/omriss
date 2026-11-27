@@ -11,6 +11,7 @@ use crate::range::ByteRange;
 use super::error::StructuralEditError;
 use super::preflight::{
     atx_title_range, check_revision, document_newline, joining_separator, starts_with_atx_heading,
+    validate_title,
 };
 
 pub(crate) fn delete_section(
@@ -62,6 +63,7 @@ pub(crate) fn split_section(
     base_rev: DocumentRevision,
 ) -> Result<EditResult, StructuralEditError> {
     check_revision(doc, base_rev)?;
+    let new_title = validate_title(new_title)?;
     let node = doc
         .outline()
         .node(id)
@@ -79,7 +81,13 @@ pub(crate) fn split_section(
         return Err(StructuralEditError::InvalidSplitOffset);
     }
     let insert_pos = body.start + offset_in_body;
-    if !doc.source().is_char_boundary(insert_pos) {
+    let source = doc.source();
+    if !source.is_char_boundary(insert_pos) {
+        return Err(StructuralEditError::InvalidSplitOffset);
+    }
+    // Between the CR and the LF of one CRLF: the insertion would cut a line ending
+    // in two (RFC-070 §8.3, RFC-084).
+    if source[..insert_pos].ends_with('\r') && source[insert_pos..].starts_with('\n') {
         return Err(StructuralEditError::InvalidSplitOffset);
     }
 
