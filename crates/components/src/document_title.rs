@@ -6,51 +6,31 @@
 //! assistive technology announces as the document's name. No other code sets
 //! either; `title_path_tests` scans for it.
 //!
-//! The page's *first* name comes from [`startup_head`], run as the page is parsed,
+//! The page's *first* name comes from [`STARTUP_HEAD`], run as the page is parsed,
 //! so it is never the framework's own default, not even before the first effect.
 
 use dioxus::prelude::*;
-use omriss_ui::{EditorSession, PRODUCT_NAME, window_title};
+use omriss_ui::{EditorSession, window_title};
 
-/// `text` as a JavaScript string literal, double-quoted.
-fn js_string(text: &str) -> String {
-    let mut out = String::with_capacity(text.len() + 2);
-    out.push('"');
-    for c in text.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            c if (c as u32) < 0x20 || matches!(c, '\u{2028}' | '\u{2029}') => {
-                out.push_str(&format!("\\u{:04x}", c as u32));
-            }
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
-
-/// The statement that names the page.
-fn set_page_title(title: &str) -> String {
-    format!("document.title = {};", js_string(title))
-}
+/// The script that names the page. A constant: the title is *data*, and reaches the
+/// script through the eval channel (`send` here, `dioxus.recv()` there), never by
+/// being written into source. A file's name is anyone's to choose (RFC-060 §12).
+const TITLE_SCRIPT: &str = "document.title = await dioxus.recv();";
 
 /// What the page's `<head>` is given at start-up: the product's name, set as the
 /// page is parsed. `dioxus-desktop`'s own `<title>Dioxus app</title>` comes first
 /// in the document and wins over any `<title>` added later, so this is a script.
-pub fn startup_head() -> String {
-    format!("<script>{}</script>", set_page_title(PRODUCT_NAME))
-}
+/// Written out; a test pins that it is `PRODUCT_NAME`.
+pub const STARTUP_HEAD: &str = "<script>document.title = \"Omriss\";</script>";
 
 /// Applies the title for the open file (or none) to the window and the page.
 #[component]
 pub fn DocumentTitle(session: Signal<EditorSession>) -> Element {
     let title = window_title(session.read().file_name());
-    let page = set_page_title(&title);
-    use_effect(use_reactive!(|page| {
-        let _ = document::eval(&page);
+    let for_page = title.clone();
+    use_effect(use_reactive!(|for_page| {
+        let eval = document::eval(TITLE_SCRIPT);
+        let _ = eval.send(for_page);
     }));
     rsx! {
         document::Title { "{title}" }
@@ -60,22 +40,25 @@ pub fn DocumentTitle(session: Signal<EditorSession>) -> Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use omriss_ui::PRODUCT_NAME;
 
     #[test]
-    fn a_title_is_one_javascript_string() {
-        assert_eq!(js_string("Omriss"), "\"Omriss\"");
+    fn the_start_up_head_is_the_product_name_and_never_dioxus() {
+        assert!(PRODUCT_NAME.chars().all(|c| c.is_ascii_alphanumeric()));
         assert_eq!(
-            js_string("a\"b\\c\nd\u{2028}\u{2014}"),
-            "\"a\\\"b\\\\c\\nd\\u2028\u{2014}\""
+            STARTUP_HEAD,
+            format!("<script>document.title = \"{PRODUCT_NAME}\";</script>")
         );
+        assert!(!STARTUP_HEAD.contains("Dioxus"));
+        // The same name the window gets with no file open.
+        assert_eq!(window_title(None), PRODUCT_NAME);
     }
 
     #[test]
-    fn the_start_up_head_names_the_page_and_never_dioxus() {
-        let head = startup_head();
-        assert_eq!(head, "<script>document.title = \"Omriss\";</script>");
-        assert!(!head.contains("Dioxus"));
-        // The same name the window gets with no file open.
-        assert!(head.contains(&js_string(&window_title(None))));
+    fn the_title_script_holds_no_title() {
+        // Data comes through the channel; the source names no file and no product.
+        assert!(TITLE_SCRIPT.contains("dioxus.recv()"));
+        assert!(!TITLE_SCRIPT.contains(PRODUCT_NAME));
+        assert!(!TITLE_SCRIPT.contains('"') && !TITLE_SCRIPT.contains('\''));
     }
 }

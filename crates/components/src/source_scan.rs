@@ -44,6 +44,17 @@ pub(crate) fn ui_layer_roots() -> Vec<PathBuf> {
     vec![manifest.join("src"), manifest.join("../app/src")]
 }
 
+/// Every non-test source file of the UI layer, for a guard that reads more than one
+/// line at a time.
+pub(crate) fn ui_layer_files() -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    for root in ui_layer_roots() {
+        rust_files(&root, &mut files);
+    }
+    files.retain(|p| !is_test_file(p));
+    files
+}
+
 /// Scans the UI layer for lines containing any of `forbidden`, skipping test
 /// code and every file `exempt` accepts. Returns the number of files scanned
 /// (so a wrong path cannot make a scan vacuous) and `path:line: code` for each

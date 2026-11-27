@@ -37,7 +37,7 @@ fn main() {
                 .with_window(window)
                 .with_menu(None)
                 // The page is named before any effect runs (RFC-060 §11 item 2).
-                .with_custom_head(omriss_components::startup_head()),
+                .with_custom_head(omriss_components::STARTUP_HEAD.to_string()),
         )
         .with_context(detect_locale())
         .with_context(settings)

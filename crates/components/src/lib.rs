@@ -16,6 +16,8 @@ mod contrast_tests;
 #[cfg(test)]
 mod draft_set_tests;
 #[cfg(test)]
+mod eval_path_tests;
+#[cfg(test)]
 mod focus_path_tests;
 #[cfg(test)]
 mod landmark_tests;
@@ -52,7 +54,7 @@ pub use breadcrumb::Breadcrumb;
 pub use command_palette::{CommandId, CommandPalette};
 pub use confirm_delete_dialog::{ConfirmDeleteChoice, ConfirmDeleteDialog};
 pub use document_map_pane::DocumentMapPane;
-pub use document_title::{DocumentTitle, startup_head};
+pub use document_title::{DocumentTitle, STARTUP_HEAD};
 pub use error_dialog::ErrorDialog;
 pub use ext_modified_dialog::{ExtModifiedChoice, ExtModifiedDialog};
 pub use focus::use_focus_script;
