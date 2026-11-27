@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — designed on RFC-085's search (§8), 2026-11-27.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053
@@ -95,3 +95,34 @@ heading in the document.
 2. Heading and body matches are distinguishable and both activate correctly.
 3. No regression in body search results or ordering.
 4. `docs/src/known-limitations.md` loses the entry.
+
+## 8. On RFC-085's search (2026-11-27)
+
+RFC-085 gave search one walk over every node, in every format, with each
+node's own text cached by revision. This RFC adds titles to that walk, for
+every format.
+
+1. **A title is text from the file.** A Markdown heading's title, and a JSON
+   object member's key (decoded, as the Document Map shows it). A list's
+   members have **positional** labels ("Item 3") that omriss makes up. They are
+   not in the file and are not searchable; otherwise "3" or "Item" would match
+   every list. This is a rule of the structure model, not of JSON: a `List`'s
+   members are positional in every format. Core's doc comment on
+   `StructureNodeKind::List` says so; that comment is core's only change.
+2. **A title match is its own result kind** (§4.2), on the same walk and the
+   same cache. It opens its node, with no offset inside the text. In the result
+   list it carries a visible word for what matched: "Heading" for Markdown,
+   "Key" for JSON, in both locales. Not colour alone (RFC-080 §5.4 rule 1).
+3. **Order:** results follow the document, and a node's title result comes
+   before its text results (§4.3).
+4. **Scope:** "Current Section" includes the focused node's own title and every
+   title under it.
+5. **Case and matching:** exactly the text search's rules, one function.
+
+### Validation, added to §6
+
+- JSON: a key is found; "Item" and an index number find nothing; a key and
+  its value matching give two results, and both open the node.
+- The "Heading" / "Key" word in the result list, both locales (Level 2).
+- Measured on RFC-085's 8,000-item fixtures: search per call, before and
+  after. Titles join the cache, so the change should be small; report it.

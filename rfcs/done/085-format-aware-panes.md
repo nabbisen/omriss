@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, item 7: RFC-067 §3.2's deferred scope)
-**Status.** Proposed — PR 1–3 on `main` for 0.18.0 (`da66f4a`, `362462d`, `173d561`); PR 4 measured; PR 5 (`c007cc7`); PR 6 (`0f8bd66`). **Open:** PR 7 (§9); then `done/`.
+**Status.** Implemented (0.18.0) — PR 1–7 (`da66f4a`, `362462d`, `173d561`, `c007cc7`, `0f8bd66`, `43639f2`; PR 4 a measurement). F2 was a 0.17.0 file-integrity defect, fixed. §4's C2 closed on measurement (§7.5). **Not built here:** P4 and P5, large structures in the Document Map and the overview (§8.4), whose release the owner decides.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053, RFC-054, RFC-067

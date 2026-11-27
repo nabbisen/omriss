@@ -106,7 +106,7 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 082 | [Right-to-Left Readiness](./proposed/082-right-to-left-readiness.md) | M17 |
 | 083 | [User Settings](./proposed/083-user-settings.md) | M16 |
 | 084 | [Line Endings and Separators in Section Edits](./done/084-line-endings-and-separators-in-section-edits.md) | M13 |
-| 085 | [Format-Aware Panes](./proposed/085-format-aware-panes.md) | M13 |
+| 085 | [Format-Aware Panes](./done/085-format-aware-panes.md) | M13 |
 
 ## Archive
 

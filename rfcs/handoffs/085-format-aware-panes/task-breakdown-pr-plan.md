@@ -1,6 +1,6 @@
 # RFC-085 — Task Breakdown and PR Plan
 
-Related RFC: `../../proposed/085-format-aware-panes.md`
+Related RFC: `../../done/085-format-aware-panes.md`
 
 Lifecycle status: inherited from RFC-085.
 
