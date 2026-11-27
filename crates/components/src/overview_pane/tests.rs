@@ -88,3 +88,18 @@ fn an_unreadable_json_file_is_one_card_for_the_whole_document() {
     let t = cards("{\"a\": ", DocumentFormat::Json, Locale::En);
     assert!(has(&t, "Document"), "{t:?}");
 }
+
+// ── a list member's label, in the user's language (RFC-073 §8.6) ───────────
+
+#[test]
+fn a_list_members_card_says_item_n_in_english_and_koumoku_n_in_japanese() {
+    // A root list: its members are the top-level cards.
+    let en = cards("[true, \"x\"]\n", DocumentFormat::Json, Locale::En);
+    assert!(has(&en, "Item 1") && has(&en, "Item 2"), "{en:?}");
+    let ja = cards("[true, \"x\"]\n", DocumentFormat::Json, Locale::Ja);
+    assert!(has(&ja, "項目 1") && has(&ja, "項目 2"), "{ja:?}");
+    assert!(
+        !ja.iter().any(|t| t.starts_with("Item")),
+        "no English word: {ja:?}"
+    );
+}

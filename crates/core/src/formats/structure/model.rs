@@ -41,9 +41,10 @@ pub enum StructureNodeKind {
     /// A structured group (JSON object, TOML table, ...).
     Group,
     /// A structured list (JSON array, TOML array of tables, ...). A list's
-    /// members are **positional** in every format: their titles ("Item 3") are
-    /// labels omriss makes up, not text from the file, so a pane that searches
-    /// titles does not search them (RFC-077 §8.1).
+    /// members are **positional** in every format: a member's title is its
+    /// number alone ("3"), made up by omriss and not in the file. The UI adds a
+    /// word for it in the user's language (RFC-073 §8.6), and a pane that searches
+    /// titles does not search it (RFC-077 §8.1).
     List,
     /// A leaf value (JSON/TOML scalar).
     Value,

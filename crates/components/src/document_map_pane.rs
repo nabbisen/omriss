@@ -297,8 +297,13 @@ pub fn DocumentMapPane(
                         } else { " " };
                         let mut row_class = "dx-swdir-row".to_string();
                         if row.is_selected { row_class.push_str(" dx-swdir-row--selected"); }
-                        let row_icon_class =
-                            icon_class(map_root.as_ref().and_then(|root| find_node(root, raw_id)).map(|n| n.kind));
+                        let map_node = map_root.as_ref().and_then(|root| find_node(root, raw_id));
+                        let row_icon_class = icon_class(map_node.map(|n| n.kind));
+                        // The title as a person reads it (RFC-073 §8.6): a list member's
+                        // number gets its word, in the current language, here.
+                        let row_label = map_node
+                            .map(|n| n.display_title(lang))
+                            .unwrap_or_else(|| row.label.clone());
                         Some(rsx! {
                             div {
                                 key: "{raw_id}",
@@ -335,7 +340,7 @@ pub fn DocumentMapPane(
                                 span {
                                     class: "dx-swdir-label",
                                     style: "flex: 1; overflow: hidden; text-overflow: ellipsis; pointer-events: none;",
-                                    "{row.label}"
+                                    "{row_label}"
                                 }
                                 // Row mutation/organization menu.
                                 button {

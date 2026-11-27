@@ -122,3 +122,11 @@ fn other_formats_have_their_own_words() {
 fn t_str(key: &'static str) -> &'static str {
     t(Locale::En, key)
 }
+
+#[test]
+fn the_maps_rows_for_a_list_say_item_n_in_the_users_language() {
+    let en = texts("[true, false]\n", DocumentFormat::Json, Locale::En);
+    assert!(says(&en, "Item 1") && says(&en, "Item 2"), "{en:?}");
+    let ja = texts("[true, false]\n", DocumentFormat::Json, Locale::Ja);
+    assert!(says(&ja, "項目 1") && says(&ja, "項目 2"), "{ja:?}");
+}

@@ -96,3 +96,22 @@ fn the_words_differ_in_the_two_locales_and_exist() {
     assert_ne!(t(Locale::Ja, "search.kind.heading"), "search.kind.heading");
     assert_ne!(t(Locale::Ja, "search.kind.key"), "search.kind.key");
 }
+
+#[test]
+fn a_search_path_through_a_list_names_its_member_in_the_users_language() {
+    let en = rows(
+        "{\"tags\": [\"alpha\"]}\n",
+        DocumentFormat::Json,
+        "alpha",
+        Locale::En,
+    );
+    assert!(en.iter().any(|x| x.ends_with("tags › Item 1")), "{en:?}");
+    let ja = rows(
+        "{\"tags\": [\"alpha\"]}\n",
+        DocumentFormat::Json,
+        "alpha",
+        Locale::Ja,
+    );
+    assert!(ja.iter().any(|x| x.ends_with("tags › 項目 1")), "{ja:?}");
+    assert!(!ja.iter().any(|x| x.contains("Item")), "{ja:?}");
+}

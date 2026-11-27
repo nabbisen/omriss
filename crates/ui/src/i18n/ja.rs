@@ -259,6 +259,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("focused_content.json.kind.number", "数値"),
     ("focused_content.json.kind.onoff", "オン/オフ"),
     ("focused_content.json.kind.text", "テキスト"),
+    ("focused_content.json.list_member", "項目 {number}"),
     ("focused_content.json.onoff.off", "オフ"),
     ("focused_content.json.onoff.on", "オン"),
     ("focused_content.json.raw_text_label", "生テキスト"),

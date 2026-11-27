@@ -77,11 +77,7 @@ pub fn FocusedContentPane(
             // ── Section title ─────────────────────────────────────────────
             h1 {
                 class: "focus-title",
-                if snapshot.title.is_empty() {
-                    {t(lang, "breadcrumb.root")}
-                } else {
-                    "{snapshot.title}"
-                }
+                "{omriss_ui::display_title(lang, &snapshot.title, false)}"
                 if local_dirty {
                     span { class: "local-dirty", " \u{25cf}" }
                 }

@@ -255,6 +255,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("focused_content.json.kind.number", "Number"),
     ("focused_content.json.kind.onoff", "On/Off"),
     ("focused_content.json.kind.text", "Text"),
+    ("focused_content.json.list_member", "Item {number}"),
     ("focused_content.json.onoff.off", "Off"),
     ("focused_content.json.onoff.on", "On"),
     ("focused_content.json.raw_text_label", "Raw text"),

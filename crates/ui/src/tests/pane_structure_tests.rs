@@ -79,7 +79,9 @@ fn inside_a_node_the_cards_are_its_children() {
     assert_eq!(titles(&s.current_children()), ["deep", "other"]);
     let tags = top(&s, "tags");
     s.focus(tags).unwrap();
-    assert_eq!(titles(&s.current_children()), ["Item 1", "Item 2"]);
+    // A list member's title from core is its number alone (RFC-073 §8.6); the word
+    // is the UI's.
+    assert_eq!(titles(&s.current_children()), ["1", "2"]);
     // A value has no children.
     let n = top(&s, "n");
     s.focus(n).unwrap();
@@ -177,7 +179,7 @@ fn a_group_or_list_has_no_text_of_its_own_but_its_members_do() {
     // "alpha" and "beta" are the list's two members; the list itself has none.
     let alpha = s.search_document("alpha");
     assert_eq!(alpha.len(), 1);
-    assert_eq!(titles(&alpha[0].path), ["", "tags", "Item 1"]);
+    assert_eq!(titles(&alpha[0].path), ["", "tags", "1"]);
     assert_eq!(
         s.search_document("a")
             .iter()
@@ -463,4 +465,60 @@ fn an_unreadable_file_has_one_text_and_no_cache_to_go_stale() {
     let texts = s.pane_texts();
     assert_eq!(texts.all.len(), 1);
     assert_eq!(texts.all[0].text, "{\"a\": ");
+}
+
+// ── a list member's label, in the user's language (RFC-073 §8.6) ───────────
+
+#[test]
+fn a_list_members_title_is_its_number_and_the_ui_adds_the_word_in_each_language() {
+    use crate::i18n::Locale;
+    let mut s = json(JSON);
+    let tags = top(&s, "tags");
+    s.focus(tags).unwrap();
+    let members = s.current_children();
+    assert_eq!(titles(&members), ["1", "2"]);
+    assert!(
+        members.iter().all(|m| m.positional),
+        "members of a list are positional"
+    );
+    assert_eq!(members[0].display_title(Locale::En), "Item 1");
+    assert_eq!(members[1].display_title(Locale::Ja), "項目 2");
+
+    // The map says the same, through the same function.
+    let map = s.document_map_nodes();
+    let tags_row = map.children.iter().find(|c| c.title == "tags").unwrap();
+    assert!(!tags_row.positional, "a key is the user's own text");
+    assert_eq!(tags_row.children[0].display_title(Locale::En), "Item 1");
+    assert_eq!(tags_row.children[0].display_title(Locale::Ja), "項目 1");
+
+    // A key is shown as written, whatever it spells; the root is "Document".
+    assert_eq!(tags_row.display_title(Locale::Ja), "tags");
+    assert_eq!(map.display_title(Locale::En), "Document");
+    assert_eq!(
+        map.display_title(Locale::Ja),
+        crate::i18n::t(Locale::Ja, "breadcrumb.root")
+    );
+}
+
+#[test]
+fn a_member_of_an_object_that_is_called_item_or_a_number_is_not_positional() {
+    use crate::i18n::Locale;
+    let s = json("{\"Item 3\": 1, \"2\": [true]}\n");
+    let items = s.current_children();
+    assert!(items.iter().all(|i| !i.positional));
+    assert_eq!(items[0].display_title(Locale::Ja), "Item 3");
+    assert_eq!(items[1].display_title(Locale::Ja), "2");
+}
+
+#[test]
+fn a_nested_list_member_is_positional_and_its_key_inside_is_not() {
+    let mut s = json("{\"l\": [{\"k\": 1}]}\n");
+    let l = top(&s, "l");
+    s.focus(l).unwrap();
+    let member = s.current_children()[0].clone();
+    assert!(member.positional);
+    s.focus(member.id).unwrap();
+    let k = s.current_children()[0].clone();
+    assert_eq!(k.title, "k");
+    assert!(!k.positional);
 }

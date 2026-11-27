@@ -135,6 +135,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
   and that your writing is safe. The command-line message is translated, and so is
   the name of the file dialog's default filter ("All supported"). A system language
   given as `ja.UTF-8`, with no region, is now recognised as Japanese.
+- **A JSON list's members are labelled in your language** (RFC-073). The members of
+  a JSON array were named "Item 1", "Item 2" in English whatever the language; in
+  Japanese they now read 項目 1, 項目 2 — in the Document Map, the overview's cards,
+  the path above the editor, the editor's heading and a search result's path. For
+  library users: **the title `omriss-core` gives a list member is now its number
+  alone** (`"3"`, not `"Item 3"`); core is catalog-free and no longer writes the
+  word, and the application adds it. The words are still not searchable, and a key
+  you named "Item 3" is shown as you wrote it.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

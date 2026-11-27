@@ -91,7 +91,7 @@ fn markdown_crumbs_are_unchanged() {
 fn json_crumbs_follow_the_structures_parents() {
     let t = crumbs(JSON, DocumentFormat::Json, &["nested", "k"], Locale::En);
     assert_eq!(t, ["Document", "nested", "k"], "{t:?}");
-    let t = crumbs(JSON, DocumentFormat::Json, &["list", "Item 1"], Locale::En);
+    let t = crumbs(JSON, DocumentFormat::Json, &["list", "1"], Locale::En);
     assert_eq!(t, ["Document", "list", "Item 1"], "{t:?}");
 }
 
@@ -112,4 +112,13 @@ fn with_nothing_focused_or_no_structure_there_are_no_crumbs() {
     assert!(crumbs(JSON, DocumentFormat::Json, &[], Locale::En).is_empty());
     assert!(crumbs("{}\n", DocumentFormat::Json, &[], Locale::En).is_empty());
     assert!(crumbs("{\"a\": ", DocumentFormat::Json, &[], Locale::En).is_empty());
+}
+
+#[test]
+fn a_list_members_crumb_is_in_the_users_language() {
+    let en = crumbs(JSON, DocumentFormat::Json, &["list", "1"], Locale::En);
+    assert_eq!(en, ["Document", "list", "Item 1"], "{en:?}");
+    let ja = crumbs(JSON, DocumentFormat::Json, &["list", "1"], Locale::Ja);
+    assert_eq!(ja[2], "項目 1", "{ja:?}");
+    assert_eq!(ja[1], "list", "a key is shown as written");
 }

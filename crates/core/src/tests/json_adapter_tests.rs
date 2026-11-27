@@ -142,8 +142,8 @@ fn nested_object_builds_a_tree_with_correct_depth() {
 
 #[test]
 fn nested_array_builds_a_tree_with_correct_depth() {
-    // Every level here is titled "Item 1" (RFC-054 §5: an array item is
-    // named by ordinal regardless of whether its value is a scalar or a
+    // Every level here is titled "1" (RFC-054 §5, RFC-073 §8.6: an array item is
+    // titled by its number regardless of whether its value is a scalar or a
     // container), so titles alone cannot disambiguate depth -- walk down
     // by id instead of using `find`.
     let structure = build("[[[1]]]");
@@ -154,7 +154,7 @@ fn nested_array_builds_a_tree_with_correct_depth() {
     assert_eq!(root.kind, StructureNodeKind::List);
 
     let level1 = node(root.children[0]);
-    assert_eq!(level1.title, "Item 1");
+    assert_eq!(level1.title, "1");
     assert_eq!(level1.depth, 1);
     assert_eq!(level1.kind, StructureNodeKind::List);
 
@@ -170,9 +170,9 @@ fn nested_array_builds_a_tree_with_correct_depth() {
 #[test]
 fn object_in_array_produces_group_items_named_by_ordinal() {
     let structure = build(r#"[{"x": 1}, {"y": 2}]"#);
-    let item1 = find(&structure, "Item 1");
+    let item1 = find(&structure, "1");
     assert_eq!(item1.kind, StructureNodeKind::Group);
-    let item2 = find(&structure, "Item 2");
+    let item2 = find(&structure, "2");
     assert_eq!(item2.kind, StructureNodeKind::Group);
     let x = find(&structure, "x");
     assert_eq!(x.parent_id, Some(item1.id));
@@ -186,7 +186,7 @@ fn array_in_object_produces_a_list_child_named_by_key() {
     let tags = find(&structure, "tags");
     assert_eq!(tags.kind, StructureNodeKind::List);
     assert_eq!(tags.children.len(), 2);
-    let item1 = find(&structure, "Item 1");
+    let item1 = find(&structure, "1");
     assert_eq!(item1.parent_id, Some(tags.id));
 }
 

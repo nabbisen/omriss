@@ -51,11 +51,7 @@ pub fn Breadcrumb(
                             }
                         } else {
                             let item = path[item_idx].clone();
-                            let label = if item.title.is_empty() {
-                                t(lang, "breadcrumb.root").to_string()
-                            } else {
-                                item.title.clone()
-                            };
+                            let label = item.display_title(lang);
                             rsx! {
                                 if item_idx > 0 {
                                     span { class: "sep", "aria-hidden": "true", " › " }

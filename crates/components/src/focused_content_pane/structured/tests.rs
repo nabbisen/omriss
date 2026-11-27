@@ -135,3 +135,43 @@ fn an_on_off_value_and_a_null_have_no_text_field() {
     assert!(value_fields("on").is_empty());
     assert!(value_fields("none").is_empty());
 }
+
+// ── the heading of a list member, in the user's language (RFC-073 §8.6) ─────
+
+#[test]
+fn the_writing_areas_heading_for_a_list_member_is_in_the_users_language() {
+    use omriss_ui::{EditorSession, FileTextProfile};
+    thread_local! {
+        static LANG: std::cell::Cell<Locale> = const { std::cell::Cell::new(Locale::En) };
+    }
+    fn host() -> Element {
+        let locale = LANG.with(|l| l.get());
+        let mut session = use_signal(|| {
+            EditorSession::open_detected(
+                "[true]\n".into(),
+                None,
+                FileTextProfile::detect("[true]\n", false),
+                DocumentFormat::Json,
+            )
+            .unwrap()
+        });
+        let member = session.read().outline_items()[0].id;
+        use_hook(|| session.write().focus(member).unwrap());
+        rsx! {
+            StructuredFocusView {
+                session,
+                locale: use_signal(move || locale),
+                draft: use_signal(String::new),
+                status: use_signal(String::new),
+            }
+        }
+    }
+    let texts = |locale| {
+        LANG.with(|l| l.set(locale));
+        crate::test_texts::texts_of(host)
+    };
+    assert!(texts(Locale::En).iter().any(|t| t == "Item 1"));
+    let ja = texts(Locale::Ja);
+    assert!(ja.iter().any(|t| t == "項目 1"), "{ja:?}");
+    assert!(!ja.iter().any(|t| t == "Item 1"));
+}

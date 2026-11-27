@@ -17,9 +17,20 @@ pub struct NodeItem {
     /// Direct members: subsections for Markdown, entries for a JSON group or list.
     pub child_count: usize,
     pub kind: StructureNodeKind,
+    /// The title is a list member's number, made up by omriss; say it with
+    /// [`display_title`](crate::display_title), never raw. Such a title is not
+    /// searchable (RFC-077 §8.1).
+    pub positional: bool,
     /// The document's own root: the whole-document view, not a node under it. (A
     /// JSON document's root is its top-level value, so this is not `kind`.)
     pub is_root: bool,
     /// What a JSON value is (text, number, on/off, empty); `None` for anything else.
     pub value_kind: Option<ValueKind>,
+}
+
+impl NodeItem {
+    /// The title as a person reads it, in `lang` (RFC-073 §8.6).
+    pub fn display_title(&self, lang: crate::i18n::Locale) -> String {
+        crate::interface::title::display_title(lang, &self.title, self.positional)
+    }
 }

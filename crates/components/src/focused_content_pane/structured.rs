@@ -33,11 +33,17 @@ pub fn StructuredFocusView(
     let Some(content) = session.read().focused_structured_content() else {
         return rsx! {};
     };
+    // The heading is the node's title as a person reads it (RFC-073 §8.6): a list
+    // member's number gets its word, the document's root is "Document".
+    let heading = session
+        .read()
+        .focused_path()
+        .last()
+        .map(|item| item.display_title(lang))
+        .unwrap_or_default();
 
     match content {
-        FocusedContent::StructuredValue {
-            title, value_kind, ..
-        } => {
+        FocusedContent::StructuredValue { value_kind, .. } => {
             let draft_state = session.read().structured_draft_state(&draft.read());
             let is_invalid = draft_state == omriss_core::DraftState::InvalidUncommitted;
 
@@ -46,7 +52,7 @@ pub fn StructuredFocusView(
             };
 
             rsx! {
-                h1 { class: "focus-title", "{title}" }
+                h1 { class: "focus-title", "{heading}" }
                 p { class: "structured-kind-label", "{kind_label(lang, value_kind)}" }
                 match value_kind {
                     ValueKind::NoValue => rsx! {
@@ -110,10 +116,10 @@ pub fn StructuredFocusView(
             }
         }
         FocusedContent::StructuredGroup {
-            title,
             child_count,
             summary,
             raw_text_available,
+            ..
         } => {
             let draft_state = session.read().structured_draft_state(&draft.read());
             let is_invalid = draft_state == omriss_core::DraftState::InvalidUncommitted;
@@ -122,7 +128,7 @@ pub fn StructuredFocusView(
             };
 
             rsx! {
-                h1 { class: "focus-title", "{title}" }
+                h1 { class: "focus-title", "{heading}" }
                 p { class: "focused-content-empty-hint", {t(lang, "focused_content.json.group_hint")} }
                 p {
                     class: "structured-item-count",

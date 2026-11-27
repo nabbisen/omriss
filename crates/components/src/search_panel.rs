@@ -112,7 +112,7 @@ pub fn SearchResultList(
                 let path_label: String = result
                     .path
                     .iter()
-                    .map(|p| if p.title.is_empty() { t(lang, "breadcrumb.root").to_string() } else { p.title.clone() })
+                    .map(|p| p.display_title(lang))
                     .collect::<Vec<_>>()
                     .join(" › ");
                 let preview = result.preview.clone();

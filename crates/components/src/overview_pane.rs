@@ -36,7 +36,7 @@ pub fn OverviewPane(
                         {
                             let id = item.id;
                             let count = item.child_count;
-                            let title = item.title.clone();
+                            let title = item.display_title(lang);
                             // The label each format already uses (RFC-085 §3.3 item 3): "H2"
                             // for a Markdown section; for JSON, what the value is. A group or
                             // list is told apart by its item count, below.
@@ -76,11 +76,7 @@ pub fn OverviewPane(
                                     div { class: "card-header",
                                         span { class: "card-level", "{level_label}" }
                                         span { class: "card-title",
-                                            if title.is_empty() {
-                                                {t(lang, "breadcrumb.root")}
-                                            } else {
-                                                "{title}"
-                                            }
+                                            "{title}"
                                         }
                                     }
                                     if count > 0 {

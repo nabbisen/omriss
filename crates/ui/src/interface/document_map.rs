@@ -57,6 +57,9 @@ pub struct DocumentMapNode {
     /// the row icon must not assume every format is Markdown (the `#`
     /// glyph is meaningless for a JSON key).
     pub kind: StructureNodeKind,
+    /// The title is a list member's number, made up by omriss: say it with
+    /// [`display_title`](crate::display_title), never raw (RFC-073 §8.6).
+    pub positional: bool,
     /// Ordered child nodes.
     pub children: Vec<DocumentMapNode>,
     /// Whether this node is currently selected in the editor.
@@ -66,6 +69,11 @@ pub struct DocumentMapNode {
 }
 
 impl DocumentMapNode {
+    /// The title as a person reads it, in `lang` (RFC-073 §8.6).
+    pub fn display_title(&self, lang: crate::i18n::Locale) -> String {
+        crate::interface::title::display_title(lang, &self.title, self.positional)
+    }
+
     /// Total number of descendants (not counting self).
     pub fn descendant_count(&self) -> usize {
         self.children.iter().map(|c| 1 + c.descendant_count()).sum()

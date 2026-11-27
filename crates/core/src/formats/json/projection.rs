@@ -96,10 +96,12 @@ fn push_node(
                         nodes,
                         item,
                         Some(id),
-                        // RFC-054 §5: "array item scalar -> row named 'Item
-                        // 1', 'Item 2', etc." -- 1-based in the label,
-                        // 0-based in the identity path.
-                        format!("Item {}", ordinal + 1),
+                        // A list member's title is its **number alone**, 1-based
+                        // (0-based in the identity path). RFC-054 §5 named the
+                        // row "Item 3"; that word is English, and core stays
+                        // catalog-free (RFC-073 §8.6): the UI adds the word, in the
+                        // user's language, to any title whose parent is a list.
+                        (ordinal + 1).to_string(),
                         depth + 1,
                         &child_path,
                     )

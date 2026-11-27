@@ -221,7 +221,7 @@ pub(super) fn document_map_node(
     // The root id always resolves: it came from the same `structure` the
     // index was just built over.
     index
-        .node(structure.root_id, selected)
+        .node(structure.root_id, selected, false)
         .expect("root_id from the same DocumentStructure is always present")
 }
 
@@ -247,18 +247,31 @@ impl<'a> Index<'a> {
     /// through). A missing child is skipped rather than panicking, so a
     /// bug in a future adapter degrades the Document Map to a partial
     /// tree instead of crashing the app.
-    fn node(&self, id: NodeId, selected: Option<NodeId>) -> Option<DocumentMapNode> {
+    fn node(
+        &self,
+        id: NodeId,
+        selected: Option<NodeId>,
+        parent_is_list: bool,
+    ) -> Option<DocumentMapNode> {
         let node = self.by_id.get(&id)?;
         let children = node
             .children
             .iter()
-            .filter_map(|&cid| self.node(cid, selected))
+            .filter_map(|&cid| {
+                self.node(
+                    cid,
+                    selected,
+                    node.kind == omriss_core::StructureNodeKind::List,
+                )
+            })
             .collect();
 
         Some(DocumentMapNode {
             id: id.0,
             title: node.title.clone(),
             kind: node.kind,
+            // A list member's title is its number alone (RFC-073 §8.6).
+            positional: parent_is_list,
             children,
             is_selected: selected == Some(id),
             capabilities: node.capabilities.clone(),

@@ -12,7 +12,7 @@
 
 use omriss_core::{DocumentFormat, DocumentStructure, NodeId, StructureNode, StructureNodeKind};
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::editor::node_text::subtree;
 use crate::editor::search::{SearchEntry, SearchMatch, search_entries};
@@ -34,7 +34,16 @@ pub enum EmptyMap {
 
 impl super::EditorSession {
     /// `node` as a pane lists it.
-    fn node_item(&self, structure: &DocumentStructure, node: &StructureNode) -> NodeItem {
+    fn node_item(
+        &self,
+        structure: &DocumentStructure,
+        index: &HashMap<NodeId, usize>,
+        node: &StructureNode,
+    ) -> NodeItem {
+        let positional = node
+            .parent_id
+            .and_then(|p| index.get(&p).map(|&i| &structure.nodes[i]))
+            .is_some_and(|p| p.kind == StructureNodeKind::List);
         let level = if self.format == DocumentFormat::Markdown {
             // Markdown-only label: a heading's level is not in the structure
             // (it is not the tree depth when a document skips a level).
@@ -59,6 +68,7 @@ impl super::EditorSession {
             level,
             child_count: node.children.len(),
             kind: node.kind,
+            positional,
             is_root: node.id == structure.root_id,
             value_kind,
         }
@@ -70,7 +80,7 @@ impl super::EditorSession {
         ids.iter()
             .filter_map(|id| {
                 let node = &structure.nodes[*index.get(id)?];
-                Some(self.node_item(&structure, node))
+                Some(self.node_item(&structure, &index, node))
             })
             .collect()
     }
@@ -81,7 +91,7 @@ impl super::EditorSession {
         let (structure, index) = self.pane_view();
         let root = &structure.nodes[index[&structure.root_id]];
         if root.children.is_empty() {
-            vec![self.node_item(&structure, root)]
+            vec![self.node_item(&structure, &index, root)]
         } else {
             self.items_of(&root.children)
         }
