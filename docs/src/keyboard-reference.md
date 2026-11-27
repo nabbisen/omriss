@@ -71,8 +71,8 @@ See [Structural Editing](structural-editing.md) for details.
 | Ctrl+Shift+P | Toggle the Markdown preview pane (RFC-045) |
 
 **Search panel** — open it from the header Search button or with **Ctrl+F**.
-Type to search case-insensitively across the whole document or only the focused
-section and what is under it. Click a result to focus its section (in a JSON
+Type to search case-insensitively (headings and keys as well as text) across the
+whole document or only the focused section and what is under it. Click a result to focus its section (in a JSON
 file, its value).
 
 **Quick Actions** — floating overlay; type to filter all actions by name.

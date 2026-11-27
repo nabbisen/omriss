@@ -3,7 +3,7 @@
 
 use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
-use omriss_ui::{EditorSession, SearchMatch};
+use omriss_ui::{EditorSession, SearchMatch, SearchMatchKind};
 
 #[component]
 pub fn SearchPanel(
@@ -83,32 +83,69 @@ pub fn SearchPanel(
                     p { class: "search-count hint-text",
                         "{results.len()} {t(lang, \"search.results\")}"
                     }
-                    for result in results.iter() {
-                        {
-                            let path_label: String = result
-                                .path
-                                .iter()
-                                .map(|p| if p.title.is_empty() { t(lang, "breadcrumb.root").to_string() } else { p.title.clone() })
-                                .collect::<Vec<_>>()
-                                .join(" › ");
-                            let preview = result.preview.clone();
-                            let node_id = result.containing_node;
-                            rsx! {
-                                button {
-                                    class: "search-result",
-                                    key: "{result.range.start}",
-                                    onclick: move |_| {
-                                        on_navigate.call(node_id);
-                                        on_close.call(());
-                                    },
-                                    span { class: "result-path hint-text", "{path_label}" }
-                                    span { class: "result-preview", "{preview}" }
-                                }
-                            }
-                        }
+                    SearchResultList {
+                        results: results.clone(),
+                        locale,
+                        on_navigate,
+                        on_close,
                     }
                 }
             }
         }
     }
 }
+
+/// The results of a search, one button each: the word for what matched (a title
+/// says "Heading" or "Key"; text says nothing), the path, and a preview. A result
+/// opens its node; a title result opens it with no offset inside any text.
+#[component]
+pub fn SearchResultList(
+    results: Vec<SearchMatch>,
+    locale: Signal<Locale>,
+    on_navigate: EventHandler<omriss_core::NodeId>,
+    on_close: EventHandler<()>,
+) -> Element {
+    let lang = *locale.read();
+    rsx! {
+        for (idx , result) in results.iter().enumerate() {
+            {
+                let path_label: String = result
+                    .path
+                    .iter()
+                    .map(|p| if p.title.is_empty() { t(lang, "breadcrumb.root").to_string() } else { p.title.clone() })
+                    .collect::<Vec<_>>()
+                    .join(" › ");
+                let preview = result.preview.clone();
+                let node_id = result.containing_node;
+                let kind_word = match result.kind {
+                    SearchMatchKind::Heading => Some(t(lang, "search.kind.heading")),
+                    SearchMatchKind::Key => Some(t(lang, "search.kind.key")),
+                    SearchMatchKind::Text => None,
+                };
+                rsx! {
+                    button {
+                        class: "search-result",
+                        // Two results can start at the same place (a key and its value):
+                        // the position in the list is the identity.
+                        key: "{idx}",
+                        onclick: move |_| {
+                            on_navigate.call(node_id);
+                            on_close.call(());
+                        },
+                        span { class: "result-path hint-text",
+                            if let Some(word) = kind_word {
+                                span { class: "result-kind", "{word}" }
+                                " "
+                            }
+                            "{path_label}"
+                        }
+                        span { class: "result-preview", "{preview}" }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;

@@ -273,6 +273,8 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("raw.stop_editing", "Stop editing"),
     ("raw.title", "Plain File Text"),
     ("search.close", "Close"),
+    ("search.kind.heading", "Heading"),
+    ("search.kind.key", "Key"),
     ("search.no_results", "No results."),
     ("search.placeholder", "Search\u{2026}"),
     ("search.results", "Results"),

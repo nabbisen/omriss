@@ -15,7 +15,7 @@ use omriss_core::{DocumentFormat, DocumentStructure, NodeId, StructureNode, Stru
 use std::collections::HashSet;
 
 use crate::editor::node_text::subtree;
-use crate::editor::search::{SearchMatch, search_texts};
+use crate::editor::search::{SearchEntry, SearchMatch, search_entries};
 use crate::editor::stats::{DocumentStats, compute_stats};
 use crate::interface::node_item::NodeItem;
 
@@ -208,10 +208,16 @@ impl super::EditorSession {
             _ => None,
         };
         let in_scope = texts
-            .all
+            .entries
             .iter()
-            .filter(|t| scoped.as_ref().is_none_or(|ids| ids.contains(&t.id)));
-        search_texts(in_scope, query, |id| self.path_to(id))
+            .filter(|e| scoped.as_ref().is_none_or(|ids| ids.contains(&e.id)))
+            .map(|e| SearchEntry {
+                id: e.id,
+                title: e.title.as_ref().map(|(t, k)| (t.as_str(), *k)),
+                text: e.text.map(|i| &texts.all[i]),
+                start: e.start,
+            });
+        search_entries(in_scope, query, |id| self.path_to(id))
     }
 
     /// Returns document statistics (RFC-046, RFC-085 §3.3 item 6): word counts

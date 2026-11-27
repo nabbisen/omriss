@@ -533,6 +533,12 @@ textarea.raw-editor:focus { outline: none; border-color: var(--accent); }
 }
 .search-result:hover { border-color: var(--accent); }
 .result-path { font-size: 11px; }
+/* The word for what a title result matched ("Heading", "Key"): a word in a box, not colour alone. */
+.result-kind {
+  font-weight: 600; color: var(--text);
+  border: 1px solid var(--panel-edge); border-radius: 4px;
+  padding: 0 5px; margin-right: 4px;
+}
 .result-preview { font-size: 12px; color: var(--text); line-height: 1.4; }
 
 /* Command palette */

@@ -9,12 +9,27 @@
 
 use omriss_core::{ByteRange, NodeId};
 
-use crate::editor::node_text::NodeText;
+use crate::editor::node_text::{NodeText, TitleKind};
 use crate::interface::node_item::NodeItem;
 
+/// What a search result is a match of (RFC-077 §4.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchMatchKind {
+    /// Text inside a node: a Markdown section's body, a JSON value.
+    Text,
+    /// A Markdown heading's title.
+    Heading,
+    /// An object member's key.
+    Key,
+}
+
 /// One match of a search query inside the canonical source text.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SearchMatch {
+    /// What matched: the node's text, or its title (RFC-077 §4.2). A title match
+    /// has no offset inside any text: it opens its node, and `range` is only
+    /// where the node starts.
+    pub kind: SearchMatchKind,
     /// Byte range in the full canonical source text (RFC-002 ByteRange): the
     /// match itself in a Markdown body; the whole value for a JSON value, whose
     /// text is shown decoded and so has no byte offsets of its own.
@@ -92,10 +107,24 @@ fn make_preview(body: &str, match_start: usize) -> String {
 
 // ── public API ────────────────────────────────────────────────────────────────
 
-/// Searches `texts` (in document order) for `query`; results are in that order.
-/// Empty query returns no results. `path_of` gives a node's path from the root.
-pub fn search_texts<'a>(
-    texts: impl IntoIterator<Item = &'a NodeText>,
+/// One node as the search walk sees it (RFC-077 §8): its searchable title, if
+/// any, and its own text, if any. `where` the node starts is what a title match
+/// reports, since a title is not at an offset inside a text.
+pub struct SearchEntry<'a> {
+    pub id: NodeId,
+    pub title: Option<(&'a str, TitleKind)>,
+    pub text: Option<&'a NodeText>,
+    /// Where the node starts in the source.
+    pub start: usize,
+}
+
+/// Searches `entries` (in document order) for `query`. Results are in that order,
+/// and within a node its title result comes before its text results (RFC-077
+/// §4.3: two results, not a merged one). One matching rule for both (§8.5): the
+/// same [`find_all`]. Empty query returns no results. `path_of` gives a node's
+/// path from the root.
+pub fn search_entries<'a>(
+    entries: impl IntoIterator<Item = SearchEntry<'a>>,
     query: &str,
     path_of: impl Fn(NodeId) -> Vec<NodeItem>,
 ) -> Vec<SearchMatch> {
@@ -103,28 +132,72 @@ pub fn search_texts<'a>(
         return vec![];
     }
     let mut results = Vec::new();
-    for node in texts {
-        let hits = find_all(&node.text, query);
-        if hits.is_empty() {
+    for entry in entries {
+        let title_hits = entry
+            .title
+            .map(|(title, kind)| (title, kind, find_all(title, query)))
+            .filter(|(_, _, hits)| !hits.is_empty());
+        let text_hits = entry
+            .text
+            .map(|node| (node, find_all(&node.text, query)))
+            .filter(|(_, hits)| !hits.is_empty());
+        if title_hits.is_none() && text_hits.is_none() {
             continue;
         }
-        let path = path_of(node.id);
-        for (start, end) in hits {
-            let range = if node.exact {
-                ByteRange::new(node.range.start + start, node.range.start + end)
-                    .unwrap_or(ByteRange::empty_at(node.range.start + start))
-            } else {
-                node.range
-            };
+        let path = path_of(entry.id);
+        if let Some((title, kind, hits)) = title_hits {
+            // One result per matching title, however many times the query occurs in it:
+            // a title is opened, not sought into.
+            let first = hits[0].0;
             results.push(SearchMatch {
-                range,
-                containing_node: node.id,
+                kind: match kind {
+                    TitleKind::Heading => SearchMatchKind::Heading,
+                    TitleKind::Key => SearchMatchKind::Key,
+                },
+                range: ByteRange::empty_at(entry.start),
+                containing_node: entry.id,
                 path: path.clone(),
-                preview: make_preview(&node.text, start),
+                preview: make_preview(title, first),
             });
+        }
+        if let Some((node, hits)) = text_hits {
+            for (start, end) in hits {
+                let range = if node.exact {
+                    ByteRange::new(node.range.start + start, node.range.start + end)
+                        .unwrap_or(ByteRange::empty_at(node.range.start + start))
+                } else {
+                    node.range
+                };
+                results.push(SearchMatch {
+                    kind: SearchMatchKind::Text,
+                    range,
+                    containing_node: node.id,
+                    path: path.clone(),
+                    preview: make_preview(&node.text, start),
+                });
+            }
         }
     }
     results
+}
+
+/// Searches `texts` (in document order) for `query`, bodies only: the text search
+/// of RFC-021, unchanged. A title is searched through [`search_entries`].
+pub fn search_texts<'a>(
+    texts: impl IntoIterator<Item = &'a NodeText>,
+    query: &str,
+    path_of: impl Fn(NodeId) -> Vec<NodeItem>,
+) -> Vec<SearchMatch> {
+    search_entries(
+        texts.into_iter().map(|text| SearchEntry {
+            id: text.id,
+            title: None,
+            text: Some(text),
+            start: text.range.start,
+        }),
+        query,
+        path_of,
+    )
 }
 
 #[cfg(test)]

@@ -280,6 +280,8 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("raw.stop_editing", "編集を終える"),
     ("raw.title", "プレーンファイルテキスト"),
     ("search.close", "閉じる"),
+    ("search.kind.heading", "見出し"),
+    ("search.kind.key", "キー"),
     ("search.no_results", "結果なし。"),
     ("search.placeholder", "検索…"),
     ("search.results", "結果"),

@@ -32,7 +32,7 @@ use omriss_core::{
     YamlExperimentalAdapter,
 };
 
-use crate::editor::node_text::{NodeText, node_texts, preorder};
+use crate::editor::node_text::{NodeText, TitleKind, node_texts, preorder, searchable_title};
 use crate::interface::document_map::DocumentMapNode;
 
 /// One cache slot: the active format adapter's own `build_structure`
@@ -55,11 +55,24 @@ pub(super) struct StructureCache {
     texts: OnceCell<Rc<PaneTexts>>,
 }
 
-/// Every node's own text, with a position index by node id.
+/// Every node's own text, with a position index by node id, and what search walks:
+/// one entry per node that has a searchable title or a text, in document order.
 #[derive(Debug)]
 pub(crate) struct PaneTexts {
     pub(crate) all: Vec<NodeText>,
     pub(crate) by_id: HashMap<NodeId, usize>,
+    pub(crate) entries: Vec<PaneEntry>,
+}
+
+/// One node as search sees it: its searchable title (RFC-077) and, by position in
+/// [`PaneTexts::all`], its own text.
+#[derive(Debug)]
+pub(crate) struct PaneEntry {
+    pub(crate) id: NodeId,
+    pub(crate) title: Option<(String, TitleKind)>,
+    pub(crate) text: Option<usize>,
+    /// Where the node starts in the source.
+    pub(crate) start: usize,
 }
 
 impl super::EditorSession {
@@ -151,8 +164,29 @@ impl super::EditorSession {
         let build = |structure: &DocumentStructure, index: &HashMap<NodeId, usize>| {
             let ids = preorder(structure, index);
             let all = node_texts(self.document.source(), structure, index, &ids);
-            let by_id = all.iter().enumerate().map(|(i, t)| (t.id, i)).collect();
-            Rc::new(PaneTexts { all, by_id })
+            let by_id: HashMap<NodeId, usize> =
+                all.iter().enumerate().map(|(i, t)| (t.id, i)).collect();
+            let entries = ids
+                .iter()
+                .filter_map(|&id| {
+                    let node = &structure.nodes[*index.get(&id)?];
+                    let title = searchable_title(structure, index, node)
+                        .map(|(title, kind)| (title.to_string(), kind));
+                    let text = by_id.get(&id).copied();
+                    let start = node.source_range.map_or(0, |r| r.start);
+                    (title.is_some() || text.is_some()).then_some(PaneEntry {
+                        id,
+                        title,
+                        text,
+                        start,
+                    })
+                })
+                .collect();
+            Rc::new(PaneTexts {
+                all,
+                by_id,
+                entries,
+            })
         };
         if self.structure_result().is_ok()
             && let Some(cache) = self.structure_cache.borrow().as_ref()

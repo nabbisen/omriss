@@ -4,15 +4,18 @@
 //!
 //! A node's *own* text, as its format's adapter says it (RFC-085 §8.2): a Markdown
 //! section's body, a JSON value (decoded). A JSON group or list has none of its
-//! own: its members are nodes. Titles (headings,
-//! keys) are not here; RFC-077 adds them as one more kind of result on the same
-//! walk.
+//! own: its members are nodes.
+//!
+//! Titles (a heading, an object member's key) are searched too (RFC-077): one more
+//! kind of result on the same walk. [`searchable_title`] is the one rule for which
+//! titles count.
 
 use std::collections::HashMap;
 
 use omriss_core::{
     ByteRange, DocumentFormat, DocumentFormatAdapter, DocumentStructure, JsonAdapter,
-    MarkdownAdapter, NodeId, PlainTextAdapter, TomlAdapter, ValueKind, YamlExperimentalAdapter,
+    MarkdownAdapter, NodeId, PlainTextAdapter, StructureNode, StructureNodeKind, TomlAdapter,
+    ValueKind, YamlExperimentalAdapter,
 };
 
 /// One node's own text.
@@ -28,6 +31,42 @@ pub struct NodeText {
     pub exact: bool,
     /// What a JSON value is; `None` for any other node.
     pub value_kind: Option<ValueKind>,
+}
+
+/// What a searchable title is called in a result list (RFC-077 §8.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TitleKind {
+    /// A Markdown heading's title.
+    Heading,
+    /// A member's key in an object.
+    Key,
+}
+
+/// The title of `node` that search finds, or `None` (RFC-077 §8.1) — the one
+/// place that decides.
+///
+/// A title is text from the file: a Markdown heading's title, an object
+/// member's key. The members of a *list* have positional labels ("Item 3") that
+/// omriss makes up; they are not in the file and are not searchable, or "3" and
+/// "Item" would match every list. The document's root has no title.
+pub fn searchable_title<'a>(
+    structure: &'a DocumentStructure,
+    index: &HashMap<NodeId, usize>,
+    node: &'a StructureNode,
+) -> Option<(&'a str, TitleKind)> {
+    if node.title.is_empty() {
+        return None;
+    }
+    let parent = &structure.nodes[*index.get(&node.parent_id?)?];
+    if parent.kind == StructureNodeKind::List {
+        return None;
+    }
+    let kind = if node.kind == StructureNodeKind::MarkdownSection {
+        TitleKind::Heading
+    } else {
+        TitleKind::Key
+    };
+    Some((node.title.as_str(), kind))
 }
 
 /// The ids under `structure`'s root in document order (parents before their

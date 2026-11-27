@@ -40,7 +40,10 @@ pub enum StructureNodeKind {
     MarkdownSection,
     /// A structured group (JSON object, TOML table, ...).
     Group,
-    /// A structured list (JSON array, TOML array of tables, ...).
+    /// A structured list (JSON array, TOML array of tables, ...). A list's
+    /// members are **positional** in every format: their titles ("Item 3") are
+    /// labels omriss makes up, not text from the file, so a pane that searches
+    /// titles does not search them (RFC-077 §8.1).
     List,
     /// A leaf value (JSON/TOML scalar).
     Value,

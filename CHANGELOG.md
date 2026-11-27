@@ -112,6 +112,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
   empty "Document" card: the editor area says the same sentence and has a button
   back to the text. A section with one subsection now says "1 subsection" (it said
   "1 subsections").
+- **Search finds headings, and JSON keys** (RFC-077). Searching for a heading you
+  can see in the Document Map used to say "No results": search covered only the text
+  under a heading, which had been documented as a limitation since v0.3.0. It now
+  finds the heading's title and opens that section, and a result says **Heading**
+  (Markdown) or **Key** (JSON) so you can tell it from a text match. A section whose
+  heading and text both match gives two results, the heading first; "Current Section"
+  includes the focused section's own heading and those under it. A Markdown setext
+  underline (`---`, `===`) is not heading text, and the "Item 3" labels omriss gives
+  a JSON list's members are not in your file, so they are not searched. English and
+  Japanese.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

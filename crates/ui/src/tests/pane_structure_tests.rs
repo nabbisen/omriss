@@ -181,7 +181,7 @@ fn a_group_or_list_has_no_text_of_its_own_but_its_members_do() {
     assert_eq!(
         s.search_document("a")
             .iter()
-            .filter(|h| h.path.len() == 2)
+            .filter(|h| h.path.len() == 2 && h.kind == crate::SearchMatchKind::Text)
             .count(),
         0
     );

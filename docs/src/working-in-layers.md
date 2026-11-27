@@ -32,10 +32,16 @@ Search runs case-insensitively across either the focused section and what is
 under it, or the whole document. Selecting a result applies any valid pending
 draft first, then navigates directly to the matching section.
 
+Search covers section **text and headings**. A result that matched a heading's
+title says **Heading** and opens that section; one that matched text says nothing
+and opens the section it is in. A section whose heading and body both match gives
+two results, the heading first.
+
 In a JSON file the same panel searches the text of each value (decoded, so
-`café` finds `"caf\u00e9"`). A result is labelled with the value's path, for
-example `Document › nested › deep`, and selecting it opens that value. Keys are
-not searched yet.
+`café` finds `"caf\u00e9"`) and each **key**. A key result says **Key**; a result
+is labelled with its path, for example `Document › nested › deep`, and selecting
+it opens that value. The positional labels of a list's members ("Item 3") are
+made up by omriss, not in your file, so they are not searched.
 
 ## Preview
 

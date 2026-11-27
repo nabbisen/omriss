@@ -142,20 +142,6 @@ design since v0.3.0. Recorded against RFC-016.
 **Workaround:** Save with Ctrl+S before closing. The saved file on disk is never
 affected — only edits you have not yet committed are lost.
 
-### Search Does Not Match Heading Text
-
-Searching finds text inside section bodies, but not the text of the headings
-themselves. Searching for a heading title you can see in the Document Map may
-return "No results".
-
-**Why:** The search index covers section body ranges and excludes the heading
-line.
-
-**Owner:** RFC-077 — accepted as a defect, not a limitation, and fixed in 0.18.0.
-
-**Workaround:** Use the Document Map to navigate to a heading by name, and use
-search for body content.
-
 ---
 
 ## Feature Limitations

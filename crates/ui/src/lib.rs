@@ -37,7 +37,7 @@ mod tests;
 
 // ── Public API ──────────────────────────────────────────────────────────────
 pub use editor::navigation::SiblingInfo;
-pub use editor::search::SearchMatch;
+pub use editor::search::{SearchMatch, SearchMatchKind};
 pub use editor::stats::{DocumentStats, StatsUnit};
 pub use editor::structure_change::{StructureChange, StructureChangeKind};
 pub use editor::view_state::{ViewMode, ViewState};

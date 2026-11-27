@@ -9,6 +9,7 @@ mod errors_tests;
 mod line_ending_tests;
 mod pane_structure_tests;
 mod raw_edit_tests;
+mod search_title_tests;
 mod session_format_tests;
 mod structure_change_coverage_tests;
 mod structure_change_tests;
