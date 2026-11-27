@@ -67,7 +67,7 @@ pub fn subtree(
 
 /// The own text of every node in `ids`, in that order; nodes with none are left
 /// out. What a node's own text *is* is its format's to say
-/// (`DocumentFormatAdapter::node_text`, RFC-085 §8.2); this only asks, node by
+/// (`DocumentFormatAdapter::own_text`, RFC-085 §8.2); this only asks, node by
 /// node, so reading every text is linear in the document.
 pub fn node_texts(
     source: &str,
@@ -79,13 +79,13 @@ pub fn node_texts(
         .filter_map(|&id| {
             let node = &structure.nodes[*index.get(&id)?];
             let own = match structure.format {
-                DocumentFormat::Markdown => MarkdownAdapter.node_text(source, node),
-                DocumentFormat::Json => JsonAdapter.node_text(source, node),
+                DocumentFormat::Markdown => MarkdownAdapter.own_text(source, node),
+                DocumentFormat::Json => JsonAdapter.own_text(source, node),
                 DocumentFormat::PlainText | DocumentFormat::Unsupported => {
-                    PlainTextAdapter.node_text(source, node)
+                    PlainTextAdapter.own_text(source, node)
                 }
-                DocumentFormat::Toml => TomlAdapter.node_text(source, node),
-                DocumentFormat::YamlExperimental => YamlExperimentalAdapter.node_text(source, node),
+                DocumentFormat::Toml => TomlAdapter.own_text(source, node),
+                DocumentFormat::YamlExperimental => YamlExperimentalAdapter.own_text(source, node),
             }?;
             Some(NodeText {
                 id,

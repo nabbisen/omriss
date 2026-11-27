@@ -59,7 +59,7 @@ pub(super) fn decode_string(source: &str, range: ByteRange) -> String {
 
 /// What a scalar literal says as text, with its kind: a string decoded, a number
 /// or an on/off literal as written, nothing for `null`. The one decoder path —
-/// `focused_content` (the editor's view of a value) and `node_text` (search and
+/// `focused_content` (the editor's view of a value) and `own_text` (search and
 /// statistics) both read through it, so they cannot disagree.
 pub(super) fn scalar_text(source: &str, range: ByteRange) -> Option<(ScalarKind, String)> {
     let literal = source.get(range.as_range())?;

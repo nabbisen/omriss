@@ -49,7 +49,7 @@ impl DocumentFormatAdapter for TomlAdapter {
     }
 
     /// No structure is ever built, so there is no node to read.
-    fn node_text(&self, _source: &str, _node: &StructureNode) -> Option<OwnText> {
+    fn own_text(&self, _source: &str, _node: &StructureNode) -> Option<OwnText> {
         None
     }
 
@@ -104,7 +104,7 @@ impl DocumentFormatAdapter for YamlExperimentalAdapter {
     }
 
     /// No structure is ever built, so there is no node to read.
-    fn node_text(&self, _source: &str, _node: &StructureNode) -> Option<OwnText> {
+    fn own_text(&self, _source: &str, _node: &StructureNode) -> Option<OwnText> {
         None
     }
 

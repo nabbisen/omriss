@@ -94,7 +94,7 @@ impl DocumentFormatAdapter for PlainTextAdapter {
     }
 
     /// The one region: the whole source.
-    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
+    fn own_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
         let range = node.source_range?;
         Some(OwnText {
             text: source.get(range.as_range())?.to_string(),

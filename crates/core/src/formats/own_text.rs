@@ -4,7 +4,7 @@
 //! section's body, a JSON value, none for a JSON group or list (its members are
 //! nodes), the whole region for plain text. Search and statistics read this; the
 //! format's adapter is the one that knows what it is, so it is the adapter's to
-//! say ([`DocumentFormatAdapter::node_text`]), read from the node itself and not
+//! say ([`DocumentFormatAdapter::own_text`]), read from the node itself and not
 //! looked up by id.
 
 use crate::formats::focused_content::ValueKind;

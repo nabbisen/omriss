@@ -117,7 +117,7 @@ impl DocumentFormatAdapter for JsonAdapter {
 
     /// A value's own text, decoded (RFC-085 §8.2); a group or list has none — its
     /// members are nodes. Shares its decoding with `focused_content`.
-    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
+    fn own_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
         if node.kind != StructureNodeKind::Value {
             return None;
         }

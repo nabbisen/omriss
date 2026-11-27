@@ -21,7 +21,7 @@ fn node<'a>(s: &'a crate::DocumentStructure, title: &str) -> &'a StructureNode {
 fn a_markdown_sections_own_text_is_its_body_byte_for_byte() {
     let source = "intro\n\n# A\nbody a\n\n## B\nbody b\n";
     let s = structure_of(&MarkdownAdapter, source);
-    let a = MarkdownAdapter.node_text(source, node(&s, "A")).unwrap();
+    let a = MarkdownAdapter.own_text(source, node(&s, "A")).unwrap();
     assert_eq!(a.text, "body a\n\n");
     assert!(a.exact && a.value_kind.is_none());
     assert_eq!(
@@ -30,7 +30,7 @@ fn a_markdown_sections_own_text_is_its_body_byte_for_byte() {
         "exact: the text is the source at the range"
     );
     let root = MarkdownAdapter
-        .node_text(source, s.nodes.iter().find(|n| n.id == s.root_id).unwrap())
+        .own_text(source, s.nodes.iter().find(|n| n.id == s.root_id).unwrap())
         .unwrap();
     assert_eq!(root.text, "intro\n\n");
 }
@@ -39,7 +39,7 @@ fn a_markdown_sections_own_text_is_its_body_byte_for_byte() {
 fn a_json_values_own_text_is_decoded_and_says_what_it_is() {
     let source = r#"{"s": "café \/ \n", "n": 3, "b": true, "z": null, "g": {"k": 1}, "l": [1]}"#;
     let s = structure_of(&JsonAdapter, source);
-    let own = |t: &str| JsonAdapter.node_text(source, node(&s, t));
+    let own = |t: &str| JsonAdapter.own_text(source, node(&s, t));
 
     let text = own("s").unwrap();
     assert_eq!(text.text, "café / \n");
@@ -66,11 +66,11 @@ fn a_json_values_own_text_is_decoded_and_says_what_it_is() {
 }
 
 #[test]
-fn json_shares_one_decoder_between_node_text_and_focused_content() {
+fn json_shares_one_decoder_between_own_text_and_focused_content() {
     let source = r#"["a\tb", "😀", 1.5e3, false, null, ""]"#;
     let s = structure_of(&JsonAdapter, source);
     for n in s.nodes.iter().filter(|n| n.id != s.root_id) {
-        let own = JsonAdapter.node_text(source, n).unwrap();
+        let own = JsonAdapter.own_text(source, n).unwrap();
         let FocusedContent::StructuredValue {
             display_text,
             value_kind,
@@ -88,7 +88,7 @@ fn json_shares_one_decoder_between_node_text_and_focused_content() {
 fn plain_text_is_one_region_and_the_unbuilt_formats_have_none() {
     let source = "just some text\n";
     let s = structure_of(&PlainTextAdapter, source);
-    let own = PlainTextAdapter.node_text(source, &s.nodes[0]).unwrap();
+    let own = PlainTextAdapter.own_text(source, &s.nodes[0]).unwrap();
     assert_eq!(own.text, source);
     assert!(own.exact);
     assert_eq!(
@@ -101,6 +101,6 @@ fn plain_text_is_one_region_and_the_unbuilt_formats_have_none() {
 
     // TOML and YAML build no structure, so no node ever reaches them.
     let fake = s.nodes[0].clone();
-    assert!(TomlAdapter.node_text(source, &fake).is_none());
-    assert!(YamlExperimentalAdapter.node_text(source, &fake).is_none());
+    assert!(TomlAdapter.own_text(source, &fake).is_none());
+    assert!(YamlExperimentalAdapter.own_text(source, &fake).is_none());
 }

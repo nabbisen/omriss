@@ -36,7 +36,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   (text with every CRLF and lone CR as LF) and `document_newline` (the newline a
   document's own text uses). Every edit in core and in the application uses this
   one rule.
-- **`DocumentFormatAdapter::node_text`, and `OwnText`** (RFC-085): what a node says
+- **`DocumentFormatAdapter::own_text`, and `OwnText`** (RFC-085): what a node says
   itself — a Markdown section's body, a JSON value (decoded), nothing for a JSON
   group or list, the whole region for plain text — read from the node. The method
   is required: **an adapter written outside omriss must implement it** (return

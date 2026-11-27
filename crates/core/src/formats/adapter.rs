@@ -52,7 +52,7 @@ pub trait DocumentFormatAdapter {
     /// whole region for plain text. Read from the node, not looked up by id, so
     /// reading every node's text is linear in the document. Required, with no
     /// default: each format states what its own text is.
-    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText>;
+    fn own_text(&self, source: &str, node: &StructureNode) -> Option<OwnText>;
 
     /// Validates a focused-content draft without applying it.
     fn validate_focused_edit(

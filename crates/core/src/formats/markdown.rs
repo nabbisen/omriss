@@ -116,7 +116,7 @@ impl DocumentFormatAdapter for MarkdownAdapter {
     }
 
     /// A section's body: the source between its heading and its first child.
-    fn node_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
+    fn own_text(&self, source: &str, node: &StructureNode) -> Option<OwnText> {
         let range = node.editable_range?;
         Some(OwnText {
             text: source.get(range.as_range())?.to_string(),
