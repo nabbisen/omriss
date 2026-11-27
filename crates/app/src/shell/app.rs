@@ -9,6 +9,7 @@ use dioxus::prelude::*;
 use omriss_ui::i18n::{Locale, t};
 use omriss_ui::{EditorSession, EmptyMap, ViewMode};
 
+use crate::file::failure::OpenFailure;
 use crate::file::file_dialog;
 use crate::input::keyboard;
 use crate::shell::actions::{
@@ -17,6 +18,7 @@ use crate::shell::actions::{
 };
 use crate::shell::app_ctx::{AppCtx, Modal};
 use crate::shell::dispatch::{dispatch_command, dispatch_palette, open_search_if_available};
+use crate::shell::failure_text::open_failure_message;
 use crate::storage::settings::AppSettings;
 use omriss_components::draft_sync;
 use omriss_components::{
@@ -62,6 +64,7 @@ pub fn App() -> Element {
         modal,
         saved_mtime,
         recent_files,
+        locale,
     };
 
     // ── callbacks — thin wrappers around free functions ───────────────────────
@@ -101,7 +104,7 @@ pub fn App() -> Element {
             crate::cli::StartupArg::RejectedOption(_) => {
                 let mut modal = modal;
                 modal.set(Modal::OpenError {
-                    cause: "omriss takes a file path and accepts no options.".into(),
+                    failure: OpenFailure::CommandLineOption,
                 });
             }
         }
@@ -321,11 +324,14 @@ pub fn App() -> Element {
                         on_choice: move |c| on_section_title_choice.call((action, c)),
                     }
                 },
-                Modal::OpenError { ref cause } => rsx! {
+                Modal::OpenError { ref failure } => rsx! {
                     ErrorDialog {
                         locale,
                         title: "error.open_failed".to_string(),
-                        cause: cause.clone(),
+                        // Said in the current language at render time, from the typed
+                        // reason: no operating-system text reaches the screen or the
+                        // dialog's accessible description (RFC-073 §8.2).
+                        cause: open_failure_message(*locale.read(), failure),
                         dismiss_label: t(*locale.read(), "dialog.discard.cancel").to_string(),
                         secondary_label: None,
                         on_dismiss: move |()| { let mut m = modal; m.set(Modal::None); },

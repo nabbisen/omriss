@@ -5,3 +5,4 @@ pub mod app;
 pub mod app_ctx;
 pub mod csp;
 pub mod dispatch;
+pub mod failure_text;

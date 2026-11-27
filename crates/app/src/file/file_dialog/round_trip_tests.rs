@@ -20,7 +20,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use omriss_core::NodeId;
 use omriss_ui::{EditorSession, node_id_from_raw};
 
-use super::{OpenOutcome, SaveOutcome, open_markdown_path, save_markdown};
+use super::{DialogLabels, OpenOutcome, SaveOutcome, open_markdown_path, save_markdown};
 
 const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../core/tests/fixtures");
 
@@ -78,7 +78,14 @@ fn open_session(path: &Path) -> EditorSession {
 /// Saves `session` back to `path` exactly as `handle_save` does.
 fn save_session(session: &EditorSession, path: &Path) {
     let path_str = path.to_str().expect("temp path is valid UTF-8");
-    let outcome = save_markdown(Some(path_str), session.source(), session.profile());
+    let outcome = save_markdown(
+        Some(path_str),
+        session.source(),
+        session.profile(),
+        &DialogLabels {
+            all_supported: "All supported".into(),
+        },
+    );
     assert!(
         matches!(outcome, SaveOutcome::Saved { .. }),
         "save_markdown must succeed for {path_str}"

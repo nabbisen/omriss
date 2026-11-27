@@ -136,6 +136,14 @@ and are runnable on their own.
 ROLE, name starts with NAME — so a script never reads one node and presses
 another.
 
+## Starting on a modal
+
+A scenario that starts with a modal dialog (a file that cannot be opened) has no
+toolbar in the accessible tree — the modal hides what is behind it — so
+`gui_launch` would time out waiting for `[tool bar]`. Set `OMRISS_GUI_READY` to what
+to wait for instead (e.g. `OMRISS_GUI_READY="[dialog]"`). A file with `chmod 000`
+reaches the dialog through the command-line path, the same one RFC-063 added.
+
 ## Known traps
 
 Things that look like a failure of the product and are not. Each cost a run.

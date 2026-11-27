@@ -6,6 +6,10 @@ use std::time::SystemTime;
 
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
+use omriss_ui::i18n::{Locale, t};
+
+use crate::file::failure::OpenFailure;
+use crate::file::file_dialog::DialogLabels;
 
 use omriss_components::SectionTitleAction;
 use omriss_components::draft_sync;
@@ -34,7 +38,7 @@ pub(crate) enum Modal {
     },
     /// File open failed — surface cause and recovery options (RFC-039).
     OpenError {
-        cause: String,
+        failure: OpenFailure,
     },
 }
 
@@ -52,6 +56,17 @@ pub(crate) struct AppCtx {
     pub modal: Signal<Modal>,
     pub saved_mtime: Signal<Option<SystemTime>>,
     pub recent_files: Signal<Vec<String>>,
+    pub locale: Signal<Locale>,
+}
+
+impl AppCtx {
+    /// The dialog words that are not format names, in the current language: text
+    /// enters the file layer, a locale does not (RFC-073 §4.4b).
+    pub(crate) fn dialog_labels(&self) -> DialogLabels {
+        DialogLabels {
+            all_supported: t(*self.locale.read(), "dialog.filter.all_supported").to_string(),
+        }
+    }
 }
 
 // ── Shared helpers ───────────────────────────────────────────────────────────

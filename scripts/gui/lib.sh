@@ -187,7 +187,10 @@ gui_launch() {
   # Match the role, not its name: the name is a translated label ("File",
   # "ファイル"), so a name match times out on every non-English run, and it is
   # the vestigial label RFC-060's P-4 will change.
-  gui_wait_until "the application's content is in the accessible tree" gui_tree_has "[tool bar]"
+  # A scenario that starts with a modal dialog (a file that cannot be opened) has no
+  # toolbar in the accessible tree: a modal hides everything behind it. It names what
+  # to wait for instead, in OMRISS_GUI_READY (e.g. "[dialog]").
+  gui_wait_until "the application's content is in the accessible tree" gui_tree_has "${OMRISS_GUI_READY:-[tool bar]}"
   gui_log "launched: zero instances before, pid $GUI_PID, niri window $GUI_NIRI_ID"
 }
 

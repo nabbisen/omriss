@@ -58,6 +58,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("dialog.ext_modified.overwrite", "上書き"),
     ("dialog.ext_modified.save_as", "名前を付けて保存…"),
     ("dialog.ext_modified.title", "ディスク上のファイル変更"),
+    ("dialog.filter.all_supported", "すべての対応形式"),
     ("dialog.section_title.add.confirm", "追加"),
     (
         "dialog.section_title.add_after.title",
@@ -145,8 +146,52 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("editor.preview", "プレビュー"),
     ("editor.source", "ソース"),
     (
+        "error.open.command_line_option",
+        "omrissにはファイルのパスを渡せますが、オプションは使えません。ファイルのパスを付けるか、何も付けずに起動してください。",
+    ),
+    (
+        "error.open.internal",
+        "omrissはこのファイルを編集用に準備できませんでした。ファイルは変更されていません。この問題を報告してください。ファイルは手元に残しておいてください。",
+    ),
+    (
+        "error.open.io.general",
+        "omrissはこのファイルを読み取れませんでした。ほかのプログラムで開けるか確認してから、もう一度お試しください。",
+    ),
+    (
+        "error.open.io.is_a_directory",
+        "これはフォルダーで、ファイルではありません。開くファイルを選んでください。",
+    ),
+    (
+        "error.open.io.permission_denied",
+        "omrissにはこのファイルを読み取る権限がありません。ファイルの権限を確認するか、別のファイルを選んでください。",
+    ),
+    (
+        "error.open.not_found",
+        "{path} にファイルがありません。移動または名前の変更が行われた可能性があります。「開く」から選び直してください。",
+    ),
+    (
+        "error.open.not_utf8",
+        "このファイルはUTF-8のテキストではないため、omrissでは安全に開けません。作成したプログラムでUTF-8のテキストファイルとして保存し直してから、もう一度開いてください。",
+    ),
+    (
         "error.open_failed",
         "ファイルを開けませんでした。別のファイルをお試しください。",
+    ),
+    (
+        "error.save.folder_missing",
+        "このファイルがあったフォルダーはもうありません。内容は失われていません。別名で保存してください。",
+    ),
+    (
+        "error.save.permission_denied",
+        "ここに保存する権限がありません。内容は失われていません。別名で保存してください。",
+    ),
+    (
+        "error.save.read_only",
+        "この場所は読み取り専用です。内容は失われていません。別名で保存してください。",
+    ),
+    (
+        "error.save.storage_full",
+        "ディスクの空きがありません。内容は失われていません。空き容量を確保するか、別名で保存してください。",
     ),
     (
         "error.save_failed",

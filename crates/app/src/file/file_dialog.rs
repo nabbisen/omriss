@@ -1,15 +1,17 @@
 //! Native file dialogs, disk I/O, and file integrity helpers (RFC-001, RFC-015,
 //! RFC-018, RFC-039).
 //!
-//! RFC-039: OpenOutcome::Failed now carries a human-readable `cause` string so
-//! the UI can display *why* a file could not be opened (permission denied, not
-//! valid UTF-8, etc.) in an actionable error message.
+//! RFC-039 / RFC-073: a failure to open or save is a typed reason
+//! ([`OpenFailure`], an `io::ErrorKind`), never a string built here: this layer has
+//! no locale, so the shell says it in words (RFC-073 §3.2).
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use omriss_ui::FileTextProfile;
+
+use super::failure::OpenFailure;
 
 const MD_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "txt"];
 const JSON_EXTENSIONS: &[&str] = &["json"];
@@ -20,8 +22,8 @@ const JSON_EXTENSIONS: &[&str] = &["json"];
 pub enum OpenOutcome {
     /// The user dismissed the dialog or no path was provided.
     Cancelled,
-    /// File could not be read; `cause` is a plain-language reason (RFC-039).
-    Failed { cause: String },
+    /// File could not be read, and why.
+    Failed { failure: OpenFailure },
     /// Text (BOM stripped), display name, profile, and disk mtime.
     Loaded {
         text: String,
@@ -35,8 +37,9 @@ pub enum OpenOutcome {
 pub enum SaveOutcome {
     /// The user dismissed the Save As dialog.
     Cancelled,
-    /// Write failed; in-memory state is untouched.
-    Failed,
+    /// Write failed; in-memory state is untouched. `kind` is why (the operating
+    /// system's own text is dropped).
+    Failed { kind: std::io::ErrorKind },
     /// Path written, new disk mtime recorded.
     Saved {
         name: String,
@@ -58,6 +61,17 @@ fn all_extensions() -> Vec<&'static str> {
         .collect()
 }
 
+/// The words on the dialog's filters that are not format names (RFC-073 §4.4b).
+/// "Markdown" and "JSON" are what those formats are called in every locale; the
+/// default filter's name is a phrase, and it is the first thing a person reads in
+/// the dialog. The caller, where a locale is in scope, resolves it: text enters
+/// this layer, a locale does not.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DialogLabels {
+    /// The default filter: every supported extension.
+    pub all_supported: String,
+}
+
 /// The shared open/save dialog. The first filter is the dialog's default, so
 /// it is "all supported": a user opening a `.json` file must see it without
 /// finding a filter dropdown (RFC-052 §14.4, JSON visible by default — no
@@ -69,19 +83,19 @@ fn all_extensions() -> Vec<&'static str> {
 /// can edit a JSON document until RFC-054 J5/J6 — so writing one back out
 /// unmodified through this dialog is the only JSON case it can reach today,
 /// and that already worked before this slice (the bytes are untouched).
-fn markdown_dialog() -> rfd::FileDialog {
+fn markdown_dialog(labels: &DialogLabels) -> rfd::FileDialog {
     rfd::FileDialog::new()
-        // TODO(RFC-073): no `Locale` reaches this module, so this label is an
-        // English literal until the dialog's strings get catalog keys.
-        .add_filter("All supported", &all_extensions())
+        .add_filter(&labels.all_supported, &all_extensions())
         .add_filter("Markdown", MD_EXTENSIONS)
         .add_filter("JSON", JSON_EXTENSIONS)
 }
 
 /// Reads `path`, strips a UTF-8 BOM if present, and returns text + profile +
-/// mtime, or a descriptive error string for RFC-039 error messages.
-fn read_markdown(path: &Path) -> Result<(String, FileTextProfile, Option<SystemTime>), String> {
-    let bytes = fs::read(path).map_err(|e| e.to_string())?;
+/// mtime, or the typed reason it could not.
+fn read_markdown(
+    path: &Path,
+) -> Result<(String, FileTextProfile, Option<SystemTime>), OpenFailure> {
+    let bytes = fs::read(path).map_err(|e| OpenFailure::from_io(path, &e))?;
     let mtime = fs::metadata(path).ok().and_then(|m| m.modified().ok());
 
     let (text_bytes, had_bom) = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
@@ -90,9 +104,7 @@ fn read_markdown(path: &Path) -> Result<(String, FileTextProfile, Option<SystemT
         (&bytes[..], false)
     };
 
-    let text = String::from_utf8(text_bytes.to_vec()).map_err(|_| {
-        "File is not valid UTF-8. Omriss requires UTF-8 Markdown files.".to_string()
-    })?;
+    let text = String::from_utf8(text_bytes.to_vec()).map_err(|_| OpenFailure::NotUtf8)?;
     let profile = FileTextProfile::detect(&text, had_bom);
     Ok((text, profile, mtime))
 }
@@ -122,8 +134,8 @@ fn write_atomic(
 // ── public API ────────────────────────────────────────────────────────────────
 
 /// Shows the open dialog and reads the chosen Markdown file.
-pub fn open_markdown() -> OpenOutcome {
-    let Some(path) = markdown_dialog().pick_file() else {
+pub fn open_markdown(labels: &DialogLabels) -> OpenOutcome {
+    let Some(path) = markdown_dialog(labels).pick_file() else {
         return OpenOutcome::Cancelled;
     };
     open_path(&path)
@@ -135,7 +147,9 @@ pub fn open_markdown_path(path_str: &str) -> OpenOutcome {
     let path = PathBuf::from(path_str);
     if !path.exists() {
         return OpenOutcome::Failed {
-            cause: format!("File not found: {path_str}"),
+            failure: OpenFailure::NotFound {
+                path: path_str.to_string(),
+            },
         };
     }
     open_path(&path)
@@ -149,7 +163,7 @@ fn open_path(path: &Path) -> OpenOutcome {
             profile,
             mtime,
         },
-        Err(cause) => OpenOutcome::Failed { cause },
+        Err(failure) => OpenOutcome::Failed { failure },
     }
 }
 
@@ -158,10 +172,11 @@ pub fn save_markdown(
     existing: Option<&str>,
     source: &str,
     profile: &FileTextProfile,
+    labels: &DialogLabels,
 ) -> SaveOutcome {
     let target = match existing {
         Some(name) => Some(PathBuf::from(name)),
-        None => markdown_dialog().save_file(),
+        None => markdown_dialog(labels).save_file(),
     };
     let Some(path) = target else {
         return SaveOutcome::Cancelled;
@@ -171,7 +186,7 @@ pub fn save_markdown(
             name: path.display().to_string(),
             mtime: Some(mtime),
         },
-        Err(_) => SaveOutcome::Failed,
+        Err(error) => SaveOutcome::Failed { kind: error.kind() },
     }
 }
 
@@ -184,6 +199,8 @@ pub fn was_modified_externally(path: &str, saved_mtime: SystemTime) -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(test)]
+mod failure_tests;
 #[cfg(test)]
 mod filter_tests;
 #[cfg(test)]

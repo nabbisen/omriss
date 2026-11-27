@@ -57,6 +57,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("dialog.ext_modified.overwrite", "Overwrite"),
     ("dialog.ext_modified.save_as", "Save As\u{2026}"),
     ("dialog.ext_modified.title", "File Changed on Disk"),
+    ("dialog.filter.all_supported", "All supported"),
     ("dialog.section_title.add.confirm", "Add"),
     ("dialog.section_title.add_after.title", "Add Section After"),
     (
@@ -144,8 +145,52 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("editor.preview", "Preview"),
     ("editor.source", "Source"),
     (
+        "error.open.command_line_option",
+        "omriss takes a file path and no options. Start it with a file path, or with nothing.",
+    ),
+    (
+        "error.open.internal",
+        "omriss could not prepare this file for editing. Nothing was changed. Please report this problem, and keep the file.",
+    ),
+    (
+        "error.open.io.general",
+        "omriss could not read this file. Check that other programs can open it, then try again.",
+    ),
+    (
+        "error.open.io.is_a_directory",
+        "This is a folder, not a file. Choose a file to open.",
+    ),
+    (
+        "error.open.io.permission_denied",
+        "omriss does not have permission to read this file. Check the file's permissions, or choose another file.",
+    ),
+    (
+        "error.open.not_found",
+        "There is no file at {path}. It may have been moved or renamed. Use Open to choose it again.",
+    ),
+    (
+        "error.open.not_utf8",
+        "This file is not UTF-8 text, so omriss cannot open it safely. Save it as a UTF-8 text file in the program that made it, then open it again.",
+    ),
+    (
         "error.open_failed",
         "We couldn't open this file. Try another file.",
+    ),
+    (
+        "error.save.folder_missing",
+        "The folder this file was in no longer exists. Your writing is safe — try Save As.",
+    ),
+    (
+        "error.save.permission_denied",
+        "You do not have permission to save here. Your writing is safe — try Save As.",
+    ),
+    (
+        "error.save.read_only",
+        "This location is read-only. Your writing is safe — try Save As.",
+    ),
+    (
+        "error.save.storage_full",
+        "The disk is full. Your writing is safe — free some space, or try Save As.",
     ),
     (
         "error.save_failed",

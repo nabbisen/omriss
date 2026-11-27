@@ -6,8 +6,10 @@
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
+use crate::file::failure::OpenFailure;
 use crate::file::file_dialog::{self, OpenOutcome, SaveOutcome};
 use crate::shell::app_ctx::{AppCtx, Modal, commit_pending, has_pending_draft, sync_draft};
+use crate::shell::failure_text::save_failure_key;
 use crate::storage::settings::AppSettings;
 use omriss_components::{
     ConfirmDeleteChoice, ExtModifiedChoice, SectionTitleAction, SectionTitleChoice, UnsavedChoice,
@@ -19,8 +21,8 @@ use omriss_components::{
 pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
     match outcome {
         OpenOutcome::Cancelled => {}
-        OpenOutcome::Failed { cause } => {
-            ctx.modal.set(Modal::OpenError { cause });
+        OpenOutcome::Failed { failure } => {
+            ctx.modal.set(Modal::OpenError { failure });
         }
         OpenOutcome::Loaded {
             text,
@@ -58,8 +60,12 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
                     settings.save();
                     ctx.recent_files.set(settings.valid_recent_files());
                 }
+                // `open_detected` fails only on an internal outline invariant (a bug in
+                // omriss, never in the user's text: any text is valid Markdown, and a
+                // JSON syntax error is not an error here, RFC-085). The honest thing
+                // is to say so, not to panic.
                 Err(_) => ctx.modal.set(Modal::OpenError {
-                    cause: "Could not parse the file structure.".into(),
+                    failure: OpenFailure::Internal,
                 }),
             }
         }
@@ -71,7 +77,7 @@ pub(crate) fn handle_open_guarded(mut ctx: AppCtx) {
     if ctx.session.read().is_dirty() || has_pending_draft(ctx) {
         ctx.modal.set(Modal::UnsavedBeforeOpen);
     } else {
-        handle_load(file_dialog::open_markdown(), ctx);
+        handle_load(file_dialog::open_markdown(&ctx.dialog_labels()), ctx);
     }
 }
 
@@ -93,11 +99,15 @@ pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
         return;
     }
     let profile = ctx.session.read().profile().clone();
-    let outcome =
-        file_dialog::save_markdown(existing.as_deref(), ctx.session.read().source(), &profile);
+    let outcome = file_dialog::save_markdown(
+        existing.as_deref(),
+        ctx.session.read().source(),
+        &profile,
+        &ctx.dialog_labels(),
+    );
     match outcome {
         SaveOutcome::Cancelled => {}
-        SaveOutcome::Failed => ctx.status.set("error.save_failed".into()),
+        SaveOutcome::Failed { kind } => ctx.status.set(save_failure_key(kind).into()),
         SaveOutcome::Saved { name, mtime } => {
             ctx.session.write().mark_saved(Some(name));
             ctx.saved_mtime.set(mtime);
@@ -136,7 +146,7 @@ pub(crate) fn handle_unsaved_choice(choice: UnsavedChoice, mut ctx: AppCtx) {
                 ctx.modal.set(Modal::None);
                 match pending {
                     Modal::UnsavedBeforeOpen => {
-                        handle_load(file_dialog::open_markdown(), ctx);
+                        handle_load(file_dialog::open_markdown(&ctx.dialog_labels()), ctx);
                     }
                     Modal::UnsavedBeforeNew => handle_new(ctx),
                     _ => {}
@@ -146,7 +156,9 @@ pub(crate) fn handle_unsaved_choice(choice: UnsavedChoice, mut ctx: AppCtx) {
         UnsavedChoice::Discard => {
             ctx.modal.set(Modal::None);
             match pending {
-                Modal::UnsavedBeforeOpen => handle_load(file_dialog::open_markdown(), ctx),
+                Modal::UnsavedBeforeOpen => {
+                    handle_load(file_dialog::open_markdown(&ctx.dialog_labels()), ctx)
+                }
                 Modal::UnsavedBeforeNew => handle_new(ctx),
                 _ => {}
             }
@@ -169,6 +181,7 @@ pub(crate) fn handle_ext_modified_choice(choice: ExtModifiedChoice, mut ctx: App
                 existing.as_deref(),
                 ctx.session.read().source(),
                 &profile,
+                &ctx.dialog_labels(),
             );
             match outcome {
                 SaveOutcome::Saved { name, mtime } => {
@@ -176,7 +189,7 @@ pub(crate) fn handle_ext_modified_choice(choice: ExtModifiedChoice, mut ctx: App
                     ctx.saved_mtime.set(mtime);
                     ctx.status.set("status.saved".into());
                 }
-                SaveOutcome::Failed => ctx.status.set("error.save_failed".into()),
+                SaveOutcome::Failed { kind } => ctx.status.set(save_failure_key(kind).into()),
                 SaveOutcome::Cancelled => {}
             }
         }

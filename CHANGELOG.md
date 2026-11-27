@@ -122,6 +122,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
   underline (`---`, `===`) is not heading text, and the "Item 3" labels omriss gives
   a JSON list's members are not in your file, so they are not searched. English and
   Japanese.
+- **A file that cannot be opened, or saved, now says why in your language**
+  (RFC-073). In Japanese, the open-failure dialog explained itself in English,
+  and for a file you were not allowed to read it showed the operating system's own
+  text (`Permission denied (os error 13)`) — on screen and to a screen reader.
+  Each failure now has its own message, in English and Japanese, that says what
+  happened and what to do: the file is not there (with its path), it is not UTF-8
+  text (it used to say "UTF-8 Markdown", though JSON opens too), omriss may not read
+  it, it is a folder, it could not be read, or omriss could not prepare it (which
+  asks you to report it, and says nothing was changed). A save that fails says
+  why too — no permission, a full disk, a read-only place, a folder that is gone —
+  and that your writing is safe. The command-line message is translated.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right
