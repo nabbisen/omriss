@@ -16,6 +16,12 @@ Files:
 - `baseline-accessible-tree.txt` — the architect's first probe, 2026-10-22.
   Reference, **not** a validation run
 
-There is no `task-breakdown-pr-plan.md`. RFC-060 is a validation RFC: a run
-produces a record and findings, not a pull request. A PR plan appears only when
-findings are accepted for fixing, and it belongs to whichever RFC owns the fix.
+RFC-060 is a validation RFC: a run produces a record and findings. A PR plan
+exists only for findings accepted for fixing that RFC-060 itself owns, which
+are §9.4's P-1 to P-4, designed in §10.
+
+**State:** P-1 to P-4 are 0.18.0's item 10. **Next: PR 1**
+(`task-breakdown-pr-plan.md`). The report goes to
+`.git-exclude/review-request/060-names/README.md`.
+
+- `task-breakdown-pr-plan.md` — P-1 to P-4

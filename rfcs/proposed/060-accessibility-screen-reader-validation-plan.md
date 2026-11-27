@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M15 — Accessibility validation (proposed)
-**Status.** Proposed
+**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10.
 **Document type:** Follow-up validation RFC
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-051
@@ -207,3 +207,42 @@ WebKit build. No participant — that remains RFC-061's.
 
 The next run should either route Orca's speech or state again that it did not,
 rather than let "Orca not run" harden into a permanent footnote.
+
+## 10. P-1 to P-4, designed (2026-11-27)
+
+One pass, as §9.4 asked. The rule for all four: **what assistive technology is
+told is true, comes from the catalog, and is given by construction rather
+than one element at a time.**
+
+1. **P-1, the document's name.** One function gives the title, and it names
+   both the window and the web document. The title is "Omriss" with no file
+   open, and "notes.md — Omriss" with one: the file's name, not its path,
+   because the status bar shows the path. Unsaved changes are not shown in the
+   title; how they are named is RFC-080 §5.4 rule 1. Dioxus's
+   `document::Title` is the expected means, because it sets the title at
+   runtime and so avoids §9.4's first-`<title>` trap. **Measure before
+   relying on it:** confirm with AT-SPI that the document's name changes, and
+   check what it does to the window title, which `main.rs` currently sets to a
+   fixed "Omriss". If one mechanism cannot reach both, stop and report. Two
+   titles that disagree are the fault this fixes.
+2. **P-2, landmarks.** Every landmark omriss renders has a name from the
+   catalog, in every view. The main region is always "Writing Area": in the
+   welcome view, the overview, plain file text and the unreadable view, as it
+   already is in focus. The section's own name is its heading, inside. The
+   footer is "Status bar". A level-2 test mounts each view and checks that
+   every `main`, `header`, `footer`, `nav` and `aside`, and every
+   `role="region"` and `role="toolbar"`, has a name. A landmark added later
+   without one fails it.
+3. **P-3, menu triggers.** The settings popup's `role="menu"` was removed by
+   RFC-059 PR 3. Measure the row menu trigger ("…") again with AT-SPI. If it
+   still reports `combo box`, find out whether omriss's markup causes that or
+   WebKitGTK maps every `aria-haspopup` button that way. The markup is fixed
+   only if omriss's markup is the cause. A platform mapping is recorded here,
+   not fought.
+4. **P-4, the toolbar's name.** "Toolbar" / 「ツールバー」, from its own key.
+   It stops borrowing `menu.file` ("File", a menu that does not exist).
+
+**Validation.** The level-2 landmark test, with a deliberate break. AT-SPI in
+the GUI, `en_US` and `ja_JP`: the document's name with and without a file;
+every landmark's name in the welcome, overview, focus and plain-file-text
+views; P-3's measurement.
