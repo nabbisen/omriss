@@ -39,7 +39,10 @@ impl Locale {
 
     /// Parses a language tag (or its primary subtag) into a supported locale.
     pub fn from_tag(tag: &str) -> Option<Locale> {
-        let primary = tag.split(['-', '_']).next().unwrap_or(tag);
+        // `-` and `_` separate language from region, `.` a codeset (`ja.UTF-8`, a
+        // `LANG` with no region), `@` a modifier (`en@euro`): the first segment is
+        // the language in every one.
+        let primary = tag.split(['-', '_', '.', '@']).next().unwrap_or(tag);
         match primary.to_ascii_lowercase().as_str() {
             "en" => Some(Locale::En),
             "ja" => Some(Locale::Ja),

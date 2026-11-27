@@ -132,7 +132,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
   it, it is a folder, it could not be read, or omriss could not prepare it (which
   asks you to report it, and says nothing was changed). A save that fails says
   why too — no permission, a full disk, a read-only place, a folder that is gone —
-  and that your writing is safe. The command-line message is translated.
+  and that your writing is safe. The command-line message is translated, and so is
+  the name of the file dialog's default filter ("All supported"). A system language
+  given as `ja.UTF-8`, with no region, is now recognised as Japanese.
 - **The section path reads from the left, on one line** (RFC-013). It was spread
   across the full width in equal gaps, and one long heading pushed it onto two or
   three lines. The path now starts at the left with the *up* button at the right

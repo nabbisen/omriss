@@ -197,3 +197,25 @@ mod substitution {
         assert_eq!(fill("日本語 {n} 件", &[("n", "2")]), "日本語 2 件");
     }
 }
+
+// ── RFC-073 §4.4a: a tag with a codeset and no region ──────────────────────
+
+#[test]
+fn from_tag_reads_the_language_whatever_follows_it() {
+    for (tag, locale) in [
+        ("ja", Some(Locale::Ja)),
+        ("ja-JP", Some(Locale::Ja)),
+        ("ja_JP", Some(Locale::Ja)),
+        ("ja_JP.UTF-8", Some(Locale::Ja)),
+        ("ja.UTF-8", Some(Locale::Ja)),
+        ("JA.utf8", Some(Locale::Ja)),
+        ("en.UTF-8", Some(Locale::En)),
+        ("en_US.UTF-8@euro", Some(Locale::En)),
+        ("en@euro", Some(Locale::En)),
+        ("fr.UTF-8", None),
+        ("C.UTF-8", None),
+        ("", None),
+    ] {
+        assert_eq!(Locale::from_tag(tag), locale, "{tag:?}");
+    }
+}

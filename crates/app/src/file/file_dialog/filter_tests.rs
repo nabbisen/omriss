@@ -34,3 +34,24 @@ fn default_filter_starts_with_a_markdown_extension() {
          so keep MD_EXTENSIONS first in all_extensions() (RFC-055 §4.1)"
     );
 }
+
+/// RFC-073 §4.4b: the default filter's name is a phrase, so it is the catalog's; the
+/// shell resolves it and hands the file layer text. "Markdown" and "JSON" are format
+/// names and stay as they are.
+#[test]
+fn the_default_filters_name_is_translated_and_the_format_names_are_not() {
+    use omriss_ui::i18n::{Locale, t};
+    let en = t(Locale::En, "dialog.filter.all_supported");
+    let ja = t(Locale::Ja, "dialog.filter.all_supported");
+    assert_eq!(en, "All supported");
+    assert_ne!(ja, en);
+    assert_ne!(
+        ja, "dialog.filter.all_supported",
+        "the key is in the catalog"
+    );
+    // The file layer takes the text it is given.
+    let labels = super::DialogLabels {
+        all_supported: ja.to_string(),
+    };
+    assert_eq!(labels.all_supported, ja);
+}
