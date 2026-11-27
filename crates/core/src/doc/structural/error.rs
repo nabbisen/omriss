@@ -32,7 +32,9 @@ pub enum StructuralEditError {
     NoAdjacentSibling,
     /// Operation would risk moving content under the wrong section.
     UnsafePreservation,
-    /// Split offset falls outside the section's body range.
+    /// The split offset is not a legal insertion point: it is outside the section
+    /// (past the end of its last subsection), strictly inside a heading line, inside
+    /// a character, or between the CR and the LF of one line ending.
     InvalidSplitOffset,
     /// Section title is empty or cannot be represented safely.
     InvalidTitle,
@@ -67,7 +69,7 @@ impl std::fmt::Display for StructuralEditError {
             Self::CannotDeleteRoot => write!(f, "cannot delete the root node"),
             Self::NoAdjacentSibling => write!(f, "no adjacent sibling to merge with"),
             Self::UnsafePreservation => write!(f, "operation could change unrelated structure"),
-            Self::InvalidSplitOffset => write!(f, "split offset is outside the section body"),
+            Self::InvalidSplitOffset => write!(f, "split offset is not a legal insertion point"),
             Self::InvalidTitle => write!(f, "section title is empty or invalid"),
             Self::Edit(e) => write!(f, "underlying edit error: {e}"),
         }

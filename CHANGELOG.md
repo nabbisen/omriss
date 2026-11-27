@@ -56,13 +56,20 @@ project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **`omriss-core`: `Document::split_section` refuses a title `rename_section` would
-  refuse, and an offset between the CR and LF of one line ending** (RFC-070). A
-  title with a line break (`"Evil\n# Injected H1"` added two outline nodes) or an
-  empty one (a heading line with a trailing space) now returns
-  `StructuralEditError::InvalidTitle`, and the title is trimmed, as `rename_section`
-  has always done. An offset that would cut a CRLF in two returns
-  `InvalidSplitOffset`. The application is not affected: its dialogs already
-  refused these. A library caller that passed such a title now gets an error.
+  refuse, and an offset that would cut through a heading** (RFC-070). A title with a
+  line break (`"Evil\n# Injected H1"` added two outline nodes) or an empty one (a
+  heading line with a trailing space) now returns `StructuralEditError::InvalidTitle`,
+  and the title is trimmed, as `rename_section` has always done. An offset now returns
+  `InvalidSplitOffset` when it is past the end of the section, strictly inside a
+  heading line (a child's title, or between a setext title and its underline — the
+  insertion used to split the heading in two), inside a character, or between the CR
+  and the LF of one line ending. **A library caller that passed such a title or offset
+  now gets an error instead of a damaged document.** Every offset that was legal and
+  did not cut a heading still works, including the one that appends after the last
+  subsection. The parameter `offset_in_body` is renamed `offset`: it counts from the
+  start of the body but may reach into the subsections, and the documentation of
+  `InvalidSplitOffset` now says exactly what it refuses. The application is not
+  affected: its dialogs and offsets already stayed clear of all of these.
 - **A screen reader can tell the regions apart** (RFC-060). The toolbar was
   announced as "File", a menu that does not exist; it is now "Toolbar" /
   「ツールバー」. The footer had no name and is now "Status bar" /

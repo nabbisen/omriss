@@ -51,13 +51,20 @@ pub(crate) fn delete_section(
     Ok(result)
 }
 
-/// Inserts a new heading of `new_level` with `new_title` at `offset_in_body`
-/// bytes into the focused section's body. The text before the offset stays as
-/// the current section's body; the text after becomes the new section's body.
+/// Inserts a new heading of `new_level` with `new_title` at `offset` bytes from
+/// the start of the section's body (RFC-070). The text before the offset stays
+/// where it is; the text after follows the new heading.
+///
+/// `offset` may be anywhere in the section: its body and its subsections, up to the
+/// end of the last of them (the Add commands pass that end, to append after the
+/// children). It is refused with `InvalidSplitOffset` when it is outside the
+/// section, strictly inside any heading line (which covers a setext title and its
+/// underline), inside a character, or between the CR and the LF of one line ending.
+/// An insertion never cuts through existing heading syntax.
 pub(crate) fn split_section(
     doc: &mut Document,
     id: NodeId,
-    offset_in_body: usize,
+    offset: usize,
     new_title: &str,
     new_level: HeadingLevel,
     base_rev: DocumentRevision,
@@ -71,23 +78,27 @@ pub(crate) fn split_section(
     let body = node.body_range;
     let full = node.full_range;
 
-    // offset_in_body is relative to body_range.start.
-    // Valid range: 0..=body.len() places the heading within the section body.
-    // full.end - body.start is also valid: it inserts the heading after all
-    // existing children (at full_range.end), which is the correct position
-    // for appending a new child at the bottom.
-    let max_offset = full.end - body.start;
-    if offset_in_body > max_offset {
+    // `offset` counts from body_range.start. full.end - body.start is the offset
+    // that appends after every existing child.
+    if offset > full.end - body.start {
         return Err(StructuralEditError::InvalidSplitOffset);
     }
-    let insert_pos = body.start + offset_in_body;
+    let insert_pos = body.start + offset;
     let source = doc.source();
     if !source.is_char_boundary(insert_pos) {
         return Err(StructuralEditError::InvalidSplitOffset);
     }
     // Between the CR and the LF of one CRLF: the insertion would cut a line ending
-    // in two (RFC-070 §8.3, RFC-084).
+    // in two (RFC-084).
     if source[..insert_pos].ends_with('\r') && source[insert_pos..].starts_with('\n') {
+        return Err(StructuralEditError::InvalidSplitOffset);
+    }
+    // Strictly inside a heading line. Headings do not overlap and `insert_pos` is at
+    // or after this section's own heading, so any heading that holds it is a
+    // descendant's. (A setext heading's range spans its title and its underline.)
+    if doc.outline().iter().any(|n| {
+        !n.is_root() && insert_pos > n.heading_range.start && insert_pos < n.heading_range.end
+    }) {
         return Err(StructuralEditError::InvalidSplitOffset);
     }
 

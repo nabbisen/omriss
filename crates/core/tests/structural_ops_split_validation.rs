@@ -169,3 +169,113 @@ fn a_lone_cr_or_lone_lf_is_not_a_pair() {
             .unwrap_or_else(|e| panic!("{src:?}: {e:?}"));
     }
 }
+
+// ── The offset rule (RFC-070 §9) ──────────────────────────────────────────
+//
+// `offset` counts from the start of the section's body and may reach the end of
+// its last subsection. Refused: outside the section, strictly inside a heading
+// line (a setext title and its underline included), inside a character, between
+// CR and LF. Anything else is legal, subsections' bodies included.
+
+const TREE: &str = "# A\nbody\n\n## Child\nchild body\n\n# B\n";
+
+fn offset_of(d: &Document, needle: &str) -> usize {
+    let a = d.outline().root().children[0];
+    d.source().find(needle).expect(needle) - d.outline().node(a).unwrap().body_range.start
+}
+
+#[test]
+fn an_offset_strictly_inside_an_atx_child_heading_is_refused() {
+    // "## Child\n": the heading line spans bytes of "## Child"; every position
+    // after its first byte and before its end is inside.
+    let d0 = doc(TREE);
+    let start = offset_of(&d0, "## Child");
+    for inside in 1..="## Child".len() {
+        let mut d = doc(TREE);
+        let a = d.outline().root().children[0];
+        let err = d
+            .split_section(a, start + inside, "X", HeadingLevel::H2, d.revision())
+            .unwrap_err();
+        assert_eq!(err, StructuralEditError::InvalidSplitOffset, "+{inside}");
+        assert_eq!(d.source(), TREE);
+    }
+}
+
+#[test]
+fn an_offset_between_a_setext_title_and_its_underline_is_refused() {
+    let src = "# A\nbody\n\nChild\n-----\ntext\n\n# B\n";
+    let d0 = doc(src);
+    let child = offset_of(&d0, "Child");
+    // Inside the title, at the line break, inside the underline.
+    for pos in [child + 2, child + 5, child + 6, child + 8, child + 10] {
+        let mut d = doc(src);
+        let a = d.outline().root().children[0];
+        let err = d
+            .split_section(a, pos, "X", HeadingLevel::H2, d.revision())
+            .unwrap_err();
+        assert_eq!(err, StructuralEditError::InvalidSplitOffset, "+{pos}");
+        assert_eq!(d.source(), src);
+    }
+}
+
+#[test]
+fn an_offset_at_either_edge_of_a_heading_line_is_legal() {
+    // Before the heading's first byte and after its last line break: the heading is
+    // not cut.
+    let d0 = doc(TREE);
+    let start = offset_of(&d0, "## Child");
+    for pos in [start, start + "## Child\n".len()] {
+        let mut d = doc(TREE);
+        let a = d.outline().root().children[0];
+        d.split_section(a, pos, "X", HeadingLevel::H3, d.revision())
+            .unwrap_or_else(|e| panic!("+{pos}: {e:?}"));
+        assert!(d.source().contains("## Child\n"), "{:?}", d.source());
+    }
+}
+
+#[test]
+fn an_offset_past_the_end_of_the_section_is_refused() {
+    let mut d = doc(TREE);
+    let a = d.outline().root().children[0];
+    let node = d.outline().node(a).unwrap();
+    let end = node.full_range.end - node.body_range.start;
+    let err = d
+        .split_section(a, end + 1, "X", HeadingLevel::H2, d.revision())
+        .unwrap_err();
+    assert_eq!(err, StructuralEditError::InvalidSplitOffset);
+    assert_eq!(d.source(), TREE);
+}
+
+#[test]
+fn after_the_children_is_legal_and_appends_there() {
+    let mut d = doc(TREE);
+    let a = d.outline().root().children[0];
+    let node = d.outline().node(a).unwrap();
+    let end = node.full_range.end - node.body_range.start;
+    d.split_section(a, end, "Last", HeadingLevel::H2, d.revision())
+        .unwrap();
+    assert_eq!(
+        d.source(),
+        "# A\nbody\n\n## Child\nchild body\n\n\n## Last\n\n# B\n"
+    );
+}
+
+#[test]
+fn inside_a_childs_body_is_legal() {
+    // The offset reaches into a subsection's own body: legal, and the new heading
+    // lands there.
+    let mut d = doc(TREE);
+    let a = d.outline().root().children[0];
+    let pos = offset_of(&d, "child body") + "child".len() + 1;
+    d.split_section(a, pos, "Deep", HeadingLevel::H3, d.revision())
+        .unwrap();
+    assert!(d.source().contains("### Deep\n"), "{:?}", d.source());
+}
+
+#[test]
+fn an_empty_offset_in_a_document_with_only_headings_still_works() {
+    let mut d = doc("# A\n## B\n");
+    let a = d.outline().root().children[0];
+    d.split_section(a, 0, "X", HeadingLevel::H2, d.revision())
+        .unwrap();
+}

@@ -272,25 +272,10 @@ proptest! {
     }
 
     /// A correct split inserts exactly one new node and changes no existing
-    /// title.
-    ///
-    /// Still `#[ignore]`d after RFC-065's B1–B6/B8 boundary fixes: the
-    /// remaining shrunk counterexample is a *different* defect from the
-    /// boundary-welding family those slices fix. `max_offset =
-    /// full.end - body.start` lets `offset_in_body` land anywhere within
-    /// the target's entire subtree, including strictly inside a
-    /// *descendant* node's own heading line (its title text, or the gap
-    /// between a setext title and its underline) — fracturing that
-    /// heading regardless of what separator gets inserted around it, since
-    /// the insertion is happening *inside* existing heading syntax, not at
-    /// a boundary next to it. Deferred to RFC-070 (API-only: the GUI's own
-    /// split offset is always a cursor position inside the edited body, so
-    /// it cannot exceed the body the way a direct library call can), which
-    /// also covers AUDIT-0170-033 (the same function's unvalidated title)
-    /// as one unit of work. RFC-066 criterion 6 was amended to allow this:
-    /// a *tracked* `#[ignore]` naming its owning RFC is a scheduled
-    /// defect, not a silently disabled test.
-    #[ignore = "fails until RFC-070: split can insert inside a descendant heading"]
+    /// title. The offset ranges over the whole section, its subsections included,
+    /// so it can land strictly inside a descendant's heading line; `split_section`
+    /// refuses that (RFC-070 §9) rather than cut through the heading, and a refusal
+    /// is skipped here, not counted as a failure.
     #[test]
     fn split_increases_count_by_one_and_preserves_titles(
         source in inert_markdown_source_strategy(),
@@ -314,7 +299,7 @@ proptest! {
         let rev = doc.revision();
 
         if doc.split_section(id, offset, &new_title, level, rev).is_err() {
-            return Ok(()); // e.g. offset lands mid-character
+            return Ok(()); // e.g. the offset is inside a heading line or a character
         }
 
         assert_count_delta(before_count, doc.outline().len(), 1, "split");

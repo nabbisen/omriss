@@ -379,24 +379,25 @@ impl Document {
         crate::doc::structural::move_section(self, id, target, base_revision)
     }
 
-    /// Inserts a new heading at `offset_in_body` bytes into the section body,
-    /// splitting the body at that point. Empty offset appends at the top.
+    /// Inserts a new heading at `offset` bytes from the start of the section's body,
+    /// splitting the section at that point. `offset` may be anywhere in the section,
+    /// its subsections included; `0` inserts at the top, and
+    /// `full_range.end - body_range.start` appends after the last child.
+    ///
+    /// Refused with [`StructuralEditError::InvalidTitle`] when the title is empty or
+    /// has a line break (the rule `rename_section` has), and with
+    /// [`StructuralEditError::InvalidSplitOffset`] when the offset is outside the
+    /// section, strictly inside a heading line, inside a character, or between the
+    /// CR and the LF of one line ending.
     pub fn split_section(
         &mut self,
         id: NodeId,
-        offset_in_body: usize,
+        offset: usize,
         new_title: &str,
         new_level: HeadingLevel,
         base_revision: DocumentRevision,
     ) -> Result<EditResult, crate::doc::structural::StructuralEditError> {
-        crate::doc::structural::split_section(
-            self,
-            id,
-            offset_in_body,
-            new_title,
-            new_level,
-            base_revision,
-        )
+        crate::doc::structural::split_section(self, id, offset, new_title, new_level, base_revision)
     }
 
     /// Removes `id`'s full range from the source. Requires explicit
