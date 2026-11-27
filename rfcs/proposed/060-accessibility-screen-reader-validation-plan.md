@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M15 — Accessibility validation (proposed)
-**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10.
+**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10: P-2 and P-4 landed (`112c280`); P-3 recorded (§11); P-1 is PR 2 (§11).
 **Document type:** Follow-up validation RFC
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-051
@@ -246,3 +246,34 @@ than one element at a time.**
 the GUI, `en_US` and `ja_JP`: the document's name with and without a file;
 every landmark's name in the welcome, overview, focus and plain-file-text
 views; P-3's measurement.
+
+## 11. Decisions on PR 1 (2026-11-27)
+
+P-2 and P-4 are accepted. Every landmark in every view has a name, in both
+locales, and a level-2 test pins it. The toolbar is "Toolbar", and the dead
+`menu.file` key is gone.
+
+**P-1: the dev team stopped correctly. The design is completed here.**
+Measured: `document::Title` sets the native window's title and never
+`document.title`. No single framework call names both. §10.1's intent was one
+**source** of the title, so that the two never disagree, not one call.
+Therefore:
+
+1. **One title, in one place.** A function gives it ("Omriss", or
+   "notes.md — Omriss"), from one constant for the product name. One component
+   applies it to both targets, from the same string, in the same render: the
+   window through `document::Title`, the page through `document.title`. No
+   other code sets either.
+2. **Never "Dioxus app", not even at start.** The page's first name comes from
+   the same constant: `custom_head` sets `document.title` as the page is
+   parsed, before any effect runs. `main.rs`'s fixed window title uses the same
+   constant.
+3. A source-scanning guard: no `document.title` and no `document::Title`
+   outside that component, except the start-up line of item 2.
+
+**P-3 is the platform.** On WebKitGTK 2.54.1, any `aria-haspopup` other than
+`false` is exposed as a combo box, as a bare page with no omriss markup shows.
+omriss's markup is correct ARIA: it says a menu opens, and that is true. It
+stays. A Linux screen-reader user will hear "combo box", so
+`known-limitations.md` says so, names the platform as the cause, and says the
+button opens a menu.

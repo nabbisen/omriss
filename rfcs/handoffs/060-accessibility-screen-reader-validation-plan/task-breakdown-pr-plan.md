@@ -29,3 +29,19 @@ with both counts, `check-rfcs`, `mdbook build docs`, the wasm32 build.
 
 Report: gates, the P-1 measurement, the landmark table per view, P-3's
 finding, the AT-SPI output in both locales, and what was not run.
+
+**PR 1 landed** (`112c280`): P-2, P-4; P-3 measured; P-1 held.
+
+## PR 2 — P-1 and P-3's note (RFC-060 §11)
+
+1. The title function, the product-name constant, and one component that
+   applies the title to the window and the page.
+2. The start-up name from the same constant (`custom_head`, `main.rs`).
+3. The guard of §11.3, with a deliberate break.
+4. `known-limitations.md`: the section-actions button is announced as a combo
+   box on Linux, with the reason and what it does.
+
+Proof: AT-SPI, `en_US` and `ja_JP`. Read the `[document web]` name as early
+as the harness can after launch: "Omriss". Then with a file open:
+"notes.md — Omriss". Then after closing or switching the file. Check the
+window title in each state too.
