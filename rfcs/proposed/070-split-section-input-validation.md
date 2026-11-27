@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — published-API correctness (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — 0.18.0 item 11, with RFC-066's P4; design completed in §8 (2026-11-28).
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-025, RFC-026, RFC-065
@@ -135,3 +135,37 @@ test.
 3. `InvalidSplitOffset` added and documented.
 4. RFC-066's split property passes un-ignored; no `#[ignore]` remains anywhere.
 5. `structural_ops*` and the 239 baseline pass unmodified.
+
+## 8. Against today's code (2026-11-28)
+
+Read again before handing it over. §4.2 needs correcting in three ways.
+
+1. **`InvalidSplitOffset` already exists**, documented as "split offset falls
+   outside the section's body range". The code bounds the offset by
+   `full_range`, so the code disagrees with its own documentation. **No new
+   variant**: §4.2's argument for one assumed it did not exist. Acceptance
+   criterion 3 becomes "the variant does what its documentation says".
+2. **One rule, not two.** `offset_in_body` is an offset into the section's own
+   body. Bounding it by the body is the whole rule. A descendant's heading is
+   never inside a section's own body, so §4.2's loop over descendants cannot
+   fire once the bound is right. It is not written. The property and the two
+   heading tests (ATX child, setext title and underline) show the bound alone
+   is enough.
+3. **Two more ways an offset can be illegal inside the body,** both refused
+   with the same variant and each with its own test:
+   - an offset that is **not on a character boundary** (inside `日`), which
+     today would panic when the source is sliced;
+   - an offset **between the CR and the LF of a CRLF**, which would split one
+     line ending into two (RFC-084's ground).
+
+§4.1 stands: `validate_title` moves to `preflight.rs`, and rename and split
+both call it.
+
+**RFC-066's P4 travels with this item** (ROADMAP item 11). RFC-066 is in
+`done/`, and its §3.1b records P4 as 0.18.0 work. Rename and join get the
+property "every byte of S outside N's own heading line is unchanged". **If
+join legitimately changes anything else,** such as a separator at the seam that
+RFC-065's `joining_separator` decides, the property states exactly that change
+and asserts it. It does not exempt it. If the change cannot be stated exactly,
+stop and report: an exemption is a place where nothing is watching
+(RFC-066 §3.1b).
