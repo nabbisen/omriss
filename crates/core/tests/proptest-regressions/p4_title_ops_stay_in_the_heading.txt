@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7c50a49bb8ea0a662ece000b450f98baf0ef60c9ec0c1e439abcd9996be3de05 # shrinks to source = "a\r\n---\r\nA\r\n===\r\na\r\n===\r\nA\r\nA\r\n---\r\n\r\n# [a link](https://example.com/path?q=1)\r\n\r\n#### *emphasis*", node_pick = 12461147105649227031, new_title = "zlfgAmhl O"
+cc 080050ad23496f32ac9f983dcb95bb8d4f93554746668b53212f748cccc17592 # shrinks to source = "a\n===\nA\n---\n#x\n---\nA\n===\n##### a\n### a\nA\n---\n\n### [a link](https://example.com/path?q=1)\nIP5 H\n\nplain and <b>raw html</b> mixed\n===\nGt D", node_pick = 10252102313646188696

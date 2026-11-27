@@ -9,3 +9,4 @@ mod inert;
 mod p1_replace_undo;
 mod p2_structural_invariants;
 mod p3_body_addressing;
+mod p4_title_ops_stay_in_the_heading;
