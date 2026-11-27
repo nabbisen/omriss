@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M15 — Accessibility validation (proposed)
-**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10: P-2 and P-4 landed (`112c280`); P-3 recorded (§11); P-1 landed in PR 2 (`79d1942`); open: PR 3 (§12).
+**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10: P-2 and P-4 landed (`112c280`); P-3 recorded (§11); P-1 landed in PR 2 (`79d1942`), with constant scripts in PR 3 (`c8a0ac0`). **P-1 to P-4 are done**; the RFC stays Proposed for F-1 and the validation runs.
 **Document type:** Follow-up validation RFC
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-051

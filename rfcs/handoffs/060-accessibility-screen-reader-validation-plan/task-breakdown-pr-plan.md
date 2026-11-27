@@ -59,3 +59,5 @@ window title in each state too.
 Proof: the title tests and the poller run once, `en_US`, including a file
 whose name contains `"`, `\` and `'`. The page's name is that file name
 exactly.
+
+**PR 3 landed** (`c8a0ac0`). P-1 to P-4 are closed.
