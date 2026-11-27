@@ -17,8 +17,8 @@ row is wrong when you test it, say so in the report. Do not build around it.
 
 ## 2. Constraints
 
-1. `omriss-core` does not change. If something needs it (a node field the
-   structure lacks), stop and report.
+1. `omriss-core` does not change, except PR 6's adapter method (RFC-085
+   §8.2). Anything else that needs core: stop and report.
 2. No new crate dependency; `omriss-components` still builds for
    `wasm32-unknown-unknown`.
 3. **Markdown behaviour is unchanged.** Existing Markdown tests pass

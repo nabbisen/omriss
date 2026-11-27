@@ -9,10 +9,10 @@ open, the overview, breadcrumb, Esc, search and statistics read the Markdown
 heading outline; the Document Map reads the JSON structure. The RFC is the
 design; this handoff orders it.
 
-**State:** PR 1–4 done. **Next: PR 5** (RFC-085 §7).
+**State:** PR 1–5 done. **Next: PR 6** (RFC-085 §8).
 
-The report for PR 5 goes to
-`.git-exclude/review-request/085-format-aware-panes-2/README.md`.
+The report for PR 6 goes to
+`.git-exclude/review-request/085-format-aware-panes-3/README.md`.
 
 Files:
 

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, item 7: RFC-067 §3.2's deferred scope)
-**Status.** Proposed — PR 1–3 on `main` for 0.18.0 (`da66f4a`, `362462d`, `173d561`); PR 4 measured. **Open:** PR 5 (§7).
+**Status.** Proposed — PR 1–3 on `main` for 0.18.0 (`da66f4a`, `362462d`, `173d561`); PR 4 measured; PR 5 (`c007cc7`). **Open:** PR 6 (§8).
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053, RFC-054, RFC-067
@@ -190,3 +190,43 @@ Accepted as built:
    in a release build, and report. The architect decides from the numbers.
 3. `overview.card.subsections_one`: "1 subsection", like `items_one`. In both
    locales.
+
+## 8. Decisions on PR 5 (2026-11-27)
+
+PR 5 is accepted. The editor view beside an unreadable file shows the
+Document Map's sentence and a button to plain file text, and never an empty
+card. Its measurement found two things.
+
+### Findings
+
+| # | Finding | Measured (8,000-item root array, 374–391 KiB, release) |
+|---|---|---|
+| P1 | **The sentence is untrue in the view PR 5 added.** "Its text is open in Plain file text" is shown beside a Writing Area where plain file text is *not* open | screenshot `pr5-unreadable-back-to-editor.png` |
+| P2 | **Search and statistics are quadratic on JSON.** Each value's text is read through `focused_content`, which finds its node by a linear scan. Search runs this on every keystroke | 95 ms per call (objects), 18 ms (strings) |
+| P3 | Overview cards for a list of scalars: one `focused_content` per card, for its kind label | 13.8 ms per render |
+| P4 | **The Document Map rebuilds its whole tree on every focus change.** This predates RFC-085 and has been in the map since 0.17.0 | 0.4–1.2 s per row click |
+| P5 | 8,000 overview cards when the user climbs to the whole document | 0.6–1.0 s, once |
+
+### Design
+
+1. **P1 — a sentence that is true wherever it is shown.** It says where the
+   text *can* be seen, not that it is open: *"This file could not be read as
+   JSON, so its structure cannot be shown. You can view and edit its text in
+   Plain file text. When it is valid JSON, its structure is shown."* The TOML,
+   YAML and plain-text sentences change the same way. Japanese keeps the same
+   meaning.
+2. **P2, P3 — a node's own text is the format's to say, and is read by node,
+   not looked up by id.** `DocumentFormatAdapter` gains a required method that
+   gives a node's own text from the node itself. It is §3.3 item 5's rule,
+   moved to where the formats live: a Markdown section's body, a JSON value
+   (decoded), none for a group or list, and the region for plain text. It
+   returns whether the text is the source byte for byte. JSON's
+   `focused_content` uses the same decoding, so there is one decoder path.
+   `node_text.rs`'s per-format match becomes a call. It is required, with no
+   default, so every format states its own text. This is a public API addition
+   to `omriss-core`, stated in the CHANGELOG under `Added`.
+3. **Node texts are cached by revision**, beside the structure (RFC-067 C1).
+   Search per keystroke and the cards read the cache and decode nothing.
+4. **P4 and P5 are not this RFC's.** Large structures in the Document Map and
+   the overview — the map's rebuild per focus change, and the cards — need a
+   design of their own. The owner decides its release.

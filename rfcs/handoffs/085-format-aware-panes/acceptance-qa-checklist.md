@@ -13,7 +13,7 @@ Lifecycle status: inherited from RFC-085.
 - [ ] `cargo test --workspace`, and `cargo test` — state both counts
 - [ ] `bash scripts/check-rfcs.sh`, `mdbook build docs`
 - [ ] `cargo build -p omriss-components --target wasm32-unknown-unknown`
-- [ ] `git diff -- crates/core` empty
+- [ ] `git diff -- crates/core` empty (PR 6: only the adapter method, RFC-085 §8.2)
 
 ## Proofs
 

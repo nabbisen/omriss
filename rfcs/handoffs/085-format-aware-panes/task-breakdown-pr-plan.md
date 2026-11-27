@@ -52,3 +52,17 @@ The architect decides from it.
 2. The measurement of the whole-document view and the Document Map on the
    8,000-item array, release build. Report only.
 3. `overview.card.subsections_one`, both locales.
+
+**PR 5 landed** (`c007cc7`).
+
+## PR 6 — RFC-085 §8
+
+1. The sentences of §8.1, in both locales: map and Writing Area, all formats.
+2. The adapter's own-text method (§8.2): required, implemented by every
+   adapter. JSON's `focused_content` shares its decoding. `node_text.rs`
+   calls it. Core's existing tests pass unmodified. The CHANGELOG has an
+   `Added` entry for core.
+3. Node texts cached by revision with the structure (§8.3). A test shows that a
+   draft does not rebuild them and a commit does.
+4. Measure again on PR 5's two fixtures, in the same way: search per call,
+   statistics, `current_children` for 8,000 scalars. Before and after.
