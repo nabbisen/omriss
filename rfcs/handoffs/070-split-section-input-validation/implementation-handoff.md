@@ -9,8 +9,9 @@ Lifecycle status: inherited from RFC-070.
 ## 1. Build what RFC-070 §4.1 and §8 say
 
 - `validate_title` in `preflight.rs`, called by rename and split.
-- The split offset bounded by the section's own body, on a character
-  boundary, and not between CR and LF; `InvalidSplitOffset` otherwise.
+- The split offset per RFC-070 §9 (not §8.2): in the section, not strictly
+  inside any heading line, on a character boundary, not between CR and LF;
+  `InvalidSplitOffset` otherwise.
 - RFC-066's P4 for rename and join (RFC-070 §8, last paragraph).
 
 ## 2. Constraints
@@ -24,6 +25,6 @@ Lifecycle status: inherited from RFC-070.
    alter which titles it accepts; a test pins the before and after.
 5. CHANGELOG, under `Fixed`, for library users: `split_section` refuses a
    title `rename_section` would refuse, and an offset outside the section's own
-   body. Name the change of accepted inputs plainly: a caller that relied on
-   offsets past the body now gets an error.
+   body. Name the change of accepted inputs plainly: name exactly which
+   offsets are now refused (RFC-070 §9).
 6. No new dependency. Property case counts as the suite already sets them.

@@ -13,6 +13,18 @@ Lifecycle status: inherited from RFC-070.
 - Show the property bites: restore the `full_range` bound, and the property
   fails with a shrunk case. Quote it.
 
+**PR 1 part 1 landed** (`d131b6e`): `validate_title`, the CRLF rule, the
+character-boundary test.
+
+## PR 1 part 2 — the offset rule (RFC-070 §9)
+
+- The heading-range rule, as prototyped; the parameter rename and the
+  variant's documentation; the CHANGELOG.
+- Offset tests: inside an ATX child heading, between a setext title and its
+  underline, past the section's end, all refused; after the children, legal.
+- Remove the `#[ignore]`; show the property fails without the rule (quote
+  the case, as you did).
+
 ## PR 2 — P4 (RFC-066 §3.1b, RFC-070 §8)
 
 - The property for rename and join.

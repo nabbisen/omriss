@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — published-API correctness (0.18.0)
-**Status.** Proposed — 0.18.0 item 11, with RFC-066's P4; design completed in §8 (2026-11-28).
+**Status.** Proposed — 0.18.0 item 11, with RFC-066's P4; design completed in §8, and **§8.2–§8.3 corrected by §9** (2026-11-28). PR 1 part 1 (`d131b6e`): title rule, CRLF rule.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-025, RFC-026, RFC-065
@@ -170,3 +170,45 @@ RFC-065's `joining_separator` decides, the property states exactly that change
 and asserts it. It does not exempt it. If the change cannot be stated exactly,
 stop and report: an exemption is a place where nothing is watching
 (RFC-066 §3.1b).
+
+## 9. §8 was wrong in two places (2026-11-28)
+
+The dev team stopped on PR 1 and measured both errors. They are the
+architect's.
+
+- **§8.2's "the body bound is the whole rule" breaks the application.** Every
+  Add command (`append_child_to_focused`, `add_after_focused`,
+  `add_top_level_section`, and core's `add_inside` and `add_after`) passes
+  `full_range.end - body_range.start` deliberately, to append after a
+  section's children. With the body bound, six existing tests fail. §5.2's "not
+  GUI-reachable" was true of the cursor offset only. I read the function, not
+  its callers: the same method error RFC-067 §3.2 recorded.
+- **§8.3's "nothing checks a character boundary" was false.** The code already
+  had `is_char_boundary`, and a test now pins it.
+
+### Decision: §4.2 as first written, with honest names
+
+The offset may be anywhere in the section, its body and its subsections, as
+the callers need. It is refused when it is:
+- outside the section;
+- strictly inside any heading line (`heading_range`), which covers a setext
+  title and its underline;
+- inside a character;
+- between CR and LF.
+
+That is the invariant that matters: **an insertion never cuts through
+existing heading syntax.** The dev team's prototype passes the property with
+its `#[ignore]` removed, at default cases and at 5,000, and keeps every
+existing test green. Without the rule, the property fails.
+
+Not chosen: a second way for Add commands to say "after the children", with a
+body bound for everything else. That is a wider API change, inside the 0.18.0
+freeze, for no more safety than the rule above.
+
+**The names follow:**
+- `split_section`'s parameter `offset_in_body` becomes `offset`, documented
+  as "measured from the start of the section's body; anywhere in the section,
+  its subsections included". Renaming a positional parameter does not break
+  callers.
+- `InvalidSplitOffset`'s documentation lists exactly the four refusals above.
+- The CHANGELOG says what a library caller now gets refused.
