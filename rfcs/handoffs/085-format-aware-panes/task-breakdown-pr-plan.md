@@ -66,3 +66,10 @@ The architect decides from it.
    draft does not rebuild them and a commit does.
 4. Measure again on PR 5's two fixtures, in the same way: search per call,
    statistics, `current_children` for 8,000 scalars. Before and after.
+
+**PR 6 landed** (`0f8bd66`).
+
+## PR 7 — RFC-085 §9
+
+`DocumentFormatAdapter::node_text` → `own_text`, in every adapter, every caller,
+the docs and the CHANGELOG. No other change. Gates only; no GUI run.

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, item 7: RFC-067 §3.2's deferred scope)
-**Status.** Proposed — PR 1–3 on `main` for 0.18.0 (`da66f4a`, `362462d`, `173d561`); PR 4 measured; PR 5 (`c007cc7`). **Open:** PR 6 (§8).
+**Status.** Proposed — PR 1–3 on `main` for 0.18.0 (`da66f4a`, `362462d`, `173d561`); PR 4 measured; PR 5 (`c007cc7`); PR 6 (`0f8bd66`). **Open:** PR 7 (§9); then `done/`.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-053, RFC-054, RFC-067
@@ -230,3 +230,18 @@ card. Its measurement found two things.
 4. **P4 and P5 are not this RFC's.** Large structures in the Document Map and
    the overview — the map's rebuild per focus change, and the cards — need a
    design of their own. The owner decides its release.
+
+## 9. Decisions on PR 6 (2026-11-27)
+
+Accepted. Search on a 374 KiB JSON file takes about 2 ms per keystroke instead
+of 95 ms. The cards of an 8,000-scalar list take 0.3 ms instead of 14.6 ms.
+The sentence is true in both views.
+
+- **`OwnText.value_kind` is accepted.** The kind comes out of the same decode.
+  Without it a card would decode a second time, or the UI would keep a second
+  copy of `classify`.
+- **PR 7: the method is named for what it returns.** `node_text` returns an
+  `OwnText`, from the `own_text` module, and "node text" reads as if it
+  included the children. The method becomes `own_text`. It is unreleased, so
+  the rename costs nothing now and a breaking change after 0.18.0. The
+  CHANGELOG's `Added` entry follows.
