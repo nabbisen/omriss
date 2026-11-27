@@ -1,6 +1,6 @@
 # Handoff: RFC-073 — Complete Localization (the 0.18.0 slice)
 
-Related RFC: `../../proposed/073-complete-localization-and-locale-persistence.md`
+Related RFC: `../../done/073-complete-localization-and-locale-persistence.md`
 
 Lifecycle status: inherited from RFC-073.
 
@@ -9,7 +9,7 @@ Lifecycle status: inherited from RFC-073.
 slice is RFC-073 §8: typed open and save failures, the dialog filter labels,
 `from_tag`, and JSON list labels.
 
-**State:** PR 1–3 landed. **Next: PR 4** (RFC-073 §9), then RFC-073 closes.
+**State: closed.** PR 1–4 landed; RFC-073 is in `done/`. Nothing further here.
 
 The report goes to `.git-exclude/review-request/073-localization-2/README.md`.
 

@@ -1,6 +1,6 @@
 # RFC-073 — Task Breakdown and PR Plan
 
-Related RFC: `../../proposed/073-complete-localization-and-locale-persistence.md`
+Related RFC: `../../done/073-complete-localization-and-locale-persistence.md`
 
 Lifecycle status: inherited from RFC-073.
 

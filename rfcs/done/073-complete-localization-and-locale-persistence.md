@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — localization completeness (0.18.0)
-**Status.** Proposed — §4.1 (`t_args` and the placeholder-set parity test) landed on `main` as the first PR of RFC-071's 0.18.0 item, credited here; the rest of this RFC, including §4.3, is outstanding. **The 0.18.0 slice is §8**: PR 1–3 landed (`ac4f75b`, `7ec5c93`, `420f4bb`); open: PR 4 (§9).
+**Status.** Implemented (0.18.0) — §4.1 (with RFC-071), §4.3, §4.4, §4.4a, §4.4b and the JSON list labels, by the 0.18.0 slice (§8, §9: `ac4f75b`, `7ec5c93`, `420f4bb`, `eae0d5e`). **Not built here, and carried:** §4.2 plurals by RFC-082 (0.20.0); §4.5 locale persistence by RFC-083 (0.19.0). Acceptance criteria 3 and 5 are theirs.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-036, RFC-043
