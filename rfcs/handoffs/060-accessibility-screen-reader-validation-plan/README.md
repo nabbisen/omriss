@@ -20,8 +20,8 @@ RFC-060 is a validation RFC: a run produces a record and findings. A PR plan
 exists only for findings accepted for fixing that RFC-060 itself owns, which
 are §9.4's P-1 to P-4, designed in §10.
 
-**State:** P-1 to P-4 are 0.18.0's item 10. **Next: PR 2**
+**State:** P-1 to P-4 are 0.18.0's item 10. **Next: PR 3**
 (`task-breakdown-pr-plan.md`). The report goes to
-`.git-exclude/review-request/060-names-2/README.md`.
+`.git-exclude/review-request/060-names-3/README.md`.
 
 - `task-breakdown-pr-plan.md` — P-1 to P-4

@@ -45,3 +45,17 @@ Proof: AT-SPI, `en_US` and `ja_JP`. Read the `[document web]` name as early
 as the harness can after launch: "Omriss". Then with a file open:
 "notes.md — Omriss". Then after closing or switching the file. Check the
 window title in each state too.
+
+**PR 2 landed** (`79d1942`).
+
+## PR 3 — constant scripts (RFC-060 §12)
+
+1. The title reaches the page as data through the eval channel; `js_string` is
+   deleted.
+2. The start-up script is a constant from `PRODUCT_NAME`.
+3. The guard: every `document::eval(` argument is a literal or a `const`. It has
+   a deliberate break.
+
+Proof: the title tests and the poller run once, `en_US`, including a file
+whose name contains `"`, `\` and `'`. The page's name is that file name
+exactly.

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M15 — Accessibility validation (proposed)
-**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10: P-2 and P-4 landed (`112c280`); P-3 recorded (§11); P-1 is PR 2 (§11).
+**Status.** Proposed — §10, P-1 to P-4, is 0.18.0's item 10: P-2 and P-4 landed (`112c280`); P-3 recorded (§11); P-1 landed in PR 2 (`79d1942`); open: PR 3 (§12).
 **Document type:** Follow-up validation RFC
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer
 **Depends on:** RFC-048, RFC-051
@@ -277,3 +277,33 @@ omriss's markup is correct ARIA: it says a menu opens, and that is true. It
 stays. A Linux screen-reader user will hear "combo box", so
 `known-limitations.md` says so, names the platform as the cause, and says the
 button opens a menu.
+
+## 12. Decisions on PR 2 (2026-11-27)
+
+Accepted. Measured by a poller started before launch, in both locales:
+- the page is "Omriss" from its first name;
+- with a file open, the window and the page both read "notes.md — Omriss";
+- "Dioxus app" is never seen.
+
+The window takes the new title about 0.05 s before the page. That is accepted:
+both names come from one string, in one render.
+
+Also accepted:
+- `welcome.rs` takes its heading from `PRODUCT_NAME`;
+- the unused `app.title` key is removed.
+
+**PR 3. JavaScript source is never built from data.** The page title is the
+first `document::eval` whose source contains text from outside the program: a
+file's name, which anyone who can name a file chooses. Its escaping is correct
+today, but that correctness depends on a hand-written escaper at a security
+boundary. The rule, by construction:
+
+1. **Every script omriss runs in the page is a constant.** Data reaches a
+   script as data, through the eval channel (`send` and `dioxus.recv()`), and
+   is never spliced into source. The title component sends the title string.
+   `js_string` and the code-building go.
+2. **The start-up script is a constant too**, made from `PRODUCT_NAME` at
+   compile time, or written out with a test that it equals the constant.
+3. **A guard:** in the UI layer's sources, every `document::eval(` argument is
+   a string literal or a `const`. A `format!`, a variable or a `&String` fails
+   it. `focus.rs`'s calls already satisfy it.
