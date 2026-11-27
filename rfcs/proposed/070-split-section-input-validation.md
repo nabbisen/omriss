@@ -153,8 +153,9 @@ Read again before handing it over. §4.2 needs correcting in three ways.
    is enough.
 3. **Two more ways an offset can be illegal inside the body,** both refused
    with the same variant and each with its own test:
-   - an offset that is **not on a character boundary** (inside `日`), which
-     today would panic when the source is sliced;
+   - an offset that is **not on a character boundary** (inside `日`). Nothing
+     checks it today; the report says what happens now (a panic or an edit
+     error);
    - an offset **between the CR and the LF of a CRLF**, which would split one
      line ending into two (RFC-084's ground).
 
