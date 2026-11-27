@@ -23,7 +23,7 @@ pub fn WelcomeScreen(
     rsx! {
         main { class: "welcome", "aria-label": t(lang, "focused_content.title"),
             div { class: "welcome-inner",
-                h1 { class: "welcome-title", "Omriss" }
+                h1 { class: "welcome-title", {omriss_ui::PRODUCT_NAME} }
                 p { class: "welcome-tagline", {t(lang, "welcome.tagline")} }
 
                 div { class: "welcome-actions",

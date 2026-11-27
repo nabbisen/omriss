@@ -24,3 +24,55 @@ pub fn display_title(lang: Locale, title: &str, positional: bool) -> String {
         title.to_string()
     }
 }
+
+/// The product's name: the one place it is written for anything that names the
+/// application — the window, the page's document, the welcome heading.
+pub const PRODUCT_NAME: &str = "Omriss";
+
+/// The name of the window and of the page, one string for both (RFC-060 §11): the
+/// product's name with no file open, and "notes.md — Omriss" with one. It is the
+/// file's *name*, not its path — the status bar shows the path — and the product
+/// name is not translated. Unsaved changes are not in it (RFC-080 §5.4 rule 1).
+pub fn window_title(file: Option<&str>) -> String {
+    let name = file
+        .map(std::path::Path::new)
+        .and_then(|p| p.file_name())
+        .and_then(|n| n.to_str())
+        .filter(|n| !n.is_empty());
+    match name {
+        Some(name) => format!("{name} \u{2014} {PRODUCT_NAME}"),
+        None => PRODUCT_NAME.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_file_is_the_product_name() {
+        assert_eq!(window_title(None), "Omriss");
+        assert_eq!(window_title(None), PRODUCT_NAME);
+        assert_eq!(window_title(Some("")), "Omriss");
+    }
+
+    #[test]
+    fn a_file_is_its_name_not_its_path() {
+        assert_eq!(
+            window_title(Some("/home/a/docs/notes.md")),
+            "notes.md \u{2014} Omriss"
+        );
+        assert_eq!(window_title(Some("notes.md")), "notes.md \u{2014} Omriss");
+        // A name with a dash, a quote and Japanese is shown as it is.
+        assert_eq!(
+            window_title(Some("/x/\u{30e1}\u{30e2} \"a\" \u{2014} b.md")),
+            "\u{30e1}\u{30e2} \"a\" \u{2014} b.md \u{2014} Omriss"
+        );
+    }
+
+    #[test]
+    fn a_path_with_no_file_name_is_the_product_name() {
+        assert_eq!(window_title(Some("/")), "Omriss");
+        assert_eq!(window_title(Some("..")), "Omriss");
+    }
+}

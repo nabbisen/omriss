@@ -3,7 +3,6 @@
 //! Entries MUST stay sorted by key and unique, and every key MUST also exist
 //! in the English catalog; `i18n_tests` enforces all three.
 pub(super) static CATALOG: &[(&str, &str)] = &[
-    ("app.title", "Omriss"),
     ("aria.breadcrumb", "セクションパス"),
     ("aria.document_map", "ドキュメントマップ"),
     ("aria.editor", "セクションテキストを編集"),

@@ -168,6 +168,17 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
 - **Unsigned macOS builds**: Gatekeeper will warn. Right-click → Open to bypass.
 - **Linux Wayland**: Runs via XWayland; native Wayland support follows upstream.
 - **File dialogs on headless Linux**: May silently return no file if no portal is available.
+- **Linux screen readers: the section-actions button is announced as a "combo
+  box".** The "…" button on a Document Map row opens a menu — Move up, Rename,
+  Delete and the rest — and omriss says so to assistive technology
+  (`aria-haspopup="menu"`). WebKitGTK, the web view omriss runs in on Linux,
+  exposes *any* button that says it opens a popup as a combo box, so Orca reads
+  "combo box" where it should say "menu button". Checked on WebKitGTK 2.54.1 with
+  a plain page that has none of omriss's markup. The button still does what it
+  says: it opens the menu, and the menu's items carry the reason when they are
+  unavailable. omriss keeps the correct
+  markup rather than hide that a menu opens; this is a mapping on the platform's
+  side. Windows and macOS were not checked.
 
 ---
 

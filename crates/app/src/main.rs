@@ -12,6 +12,7 @@ mod shell;
 mod storage;
 
 use dioxus::desktop::{Config, WindowBuilder};
+use omriss_ui::PRODUCT_NAME;
 
 use crate::locale::detect_locale;
 use crate::storage::settings::AppSettings;
@@ -24,14 +25,20 @@ fn main() {
     let startup_arg = cli::interpret(std::env::args().skip(1));
 
     let window = WindowBuilder::new()
-        .with_title("Omriss")
+        .with_title(PRODUCT_NAME)
         .with_inner_size(dioxus::desktop::LogicalSize::new(1080.0, 720.0));
     // RFC-064 §4.3's CSP is deliberately not wired here: as specified it
     // blocks the framework's UI events (`connect-src`) and `document::eval`
     // (`script-src` without `'unsafe-eval'`). See `shell::csp` for the
     // evidence and what wiring it would take.
     dioxus::LaunchBuilder::desktop()
-        .with_cfg(Config::new().with_window(window).with_menu(None))
+        .with_cfg(
+            Config::new()
+                .with_window(window)
+                .with_menu(None)
+                // The page is named before any effect runs (RFC-060 §11 item 2).
+                .with_custom_head(omriss_components::startup_head()),
+        )
         .with_context(detect_locale())
         .with_context(settings)
         .with_context(startup_arg)

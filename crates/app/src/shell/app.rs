@@ -22,11 +22,11 @@ use crate::shell::open_error::OpenErrorDialog;
 use crate::storage::settings::AppSettings;
 use omriss_components::draft_sync;
 use omriss_components::{
-    CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ExtModifiedChoice,
-    ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView, SearchPanel,
-    SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, StructureDialog,
-    StructureRequest, Toolbar, UnreadablePane, UnsavedChoice, UnsavedDialog, WelcomeScreen,
-    use_focus_script, use_structure_requests,
+    CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, DocumentTitle,
+    ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
+    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar,
+    StructureDialog, StructureRequest, Toolbar, UnreadablePane, UnsavedChoice, UnsavedDialog,
+    WelcomeScreen, use_focus_script, use_structure_requests,
 };
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -212,6 +212,7 @@ pub fn App() -> Element {
     // ── render tree ───────────────────────────────────────────────────────────
 
     rsx! {
+        DocumentTitle { session }
         style { {STYLE} }
         div {
             class: "app",

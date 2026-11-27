@@ -25,11 +25,14 @@ mod source_scan;
 mod test_texts;
 #[cfg(test)]
 mod text_area_sites_tests;
+#[cfg(test)]
+mod title_path_tests;
 
 mod breadcrumb;
 mod command_palette;
 mod confirm_delete_dialog;
 mod document_map_pane;
+mod document_title;
 mod error_dialog;
 mod ext_modified_dialog;
 mod focused_content_pane;
@@ -49,6 +52,7 @@ pub use breadcrumb::Breadcrumb;
 pub use command_palette::{CommandId, CommandPalette};
 pub use confirm_delete_dialog::{ConfirmDeleteChoice, ConfirmDeleteDialog};
 pub use document_map_pane::DocumentMapPane;
+pub use document_title::{DocumentTitle, startup_head};
 pub use error_dialog::ErrorDialog;
 pub use ext_modified_dialog::{ExtModifiedChoice, ExtModifiedDialog};
 pub use focus::use_focus_script;

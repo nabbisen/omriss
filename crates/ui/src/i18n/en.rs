@@ -2,7 +2,6 @@
 //!
 //! Entries MUST stay sorted by key and unique; `i18n_tests` enforces both.
 pub(super) static CATALOG: &[(&str, &str)] = &[
-    ("app.title", "Omriss"),
     ("aria.breadcrumb", "Section path"),
     ("aria.document_map", "Document Map"),
     ("aria.editor", "Edit section text"),
