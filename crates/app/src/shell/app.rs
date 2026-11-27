@@ -6,7 +6,7 @@
 use std::time::SystemTime;
 
 use dioxus::prelude::*;
-use omriss_ui::i18n::{Locale, t};
+use omriss_ui::i18n::Locale;
 use omriss_ui::{EditorSession, EmptyMap, ViewMode};
 
 use crate::file::failure::OpenFailure;
@@ -18,15 +18,15 @@ use crate::shell::actions::{
 };
 use crate::shell::app_ctx::{AppCtx, Modal};
 use crate::shell::dispatch::{dispatch_command, dispatch_palette, open_search_if_available};
-use crate::shell::failure_text::open_failure_message;
+use crate::shell::open_error::OpenErrorDialog;
 use crate::storage::settings::AppSettings;
 use omriss_components::draft_sync;
 use omriss_components::{
-    CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ErrorDialog,
-    ExtModifiedChoice, ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView,
-    SearchPanel, SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar,
-    StructureDialog, StructureRequest, Toolbar, UnreadablePane, UnsavedChoice, UnsavedDialog,
-    WelcomeScreen, use_focus_script, use_structure_requests,
+    CommandPalette, ConfirmDeleteChoice, ConfirmDeleteDialog, DocumentMapPane, ExtModifiedChoice,
+    ExtModifiedDialog, FocusedContentPane, OverviewPane, RawSourceView, SearchPanel,
+    SectionTitleAction, SectionTitleChoice, SectionTitleDialog, StatusBar, StructureDialog,
+    StructureRequest, Toolbar, UnreadablePane, UnsavedChoice, UnsavedDialog, WelcomeScreen,
+    use_focus_script, use_structure_requests,
 };
 
 const STYLE: &str = include_str!("../../assets/style.css");
@@ -325,17 +325,10 @@ pub fn App() -> Element {
                     }
                 },
                 Modal::OpenError { ref failure } => rsx! {
-                    ErrorDialog {
+                    OpenErrorDialog {
                         locale,
-                        title: "error.open_failed".to_string(),
-                        // Said in the current language at render time, from the typed
-                        // reason: no operating-system text reaches the screen or the
-                        // dialog's accessible description (RFC-073 §8.2).
-                        cause: open_failure_message(*locale.read(), failure),
-                        dismiss_label: t(*locale.read(), "dialog.discard.cancel").to_string(),
-                        secondary_label: None,
+                        failure: failure.clone(),
                         on_dismiss: move |()| { let mut m = modal; m.set(Modal::None); },
-                        on_secondary: None,
                     }
                 },
             }

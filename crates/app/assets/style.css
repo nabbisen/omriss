@@ -686,9 +686,10 @@ header.toolbar { display: flex; align-items: center; gap: 6px;
 
 /* Error dialog title */
 .error-title { color: var(--danger); }
-.error-cause { font-family: ui-monospace, monospace; font-size: 12px;
-  background: var(--bg); border: 1px solid var(--panel-edge);
-  border-radius: 4px; padding: 6px 8px; white-space: pre-wrap; }
+/* The message under it is body text — normal size, the full text colour — not a code
+   excerpt: it is a sentence the application says to a person (RFC-073 §9). */
+/* `.modal .error-message` outranks `.modal p`, which mutes a paragraph's colour. */
+.modal .error-message { color: var(--text); line-height: 1.5; margin: 8px 0 14px; }
 
 /* ── RFC-045: Markdown Preview Pane ─────────────────────────────────────── */
 

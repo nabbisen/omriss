@@ -36,6 +36,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "capability.disabled.unsupported_for_format",
         "このアクションはこのファイル形式では使用できません。",
     ),
+    ("dialog.close", "閉じる"),
     (
         "dialog.confirm_delete.body",
         "このセクションとすべての子セクションを削除しますか？元に戻す操作で取り消せます。",
@@ -173,10 +174,7 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
         "error.open.not_utf8",
         "このファイルはUTF-8のテキストではないため、omrissでは安全に開けません。作成したプログラムでUTF-8のテキストファイルとして保存し直してから、もう一度開いてください。",
     ),
-    (
-        "error.open_failed",
-        "ファイルを開けませんでした。別のファイルをお試しください。",
-    ),
+    ("error.open_failed", "このファイルを開けませんでした。"),
     (
         "error.save.folder_missing",
         "このファイルがあったフォルダーはもうありません。内容は失われていません。別名で保存してください。",

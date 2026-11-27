@@ -129,7 +129,7 @@ fn the_error_dialog_contains_focus_and_takes_arrows() {
             ErrorDialog {
                 locale: use_signal(Locale::default),
                 title: "x".to_string(),
-                cause: "y".to_string(),
+                message: "y".to_string(),
                 dismiss_label: "OK".to_string(),
                 secondary_label: None,
                 on_dismiss: |_| {},

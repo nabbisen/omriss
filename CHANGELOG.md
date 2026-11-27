@@ -133,7 +133,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
   asks you to report it, and says nothing was changed). A save that fails says
   why too — no permission, a full disk, a read-only place, a folder that is gone —
   and that your writing is safe. The command-line message is translated, and so is
-  the name of the file dialog's default filter ("All supported"). A system language
+  the name of the file dialog's default filter ("All supported"). The dialog itself
+  now reads as a message: its title says only "This file could not be opened.", the
+  explanation and what to do are normal body text rather than a small monospace
+  box, and its button says "Close" (it said "Cancel"). A system language
   given as `ja.UTF-8`, with no region, is now recognised as Japanese.
 - **A JSON list's members are labelled in your language** (RFC-073). The members of
   a JSON array were named "Item 1", "Item 2" in English whatever the language; in
