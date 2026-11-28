@@ -1,6 +1,6 @@
 # RFC-086 — Task Breakdown and PR Plan
 
-Related RFC: `../../proposed/086-document-map-idle-loop-and-row-lookup.md`
+Related RFC: `../../done/086-document-map-idle-loop-and-row-lookup.md`
 
 Lifecycle status: inherited from RFC-086.
 

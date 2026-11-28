@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — defect (0.18.0, by the owner's decision of 2026-11-28: "if the fix is small it goes into 0.18.0")
-**Status.** Proposed
+**Status.** Implemented (0.18.0) — `1b09760`. Idle CPU near zero on every file: 961/1000 → 1/1000 ticks on 8,000 items. A row click takes 0.14–0.18 s to paint, from 0.45–1.1 s. A settle test covers every view the shell composes. §5 is 0.19.0's large-structures design.
 **Document type:** Defect design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-049, RFC-085
@@ -86,3 +86,14 @@ a 0.19.0 RFC to be written. This RFC only removes the defects.
 3. No per-row search from the root.
 4. A focus change does not rebuild the item tree.
 5. The CHANGELOG tells users.
+
+## 8. Accepted (2026-11-28)
+
+- **The tree's rebuild is keyed by its content, not by the revision.**
+  Revisions restart at 0 for each opened document, so a revision key would show
+  one file's tree for another. `same_structure` compares everything except
+  `is_selected`.
+- The startup effect in `App` is not under the settle test, because it needs
+  the desktop context. Its re-run returns at its guard, which was argued from
+  the code. Accepted, and recorded here as the one effect the test does not
+  reach.

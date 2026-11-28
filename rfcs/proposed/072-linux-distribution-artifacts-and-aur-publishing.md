@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — distribution (0.18.0)
-**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1 landed (`c627b89`), with corrections in §10.
+**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1 (`c627b89`) and PR 2 (`b71e6ad`) landed; decisions on PR 2 in §11.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-037, RFC-042
@@ -324,3 +324,36 @@ desktop entry has no priority field. **Owner, 2026-11-28: Markdown only.**
 - the licence directory named after each package (the Arch convention);
 - the implicit dependencies `namcap` warns about left unlisted, because they
   come through `webkit2gtk-4.1` and `gtk3`.
+
+## 11. Decisions on PR 2 (2026-11-28)
+
+Accepted:
+- §10's corrections are in. The validators are clean, and JSON is shown never
+  to be claimed.
+- The Linux job, the `release` job and the dry-run mode are in, with every
+  action pinned. The metainfo starts "Omriss keeps…", because AppStream asks
+  for a capital first word.
+
+The dev team's three calls:
+
+1. **A dry run may name a branch.** Accepted. Without it, the rehearsal could
+   only run after the tag it rehearses. A real run still requires tag =
+   `Cargo.toml` version.
+2. **The `release` job runs on the `github-release` environment.** Accepted:
+   RFC-042 §5 puts the owner's confirmation in front of anything public, and a
+   pushed tag would otherwise publish by itself. The owner gives it a required
+   reviewer.
+3. **The Store job not waiting for Linux: reversed.** A version is published
+   everywhere CI publishes it, or nowhere. `publish` needs `linux` and
+   `release`, so a Store submission never exists without its GitHub Release.
+   This goes in PR 3.
+
+**Also in PR 3:**
+- the Linux job takes the version through `env`, as `verify` already does, so
+  no expression text reaches shell source;
+- `ci.yml`'s stale note that `Cargo.lock` is ignored is removed, and `ci.yml`
+  passes `--locked`.
+
+**Not yet executed by anything:** the workflow's expressions and its
+`needs`/`outputs` wiring. `actionlint` is not available here. **The owner's
+dry run is the first execution**, and it must pass before the 0.18.0 tag.

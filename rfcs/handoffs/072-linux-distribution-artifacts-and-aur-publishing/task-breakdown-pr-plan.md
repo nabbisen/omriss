@@ -34,7 +34,12 @@ Lifecycle status: inherited from RFC-072.
   `<release>` step and the fresh screenshot (§10.3). `README.md`'s checksum line
   points at the published `.sha256`.
 
+**PR 2 landed** (`b71e6ad`).
+
 ## PR 3 — AUR jobs, off until the owner turns them on
+
+- First, RFC-072 §11: `publish` needs `linux` and `release`; the Linux job's
+  version through `env`; `ci.yml`'s stale note goes and it passes `--locked`.
 
 - One job per package, on the protected environment, gated by `AUR_PUBLISH`.
   The package name comes from an input, so the owner's dry run can point at a
