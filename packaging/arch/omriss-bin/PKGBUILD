@@ -1,10 +1,13 @@
 # Maintainer: nabbisen
 #
-# TEMPLATE (RFC-072). Not a valid PKGBUILD until scripts/render-pkgbuild.sh has
-# filled @PKGVER@, @SHA256@ and @SOURCE_URL@. This repository is the source of
-# truth; the AUR repository is only where the rendered file is published.
-pkgname=omriss-bin
+# Source of truth: packaging/arch/omriss-bin/PKGBUILD in
+# https://github.com/nabbisen/omriss, a template that scripts/render-pkgbuild.sh
+# fills in. This copy is only where it is published; change it there, not here.
+
+# The upstream name, which is not the package name when a scratch package is
+# published for a rehearsal (RFC-072 §7).
 _name=omriss
+pkgname=@PKGNAME@
 pkgver=@PKGVER@
 pkgrel=1
 pkgdesc='A text editor that helps clarify ideas and refine them, layer by layer (prebuilt binary)'

@@ -17,12 +17,25 @@ name: Release
 # Since RFC-072 the same tag also builds the Linux tarball (and its checksum) and
 # creates the GitHub Release that carries it. The release is created only after
 # `verify`, the Windows `package` job and the Linux job have all passed, on the
-# `github-release` environment, and never in dry-run mode.
+# `github-release` environment, and never in dry-run mode. A version is published
+# everywhere CI publishes it or nowhere: the Store job and both AUR jobs wait for
+# that release.
+#
+# The AUR jobs (`aur-source`, `aur-bin`) are off until the owner turns them on:
+# they run only when the repository variable AUR_PUBLISH is "true", and then only on
+# the `aur` environment, which holds the SSH key. A dry run writes to no AUR package
+# at all, unless it is given two scratch package names (REHEARSAL, below).
 #
 # DRY RUN: a manual run (`workflow_dispatch`) with `dry_run` ticked, the default,
 # builds and uploads everything and then stops. It creates no release and
 # publishes nothing, to the Store or anywhere else. Only a pushed tag, or a manual
 # run with `dry_run` unticked, can publish.
+#
+# REHEARSAL of the AUR jobs: a dry run that also names two scratch AUR packages
+# (`aur_source_package`, `aur_bin_package`, neither of them omriss nor omriss-bin)
+# pushes a PKGBUILD to each of those, and to nothing else. It is how the owner tries
+# the key, the `aur` environment and the push before a real tag. scripts/aur-names.sh
+# decides this, and is tested by scripts/test-aur-scripts.sh.
 #
 # Every action is pinned to a commit SHA with its tag in a comment: these jobs run
 # with credentials in scope, and a moving tag could change under us.
@@ -46,6 +59,12 @@ on:
         description: 'Dry run: build and upload the artifacts, create no release, publish nothing'
         type: boolean
         default: true
+      aur_source_package:
+        description: 'Dry run only: a scratch AUR package to push the omriss PKGBUILD to (needs aur_bin_package too); leave both empty to write to no AUR package'
+        required: false
+      aur_bin_package:
+        description: 'Dry run only: a scratch AUR package to push the omriss-bin PKGBUILD to (needs aur_source_package too)'
+        required: false
 
 permissions:
   contents: read
@@ -58,6 +77,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check.outputs.version }}
+      aur_source_name: ${{ steps.aur.outputs.aur_source_name }}
+      aur_bin_name: ${{ steps.aur.outputs.aur_bin_name }}
+      aur_rehearsal: ${{ steps.aur.outputs.aur_rehearsal }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -110,6 +132,16 @@ jobs:
             echo "::error::tagged commit $tagged_commit is not an ancestor of main; refusing to publish unreviewed code"
             exit 1
           fi
+
+      # Which AUR packages this run may write to. Decided here, once, by a script
+      # with tests; the AUR jobs only read the answer.
+      - name: Which AUR packages this run may write to
+        id: aur
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          SOURCE_NAME: ${{ github.event.inputs.aur_source_package }}
+          BIN_NAME: ${{ github.event.inputs.aur_bin_package }}
+        run: bash scripts/aur-names.sh >> "$GITHUB_OUTPUT"
 
   package:
     needs: verify
@@ -187,8 +219,12 @@ jobs:
       - name: Test before packaging
         run: cargo test --workspace --locked
 
+      # The version reaches the shell as an environment variable, never as
+      # expression text in the script (as in `verify`).
       - name: Build the tarball and its checksum
-        run: scripts/build-linux-tarball.sh "${{ needs.verify.outputs.version }}"
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: scripts/build-linux-tarball.sh "$VERSION"
 
       - name: Verify the checksum and list the contents
         working-directory: target/dist
@@ -243,8 +279,99 @@ jobs:
               --verify-tag --title "$VERSION" --notes-file notes.md
           fi
 
+  # RFC-072 §5.3-§5.4, §9.4. The AUR jobs. Both are skipped, not failed, until the
+  # owner sets the repository variable AUR_PUBLISH to "true" (`vars`, because only
+  # `vars` is available in a job-level `if`). They wait for the GitHub Release,
+  # because omriss-bin's source IS the release's tarball, and so does `publish`:
+  # published everywhere or nowhere. The one exception is a rehearsal, which has no
+  # release to wait for and writes only to the two scratch packages it was given.
+  #
+  # The SSH key is on the `aur` environment, never at repository level, so no other
+  # workflow or branch can read it, and the environment is where the owner's approval
+  # goes (give it a required reviewer). The deploy action runs with that key in scope
+  # and is pinned to a commit SHA. It pushes to `master` without --force, so a push
+  # that is not a fast-forward fails rather than rewrites the package's history.
+  aur-source:
+    needs: [verify, package, linux, release]
+    if: ${{ !cancelled() && vars.AUR_PUBLISH == 'true' && needs.verify.result == 'success' && needs.package.result == 'success' && needs.linux.result == 'success' && (needs.release.result == 'success' || needs.verify.outputs.aur_rehearsal == 'true') }}
+    runs-on: ubuntu-latest
+    environment: aur
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      AUR_NAME: ${{ needs.verify.outputs.aur_source_name }}
+      REHEARSAL: ${{ needs.verify.outputs.aur_rehearsal }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: AUR credentials must be present
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          AUR_COMMIT_USERNAME: ${{ vars.AUR_COMMIT_USERNAME }}
+          AUR_COMMIT_EMAIL: ${{ vars.AUR_COMMIT_EMAIL }}
+        run: bash scripts/aur-check-credentials.sh
+
+      - name: Render the PKGBUILD
+        run: bash scripts/aur-prepare.sh omriss "$VERSION" "$AUR_NAME" "$REHEARSAL" dist aur-out
+
+      - name: Push to the AUR
+        # v4.2.0
+        uses: KSXGitHub/github-actions-deploy-aur@084b0d9b15415bf9cdb65d44dad1efe37a354050
+        with:
+          pkgname: ${{ needs.verify.outputs.aur_source_name }}
+          pkgbuild: aur-out/PKGBUILD
+          commit_username: ${{ vars.AUR_COMMIT_USERNAME }}
+          commit_email: ${{ vars.AUR_COMMIT_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update to ${{ needs.verify.outputs.version }}
+
+  aur-bin:
+    needs: [verify, package, linux, release]
+    if: ${{ !cancelled() && vars.AUR_PUBLISH == 'true' && needs.verify.result == 'success' && needs.package.result == 'success' && needs.linux.result == 'success' && (needs.release.result == 'success' || needs.verify.outputs.aur_rehearsal == 'true') }}
+    runs-on: ubuntu-latest
+    environment: aur
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      AUR_NAME: ${{ needs.verify.outputs.aur_bin_name }}
+      REHEARSAL: ${{ needs.verify.outputs.aur_rehearsal }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      # The checksum CI built: the published file is compared against it.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: omriss-linux
+          path: dist
+
+      - name: AUR credentials must be present
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          AUR_COMMIT_USERNAME: ${{ vars.AUR_COMMIT_USERNAME }}
+          AUR_COMMIT_EMAIL: ${{ vars.AUR_COMMIT_EMAIL }}
+        run: bash scripts/aur-check-credentials.sh
+
+      - name: Render the PKGBUILD
+        run: bash scripts/aur-prepare.sh omriss-bin "$VERSION" "$AUR_NAME" "$REHEARSAL" dist aur-out
+
+      - name: Push to the AUR
+        # v4.2.0
+        uses: KSXGitHub/github-actions-deploy-aur@084b0d9b15415bf9cdb65d44dad1efe37a354050
+        with:
+          pkgname: ${{ needs.verify.outputs.aur_bin_name }}
+          pkgbuild: aur-out/PKGBUILD
+          commit_username: ${{ vars.AUR_COMMIT_USERNAME }}
+          commit_email: ${{ vars.AUR_COMMIT_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update to ${{ needs.verify.outputs.version }}
+
   publish:
-    needs: [verify, package]
+    # RFC-072 §11: a Store submission never exists without its GitHub Release, so
+    # it waits for the Linux job and for the release itself. (A skipped `release`,
+    # which is a dry run, skips this job too, as its `if` already says.)
+    needs: [verify, package, linux, release]
     runs-on: windows-latest
     # Deferred by owner decision, 2026-11-03: setting up Azure Entra and
     # Partner Center for automated publishing needs more preparation than

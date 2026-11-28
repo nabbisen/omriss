@@ -22,10 +22,9 @@ env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
 
-# NOTE: no `--locked` anywhere below. Cargo.lock is gitignored (.gitignore:8),
-# so there is nothing for CI to lock against and `--locked` would fail on the
-# first run. That also means two builds of the same tag can resolve different
-# dependency versions -- add `--locked` here once the lockfile is committed.
+# `--locked` below: Cargo.lock is committed (.gitignore says why), so CI builds
+# exactly the dependency versions the tag will have, and a lockfile that is out of
+# date with Cargo.toml fails here instead of changing silently.
 
 jobs:
   # Formatting and the RFC invariants are host-independent; running them once
@@ -43,6 +42,11 @@ jobs:
 
       - name: RFC index invariants
         run: bash scripts/check-rfcs.sh
+
+      # RFC-072: the guards in front of the AUR push (which package names a run may
+      # write to, what is rendered for them, the credential check). No network.
+      - name: AUR publish guards
+        run: bash scripts/test-aur-scripts.sh
 
   test:
     name: test (${{ matrix.os }})
@@ -76,10 +80,10 @@ jobs:
             libssl-dev
 
       - name: cargo test --workspace
-        run: cargo test --workspace
+        run: cargo test --workspace --locked
 
       - name: cargo clippy --workspace --all-targets
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
   docs:
     runs-on: ubuntu-latest

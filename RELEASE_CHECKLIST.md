@@ -51,13 +51,21 @@ product owner. No automated process may bypass this gate.
       yourself as a required reviewer, which is RFC-042 §5's explicit
       confirmation. Without reviewers it proceeds without waiting. It needs no
       secret: the workflow's own token has `contents: write` for that job only.
+- [ ] **The AUR path can authenticate.** Either `AUR_PUBLISH` is unset, in which
+      case both AUR packages are updated by hand from `packaging/arch/` (render
+      with `scripts/render-pkgbuild.sh`) and **that step is not done until
+      someone does it**; or it is `true`, and `gh secret list --env aur` lists
+      `AUR_SSH_PRIVATE_KEY` and `gh variable list --env aur` lists
+      `AUR_COMMIT_USERNAME` and `AUR_COMMIT_EMAIL`. The one-time setup is
+      [below](#aur-publishing--the-owners-one-time-setup-rfc-072).
 - [ ] **Dry run, before the tag.** Actions → Release → *Run workflow*, with
-      `tag` set to `main` and **dry run ticked** (the default). Every job must be
-      green except `release` and `publish`, which are skipped by design: a dry
-      run creates no release and publishes nothing. Download the `omriss-linux`
-      artifact and check `sha256sum -c omriss-*.tar.gz.sha256`. (A branch is
-      accepted only in a dry run, because the tag that holds these files does
-      not exist until the real run.)
+      `tag` set to `main` and **dry run ticked** (the default), the two AUR
+      package fields empty. Every job must be green except `release`, `publish`
+      and the two AUR jobs, which are skipped by design: a dry run creates no
+      release and publishes nothing. Download the `omriss-linux` artifact and
+      check `sha256sum -c omriss-*.tar.gz.sha256`. (A branch is accepted only in
+      a dry run, because the tag that holds these files does not exist until the
+      real run.) The AUR rehearsal is a second dry run, below.
 - [ ] **crates.io publish, in this order** (RFC-062 §10.1), by hand after the
       gate passes — a published version can never be deleted, only yanked:
       1. `cargo publish -p omriss-core`
@@ -65,6 +73,57 @@ product owner. No automated process may bypass this gate.
          resolves `omriss-core` from the registry, not from the path
       3. confirm the README badges resolve: crates.io, docs.rs and deps.rs all
          point at `omriss-core`, and all three 404 until step 1 lands
+
+---
+
+## AUR publishing — the owner's one-time setup (RFC-072)
+
+Nothing here is done by the dev team, and nothing reaches the AUR until you have
+done it: both AUR jobs are skipped, not failed, while the repository variable
+`AUR_PUBLISH` is unset. The key can push to the AUR, so it gets the same care as
+the Store credentials: a protected environment, never a repository secret.
+
+1. **Generate a key for CI, and only for CI** — never your personal AUR key:
+   `ssh-keygen -t ed25519 -C omriss-ci-aur -f omriss-ci-aur -N ''`.
+   (No passphrase: a job cannot type one.)
+2. **Register its public half** (`omriss-ci-aur.pub`) with your AUR account
+   (aur.archlinux.org → My Account → SSH Public Key), keeping your own. Know what
+   this does: the AUR registers keys per *account*, not per package, so this key
+   can push to every package you maintain, not only these two. It can be revoked
+   by removing it there.
+3. **Create the `aur` environment** (Settings → Environments → New environment)
+   with yourself as a required reviewer. It holds, on the environment and nowhere
+   else:
+   - secret `AUR_SSH_PRIVATE_KEY`: the whole content of `omriss-ci-aur`, the line
+     `-----BEGIN OPENSSH PRIVATE KEY-----` to the `END` line;
+   - variables `AUR_COMMIT_USERNAME` and `AUR_COMMIT_EMAIL`: the name and address
+     on every AUR commit. **They are public**, so use an address you are content
+     to publish. (They are variables, not secrets, because they are not secret.)
+
+   Then delete the local `omriss-ci-aur` private file.
+4. **Set the repository variable `AUR_PUBLISH` to `true`** (Settings → Secrets and
+   variables → Actions → Variables). From now on a real release run also updates
+   both packages, after you approve the two `aur` deployments. The rehearsal below
+   needs it too, because it is the same jobs.
+5. **Rehearse on scratch packages, before the tag.** Pick two package names that
+   are not `omriss` or `omriss-bin`, for example `omriss-rehearsal` and
+   `omriss-bin-rehearsal`. They are created on the AUR by the push and are public;
+   afterwards ask for their deletion (each package page → Submit Request →
+   Deletion). Actions → Release → *Run workflow*: `tag` = `main`, **dry run
+   ticked**, `aur_source_package` and `aur_bin_package` set to the two names. The
+   workflow refuses anything else, and refuses to touch `omriss` or `omriss-bin`
+   in a dry run. Approve the two `aur` deployments. Expect `aur-source` and
+   `aur-bin` green and `release` and `publish` skipped. Check on the AUR that both
+   packages exist and that their PKGBUILD names the scratch package. **Do not
+   build them:** with no release to point at, the source package's checksum is 64
+   zeros and the binary's URL does not exist yet. What the rehearsal proves is the
+   key, the environment, the deploy action and the push.
+
+**Per release**, after the real run: the two AUR pages show the new version, and
+in a clean `archlinux:base-devel` container, `git clone` each package from the AUR
+and `makepkg -s` builds it, `namcap` reports no errors, and installing it puts
+`omriss` in the application menu. RFC-072 §7 requires this of the first release;
+repeat it whenever the PKGBUILD templates change.
 
 ---
 
@@ -85,12 +144,12 @@ what was once intended — the previous version of this table promised an
 
 | Target | Artifact | How |
 |---|---|---|
-| Windows | `omriss-X.Y.Z.msix` | **built automatically** by `release.yml` on a bare-semver tag, after `cargo test --workspace` passes, and uploaded as a run artifact. **Submitted to the Store by hand** — automated publishing is deferred (owner decision, 2026-11-03); the `publish` job is skipped unless the repository variable `STORE_PUBLISH` is `true` |
+| Windows | `omriss-X.Y.Z.msix` | **built automatically** by `release.yml` on a bare-semver tag, after `cargo test --workspace` passes, and uploaded as a run artifact. **Submitted to the Store by hand** — automated publishing is deferred (owner decision, 2026-11-03); the `publish` job is skipped unless the repository variable `STORE_PUBLISH` is `true`, and it waits for the Linux job and the GitHub release: a version is published everywhere CI publishes it or nowhere |
 | Any | crates.io: `omriss-core`, then `omriss-ui` | **by hand** at the tag, in that order (RFC-062 §10.1) |
 | Any | source archive of the tag | GitHub serves one for every tag; the release process does not build it |
 | Any | GitHub release | **created by `release.yml`** (the `release` job) once `verify`, the Windows `package` job and the Linux job have passed and the `github-release` environment is approved. Its title is the bare version, `X.Y.Z` — the same as the tag, with no product name and no label — and its notes are the tag's `CHANGELOG.md` section. Skipped in a dry run |
 | Linux | `omriss-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz` and its `.sha256` | **built automatically** by the `linux` job (`scripts/build-linux-tarball.sh`, after `cargo test --workspace --locked`), uploaded as a run artifact and attached to the GitHub release. The binary, `LICENSE`, `README.md`, the desktop entry, the 256×256 icon and the AppStream metainfo |
-| Linux | AUR `omriss` and `omriss-bin` | planned — RFC-072 PR 3. Their PKGBUILDs are templates in `packaging/arch/`, filled by `scripts/render-pkgbuild.sh`; nothing reaches the AUR from this workflow yet |
+| Linux | AUR `omriss` and `omriss-bin` | **pushed by `release.yml`** (`aur-source`, `aur-bin`) after the GitHub release exists, **only when the repository variable `AUR_PUBLISH` is `true`** and the `aur` environment is approved; skipped otherwise. Their PKGBUILDs are templates in `packaging/arch/`, rendered by `scripts/aur-prepare.sh` with the checksum of the file the package downloads. Never in a dry run, except a rehearsal on two scratch packages — see the one-time setup below |
 | Linux | Flatpak via Flathub | planned — RFC-074 |
 | macOS | app bundle | **not planned.** No Mac has been available to build or test on, and RFC-038 forbids claiming a platform that has not been run |
 
