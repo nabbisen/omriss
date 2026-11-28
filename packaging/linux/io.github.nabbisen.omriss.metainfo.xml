@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.nabbisen.omriss</id>
+  <name>Omriss</name>
+  <summary>A text editor that helps clarify ideas and refine them, layer by layer</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <developer id="io.github.nabbisen">
+    <name>nabbisen</name>
+  </developer>
+  <description>
+    <p>
+      Omriss edits Markdown and JSON as layers: the Document Map shows the
+      structure of a file, and each section or value opens on its own, so you
+      work on one idea at a time and see where it sits in the whole.
+    </p>
+    <p>
+      Your file is never rewritten behind your back. An edit changes only the
+      bytes you edited, and everything else in the file, including its line
+      endings and formatting, is saved exactly as it was.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.nabbisen.omriss.desktop</launchable>
+  <url type="homepage">https://github.com/nabbisen/omriss</url>
+  <url type="bugtracker">https://github.com/nabbisen/omriss/issues</url>
+  <url type="vcs-browser">https://github.com/nabbisen/omriss</url>
+  <provides>
+    <binary>omriss</binary>
+  </provides>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <categories>
+    <category>Office</category>
+    <category>TextEditor</category>
+    <category>Utility</category>
+  </categories>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/nabbisen/omriss/main/docs/assets/screenshot-01.png</image>
+      <caption>Editing a section, with the Document Map on the left</caption>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.17.0" date="2026-11-03"/>
+  </releases>
+</component>

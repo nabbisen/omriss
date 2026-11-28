@@ -1,0 +1,30 @@
+# Maintainer: nabbisen
+#
+# TEMPLATE (RFC-072). Not a valid PKGBUILD until scripts/render-pkgbuild.sh has
+# filled @PKGVER@, @SHA256@ and @SOURCE_URL@. This repository is the source of
+# truth; the AUR repository is only where the rendered file is published.
+pkgname=omriss-bin
+_name=omriss
+pkgver=@PKGVER@
+pkgrel=1
+pkgdesc='A text editor that helps clarify ideas and refine them, layer by layer (prebuilt binary)'
+arch=('x86_64')
+url='https://github.com/nabbisen/omriss'
+license=('Apache-2.0')
+depends=('webkit2gtk-4.1' 'gtk3' 'xdotool' 'openssl')
+provides=('omriss')
+conflicts=('omriss')
+# A prebuilt binary has no debug symbols of ours to split off into a -debug package.
+options=('!debug')
+source=("$_name-$pkgver-$CARCH-unknown-linux-gnu.tar.gz::@SOURCE_URL@")
+sha256sums=('@SHA256@')
+
+package() {
+  cd "$_name-$pkgver-$CARCH-unknown-linux-gnu"
+  install -Dm755 omriss -t "$pkgdir/usr/bin"
+  install -Dm644 io.github.nabbisen.omriss.desktop -t "$pkgdir/usr/share/applications"
+  install -Dm644 io.github.nabbisen.omriss.png \
+    "$pkgdir/usr/share/icons/hicolor/256x256/apps/io.github.nabbisen.omriss.png"
+  install -Dm644 io.github.nabbisen.omriss.metainfo.xml -t "$pkgdir/usr/share/metainfo"
+  install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
+}

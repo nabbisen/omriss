@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Omriss
+Comment=A text editor that helps clarify ideas and refine them, layer by layer
+Exec=omriss %f
+Icon=io.github.nabbisen.omriss
+Terminal=false
+Categories=Office;TextEditor;Utility;
+MimeType=text/markdown;application/json;
+StartupWMClass=omriss
