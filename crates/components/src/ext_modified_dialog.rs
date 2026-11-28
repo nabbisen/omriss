@@ -43,7 +43,7 @@ pub fn ExtModifiedDialog(
                 p { {t(lang, "dialog.ext_modified.body")} }
                 div { class: "modal-actions",
                     button {
-                        class: "primary",
+                        class: "btn-danger",
                         onclick: move |_| on_choice.call(ExtModifiedChoice::Overwrite),
                         {t(lang, "dialog.ext_modified.overwrite")}
                     }

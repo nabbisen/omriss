@@ -74,6 +74,9 @@ pub(crate) fn texts_of_settled(app: fn() -> Element) -> Vec<String> {
 pub(crate) struct Rendered {
     pub tag: String,
     pub attrs: Vec<(String, String)>,
+    /// The text inside the element, static and dynamic, joined (components inside it
+    /// are not entered). A button's label.
+    pub text: String,
 }
 
 impl Rendered {
@@ -93,6 +96,35 @@ fn attribute_text(value: &dioxus::dioxus_core::AttributeValue) -> Option<String>
         V::Int(i) => Some(i.to_string()),
         V::Bool(b) => Some(b.to_string()),
         _ => None,
+    }
+}
+
+/// The text directly under `t`: static text and dynamic text nodes, down through plain
+/// elements and fragments.
+fn own_text(node: &VNode, t: &TemplateNode, out: &mut String) {
+    match t {
+        TemplateNode::Text { text } => out.push_str(text),
+        TemplateNode::Element { children, .. } => {
+            for child in children.iter() {
+                own_text(node, child, out);
+            }
+        }
+        TemplateNode::Dynamic { id } => match &node.dynamic_nodes[*id] {
+            DynamicNode::Text(t) => out.push_str(&t.value),
+            DynamicNode::Fragment(children) => {
+                for child in children {
+                    for root in child.template.roots.iter() {
+                        own_text(child, root, out);
+                    }
+                    for d in child.dynamic_nodes.iter() {
+                        if let DynamicNode::Text(t) = d {
+                            out.push_str(&t.value);
+                        }
+                    }
+                }
+            }
+            DynamicNode::Component(_) | DynamicNode::Placeholder(_) => {}
+        },
     }
 }
 
@@ -121,9 +153,14 @@ fn walk_elements(dom: &VirtualDom, node: &VNode, t: &TemplateNode, out: &mut Vec
                     }
                 }
             }
+            let mut text = String::new();
+            for child in children.iter() {
+                own_text(node, child, &mut text);
+            }
             out.push(Rendered {
                 tag: tag.to_string(),
                 attrs: found,
+                text,
             });
             for child in children.iter() {
                 walk_elements(dom, node, child, out);

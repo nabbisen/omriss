@@ -45,6 +45,7 @@ pub fn UnsavedDialog(locale: Signal<Locale>, on_choice: EventHandler<UnsavedChoi
                         {t(lang, "dialog.unsaved.save")}
                     }
                     button {
+                        class: "btn-danger",
                         onclick: move |_| on_choice.call(UnsavedChoice::Discard),
                         {t(lang, "dialog.unsaved.discard")}
                     }

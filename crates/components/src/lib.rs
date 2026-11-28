@@ -14,6 +14,8 @@ mod commit_path_tests;
 #[cfg(test)]
 mod contrast_tests;
 #[cfg(test)]
+mod dialog_rule_tests;
+#[cfg(test)]
 mod draft_set_tests;
 #[cfg(test)]
 mod eval_path_tests;
