@@ -135,7 +135,10 @@ are listed in RFC-080 §9.
 **0.19.0 — M16, "Readable and operable":** RFC-079 (presentation foundation
 and the layout check), RFC-083 (user settings), RFC-081 (keyboard
 compatibility and Quick Actions as the help utility), RFC-080 except its
-large-size layout, and RFC-064 H4 (already promised below).
+large-size layout, RFC-064 H4 (already promised below), **RFC-087** (hide the
+Document Map, owner's idea of 2026-11-28: the map only; the toolbar and status
+bar stay), and the **large structures** design that RFC-086 §5 leaves: rows
+the map's render can skip, and the overview's thousands of cards.
 
 **0.20.0 — M17, "Ready for every direction":** RFC-082 (RTL readiness), RFC-073
 §4.2 redesigned for CLDR plural categories, RFC-080 §5.6 (large-size layout),

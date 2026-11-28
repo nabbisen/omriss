@@ -108,11 +108,12 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 084 | [Line Endings and Separators in Section Edits](./done/084-line-endings-and-separators-in-section-edits.md) | M13 |
 | 085 | [Format-Aware Panes](./done/085-format-aware-panes.md) | M13 |
 | 086 | [The Document Map's Idle Render Loop and Row Lookup](./proposed/086-document-map-idle-loop-and-row-lookup.md) | M13 |
+| 087 | [Hide the Document Map](./proposed/087-hide-the-document-map.md) | M16 |
 
 ## Archive
 
 No RFCs withdrawn or superseded yet.
 
-Next free RFC number: **087**.
+Next free RFC number: **088**.
 
 Run `scripts/check-rfcs.sh` to verify invariants.
