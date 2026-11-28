@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — distribution (0.18.0)
-**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1 (`c627b89`) and PR 2 (`b71e6ad`) landed; decisions on PR 2 in §11.
+**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1–3 (`c627b89`, `b71e6ad`, `6d41a97`) landed; decisions in §10–§12; PR 4 open (§12).
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-037, RFC-042
@@ -357,3 +357,37 @@ The dev team's three calls:
 **Not yet executed by anything:** the workflow's expressions and its
 `needs`/`outputs` wiring. `actionlint` is not available here. **The owner's
 dry run is the first execution**, and it must pass before the 0.18.0 tag.
+
+## 12. Decisions on PR 3 (2026-11-28)
+
+Accepted:
+- the AUR jobs are off until `AUR_PUBLISH` is set, run on the `aur`
+  environment, and use the deploy action pinned and read at its SHA, which
+  never force-pushes;
+- each decision lives in a tested script;
+- `omriss-bin` checks that the release serves the bytes CI built before
+  anything is pushed;
+- §11's items are in.
+
+The dev team's calls:
+
+1. **The rehearsal is accepted:** a dry run with two scratch names, neither
+   of them the real ones. The first push to the real packages must not be
+   the first push ever.
+2. **One approval per AUR job is accepted.** GitHub's review dialog approves
+   every waiting job together, so it is one decision for the owner.
+3. **The key reaches every package of the owner's AUR account.** That is an
+   AUR property; the checklist says so.
+4. **Done everywhere: one rule for the whole of CI.** No `${{ }}` in any
+   `run:` text, in the Windows job too: the version and the secrets go through
+   `env`. `ci.yml`'s actions are pinned to SHAs like `release.yml`'s.
+5. **A CHANGELOG line belongs**, under `Added`: the Linux tarball with its
+   checksum on each GitHub Release, and the AUR packages `omriss` and
+   `omriss-bin`. Markdown only, and the note on the default handler.
+
+**Accepted risk, recorded.** The deploy action trusts `ssh-keyscan` of
+`aur.archlinux.org` at run time, and builds its container with `pacman -Syu`
+at run time. Pinning the host key would mean forking the action. That is not
+worth it for 0.18.0; revisit if the action changes hands.
+
+**PR 4** is items 4 and 5 only.

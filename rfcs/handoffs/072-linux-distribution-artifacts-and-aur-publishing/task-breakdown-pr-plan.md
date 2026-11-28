@@ -46,3 +46,13 @@ Lifecycle status: inherited from RFC-072.
   scratch package.
 - `RELEASE_CHECKLIST.md`: the owner's one-time steps (RFC-072 §9) and the
   per-release check.
+
+**PR 3 landed** (`6d41a97`).
+
+## PR 4 — one rule for CI, and the CHANGELOG (RFC-072 §12)
+
+- No `${{ }}` in any `run:` text in `release.yml` or `ci.yml`: the MSIX step's
+  version, and the Store secrets, go through `env`. A small test script, run
+  in `ci.yml`'s lint job, fails if one appears.
+- `ci.yml`'s actions pinned to SHAs, with their tags in comments.
+- CHANGELOG `Added`: Linux release files and the AUR packages (§12.5).

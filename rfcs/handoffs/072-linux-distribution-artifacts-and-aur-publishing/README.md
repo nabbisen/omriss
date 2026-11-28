@@ -7,9 +7,10 @@ Lifecycle status: inherited from RFC-072.
 **0.18.0's first stretch item** (owner, 2026-11-28). The design is RFC-072
 §4–§5 as §9 updates it. **After RFC-086.**
 
-**State:** PR 1–2 landed. **Next: PR 3** (with RFC-072 §11's items).
+**State:** PR 1–3 landed. **Next: PR 4** (RFC-072 §12, items 4–5), then the
+owner's dry run and rehearsal.
 
-The report goes to `.git-exclude/review-request/072-linux-artifacts-3/README.md`.
+The report goes to `.git-exclude/review-request/072-linux-artifacts-4/README.md`.
 
 Files:
 
