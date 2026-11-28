@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — durability hardening (0.18.0)
-**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1–3 (`a69e43c`, `e4165ad`, `571b047`) and PR 4's first part (`bf9c661`, `118a111`) landed; decisions in §8–§11; PR 4's ceiling open (§11).
+**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1–3 (`a69e43c`, `e4165ad`, `571b047`) and PR 4's first part (`bf9c661`, `118a111`) landed; decisions in §8–§11; PR 4's ceiling open (§11–§12); **blocked on Task 030**.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015, RFC-016, RFC-018
@@ -321,3 +321,38 @@ it is not usable, stop and report: the byte ceiling then comes down to where
 it is usable.
 
 The one second copy of the text (`SavedFingerprint`, RFC-069 §2.3) stays.
+
+## 12. Plain file text at size, and a possible lost edit (2026-11-28)
+
+The dev team stopped at §11's measurement, as told.
+- **Reading is fine at 100 MB:** 7.9 s to appear, then it scrolls.
+- **Editing is not usable even at 10 MB.** The text area is controlled, so
+  every keystroke sends the whole text to Rust and back: 2.2 s per keystroke
+  at 10 MB, 13.7 s at 100 MB.
+
+**First, a possible defect of the worst kind.** At 10 MB and above, a
+character typed in plain file text and saved with Ctrl+S was not in the file,
+while the status said "Saved". It is not yet known whether the character was
+lost or never reached the text area under multi-second keystrokes.
+**Task 030 investigates it before anything else in this RFC. Until it is
+understood, it blocks the 0.18.0 tag**, because RFC-076's editing is new in
+0.18.0.
+
+**Decisions:**
+
+1. **The byte ceiling stays at 100 MB.** It guards reading, and reading is
+   fine. Lowering it to suit editing would refuse files the structured views
+   open well.
+2. **Plain file text gets an editing limit, a third number** (§12 option A).
+   Above it the view is read-only, and in place of Edit it says why, in words:
+   too large to edit here, and the file is not changed. The number is the
+   largest size at which a keystroke still feels immediate, from Task 030's
+   sweep. The architect sets it from that sweep. It is a constant with its
+   reason, like the others.
+3. **The node ceiling's sentence is true for every file it is shown for.** It
+   says the text can be *viewed* in plain file text, and edited there only
+   when the file is under the editing limit.
+4. **A cheap editor, so that large files become editable, is 0.19.0's.** That
+   needs a text area that does not send its whole value on every keystroke,
+   and no whole-source copy on every render. It belongs to the large-structures
+   design (RFC-086 §5) and is not built in 0.18.0.
