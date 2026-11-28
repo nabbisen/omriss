@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — durability hardening (0.18.0)
-**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28).
+**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1 landed (`a69e43c`); decisions in §8.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015, RFC-016, RFC-018
@@ -184,3 +184,30 @@ Decisions where §3 left a choice:
    limit in it). The open path stops copying the bytes twice.
 9. **NFR-REL-003** is stated as what is now guaranteed, per platform, in
    `docs/src/source-preservation.md`'s saving section.
+
+## 8. Decisions on PR 1 (2026-11-28)
+
+Accepted. One durable write serves documents and settings. A forced failure at
+each step is tested to leave no temporary file and the old file intact. A
+mutation check broke nine guarantees, and each one made a test fail. A guard
+covers all four crates. The Windows build is clean under `-D warnings`, which
+also caught a real CI failure before it happened.
+
+The dev team's calls:
+
+1. **A dangling symlink creates its target**, as the shell does. Accepted.
+   PR 3's content check catches a target deleted after opening, before any
+   save.
+2. **Reversed: a directory-sync error must not say the save failed.** The
+   rename has happened, so the file holds the new text, and "could not save"
+   would be false. That is the one thing a message here must not be. A save
+   whose directory sync fails is **saved, with a warning**: the document is
+   marked saved, and the status says, in both locales, that the file was saved
+   but the disk did not confirm it, and that if this repeats the disk should be
+   checked. This needs a typed outcome, not a reused failure key. It is done
+   first in PR 2.
+3. The guard is wider than asked. Accepted.
+4. Ownership is not carried over, and that is documented. Accepted.
+5. All temporary names taken maps to `error.save_failed`. Accepted.
+6. Leftover `*.tmp.omriss` files from older versions are left alone.
+   Accepted: omriss does not delete files by pattern.

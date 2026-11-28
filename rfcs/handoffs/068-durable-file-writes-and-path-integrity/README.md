@@ -8,9 +8,9 @@ Lifecycle status: inherited from RFC-068.
 break a symlink, widen permissions, or, with a non-UTF-8 name, go to another
 path. The design is RFC-068 §3 as §7 completes it; where they differ, §7 wins.
 
-**State:** ready. **Next: PR 1.**
+**State:** PR 1 landed (`a69e43c`). **Next: PR 2**, starting with RFC-068 §8.2.
 
-The report goes to `.git-exclude/review-request/068-durable-writes/README.md`.
+The report goes to `.git-exclude/review-request/068-durable-writes-2/README.md`.
 One report per PR is fine; PR 4 stops for a decision by design.
 
 Files:

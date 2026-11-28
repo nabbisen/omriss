@@ -28,7 +28,14 @@ Constraints for every PR:
 - A source-scanning guard: no `fs::write`, `File::create` or `fs::rename` in
   the application crates outside the primitive.
 
+**PR 1 landed** (`a69e43c`).
+
 ## PR 2 — paths, losslessly (§7.5)
+
+- First, RFC-068 §8.2: a save whose directory sync fails is saved with a
+  warning, a typed outcome with words in both locales. Test it with the
+  injected directory-sync failure: the document is marked saved and the status
+  is the warning, not a failure.
 
 - `args_os()`; `PathBuf` through to the save target; a display string only for
   display.
