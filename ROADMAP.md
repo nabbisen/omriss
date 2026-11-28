@@ -68,7 +68,6 @@ That rule is the scope's only defence when something else asks to join.
 | # | Work | Why |
 |---|---|---|
 | 12 | **RFC-084** line endings and separators in section edits | Editing a section in a CRLF file rewrote that section's line endings to LF — lines the user never touched — breaking the documented promise to keep line endings exactly as found. Shipped in 0.17.0. Taken in by the owner on 2026-11-26 under the same file-integrity exception 0.17.0 used for Task 023. **Widened the same day (§10):** a JSON string value lost its line breaks and had untouched escapes re-spelled on any edit; bare-CR files took LF. **PR 7 (§12):** renaming a section in a CRLF file turned its heading's ending into LF |
-
 | 13 | **RFC-086** the Document Map's idle render loop and row lookup | Found by Task 029 (2026-11-28): the map re-rendered forever, taking a whole core idle on a large file and delaying every click; shipped in 0.17.0. A small fix in one file, taken by the owner's rule "if the fix is small it goes into 0.18.0". What remains (rows Dioxus can skip; the overview's thousands of cards) is a 0.19.0 design |
 
 ### Stretch — taken only if the core lands early
