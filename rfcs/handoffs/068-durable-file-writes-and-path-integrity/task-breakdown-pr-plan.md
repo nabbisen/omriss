@@ -74,3 +74,23 @@ Constraints for every PR:
 Gates, each PR: fmt, clippy `-D warnings` with `--locked`, `cargo test
 --workspace --locked` and `cargo test` with both counts, `check-rfcs`,
 `mdbook build docs`, `check-workflows.sh`.
+
+**PR 4, first part, landed** (`bf9c661` the dialog rule, `118a111` no double
+copy). The ceiling, by RFC-068 §11:
+
+1. **Measure first:** plain file text at 100 MB in the GUI (open, scroll,
+   commit one edit). If it is not usable, stop and report.
+2. The byte ceiling: `OpenFailure::TooLarge { limit }`, checked before reading,
+   with words in both locales.
+3. The structure ceiling in core: the scanner counts and stops; `TooLarge`;
+   a public constant. The UI's sentence states the constant. The file opens in
+   plain file text.
+4. Tests:
+   - a file one byte over the byte ceiling is refused before any read (a
+     sparse file is fine);
+   - a JSON of 1,000,001 tiny values opens in plain file text with the
+     sentence, and peak memory stays bounded (measure it);
+   - Markdown is unaffected.
+5. Docs (known limitations, file formats) and the CHANGELOG.
+
+`omriss-core` changes for item 3 only.

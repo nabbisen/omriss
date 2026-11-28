@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — durability hardening (0.18.0)
-**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1–3 (`a69e43c`, `e4165ad`, `571b047`) landed; decisions in §8–§10; PR 4 open.
+**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1–3 (`a69e43c`, `e4165ad`, `571b047`) and PR 4's first part (`bf9c661`, `118a111`) landed; decisions in §8–§11; PR 4's ceiling open (§11).
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015, RFC-016, RFC-018
@@ -267,3 +267,57 @@ choice.**
 - Confirm-delete already follows the rule.
 
 A level-2 test over the dialogs pins it. This is done first in PR 4.
+
+## 11. The ceiling, from the measurements (2026-11-28)
+
+PR 4 so far is accepted.
+- The dialog rule is in, with a test that makes every new primary button be
+  classified.
+- The double copy on open is gone. It lowers the memory at the moment of
+  reading and not the overall peak, and the dev team said so.
+
+The numbers (Linux, release, one dense JSON shape of about 60,000 nodes per
+MB):
+- **Markdown costs about 5× its size.** At 100 MB it opens in 0.9 s, uses
+  0.5 GB net, and an edit plus a save takes under 1 s.
+- **JSON costs about 40× its size**, roughly 700 bytes per node. At 100 MB it
+  opens in 6–7 s, uses 4.2 GB, and stalls 3 s on every edit while the map
+  rebuilds.
+
+**The cost is per node, not per byte.** A file of tiny values (`[1,2,3,…]`) has
+one node per two bytes, so any byte limit loose enough for real JSON lets a
+pathological file exhaust memory. One limit cannot do both jobs. **There are
+two, each guarding what it can measure:**
+
+1. **A byte ceiling of 100 MB, for every file, checked before reading**
+   (`metadata().len()`, in `open_markdown_path`). Every way into a document
+   goes through it: Open, recent files, the command line and Reload. A file
+   above it costs nothing and is refused with
+   `OpenFailure::TooLarge { limit }`: *"This file is larger than 100 MB, the
+   largest omriss opens safely."* It is the cheapest format's measured,
+   comfortable end. There is no data above it, and nobody has asked for more.
+2. **A structure ceiling of 1,000,000 nodes, enforced while the structure is
+   built.** The JSON scanner counts values and stops at the limit, so memory
+   is bounded during parsing, not after. The adapter returns the
+   `StructureErrorKind::TooLarge` that RFC-052 defined and nothing produced
+   until now. The file then opens exactly as an unreadable one does
+   (RFC-085 §3.4): in plain file text, with the Document Map saying why, in
+   its own sentence: *"This file has more than 1,000,000 items, too many to
+   show as a structure. You can view and edit its text in Plain file
+   text."* At the measured rate that is about 16 MB of dense JSON:
+   0.7 GB, and under half a second per edit. It is far less for files of long
+   values. Markdown at 100 MB has 365,000 nodes, so it never reaches it.
+   **Core changes for this**: the limit is a public constant beside
+   `StructureErrorKind::TooLarge`, so the UI's sentence states the same number.
+
+Both limits are constants in one place each, with the reason beside them.
+They are not settings: a limit a user can raise is a limit that does not
+protect.
+
+**Measure before building on item 2's fallback.** Plain file text shows the
+whole text, and nobody has measured it at 100 MB. Measure opening it,
+scrolling, and committing an edit from it, for a 100 MB file, in the GUI. If
+it is not usable, stop and report: the byte ceiling then comes down to where
+it is usable.
+
+The one second copy of the text (`SavedFingerprint`, RFC-069 §2.3) stays.
