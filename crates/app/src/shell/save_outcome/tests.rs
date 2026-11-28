@@ -4,10 +4,9 @@
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
-use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
+use omriss_ui::{ContentStamp, EditorSession};
 
 use super::apply_save_outcome;
 use crate::file::durable_write::Durability;
@@ -39,33 +38,29 @@ fn scratch(label: &str) -> PathBuf {
 #[test]
 fn a_confirmed_save_marks_the_document_saved_and_says_saved() {
     let mut session = dirty_session(Path::new("a.md"));
-    let mut mtime = None;
-    let at = SystemTime::now();
+    let at = ContentStamp::of(b"the bytes written");
     let key = apply_save_outcome(
         &mut session,
-        &mut mtime,
         SaveOutcome::Saved {
             path: PathBuf::from("a.md"),
-            mtime: Some(at),
+            stamp: at,
             durability: Durability::Confirmed,
         },
     );
     assert_eq!(key, Some("status.saved"));
     assert!(!session.is_dirty());
-    assert_eq!(mtime, Some(at));
+    assert_eq!(session.disk_stamp(), Some(at));
 }
 
 #[test]
 fn an_unconfirmed_save_is_saved_with_a_warning_not_a_failure() {
     let mut session = dirty_session(Path::new("a.md"));
-    let mut mtime = None;
-    let at = SystemTime::now();
+    let at = ContentStamp::of(b"the bytes written");
     let key = apply_save_outcome(
         &mut session,
-        &mut mtime,
         SaveOutcome::Saved {
             path: PathBuf::from("a.md"),
-            mtime: Some(at),
+            stamp: at,
             durability: Durability::Unconfirmed {
                 kind: ErrorKind::Other,
             },
@@ -77,31 +72,32 @@ fn an_unconfirmed_save_is_saved_with_a_warning_not_a_failure() {
         "a warning is not an error key"
     );
     assert!(!session.is_dirty(), "the document is marked saved");
-    assert_eq!(mtime, Some(at), "and its disk time is recorded");
+    assert_eq!(
+        session.disk_stamp(),
+        Some(at),
+        "and the file's stamp is recorded"
+    );
 }
 
 #[test]
 fn a_failed_save_changes_nothing_and_says_why() {
     let mut session = dirty_session(Path::new("a.md"));
-    let mut mtime = None;
     let key = apply_save_outcome(
         &mut session,
-        &mut mtime,
         SaveOutcome::Failed {
             kind: ErrorKind::PermissionDenied,
         },
     );
     assert_eq!(key, Some("error.save.permission_denied"));
     assert!(session.is_dirty());
-    assert_eq!(mtime, None);
+    assert_eq!(session.disk_stamp(), None);
 }
 
 #[test]
 fn a_cancelled_save_is_silent() {
     let mut session = dirty_session(Path::new("a.md"));
-    let mut mtime = None;
     assert_eq!(
-        apply_save_outcome(&mut session, &mut mtime, SaveOutcome::Cancelled),
+        apply_save_outcome(&mut session, SaveOutcome::Cancelled),
         None
     );
     assert!(session.is_dirty());
@@ -142,11 +138,14 @@ fn a_failed_directory_sync_through_the_real_write_is_saved_with_a_warning() {
         }
     ));
 
-    let mut mtime = None;
-    let key = apply_save_outcome(&mut session, &mut mtime, outcome);
+    let key = apply_save_outcome(&mut session, outcome);
     assert_eq!(key, Some("status.saved_unconfirmed"));
     assert!(!session.is_dirty());
-    assert!(mtime.is_some());
+    assert_eq!(
+        session.disk_stamp(),
+        Some(ContentStamp::of(&fs::read(&path).unwrap())),
+        "the stamp is that of the bytes now on disk"
+    );
     assert_eq!(fs::read_to_string(&path).unwrap(), session.source());
     assert_eq!(fs::read_dir(&dir).unwrap().count(), 1, "no temporary file");
     let _ = fs::remove_dir_all(dir);

@@ -70,6 +70,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Another program's change to your file is found by what the file holds, and you can
+  Reload it** (RFC-068; RFC-016 §4 required Reload). Before a save omriss
+  compared the file's modification time with the time it had noted, so a change that kept
+  the old time was overwritten without a word: `git checkout`, `rsync --times`,
+  `touch -d`, or two writes in one second. It now reads the file and compares its bytes
+  with those it last read or wrote (a length and a 64-bit hash; the timestamp is no
+  longer consulted), and a file that was deleted or cannot be read is asked about too.
+  The **File Changed on Disk** dialog gains **Reload from disk**, which replaces the
+  document with the file as one undo step. **Ctrl+Z** brings your unsaved text back, and
+  saving it then asks again, since that text was made from the older file. Focus starts on
+  Cancel; Reload is never the default. English and Japanese. `omriss-core` is unchanged.
 - **A file whose name is not valid text no longer crashes omriss at startup, and is
   saved where it was opened** (RFC-068). `omriss <file>`, and opening a file from a
   file manager, read the command line as text, which panics on a name that is not

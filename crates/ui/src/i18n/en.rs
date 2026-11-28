@@ -53,10 +53,11 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("dialog.discard.title", "Unsaved changes"),
     (
         "dialog.ext_modified.body",
-        "The file on disk was modified after it was opened. Overwrite with your current changes?",
+        "Another program changed this file (or removed it) after omriss last read or saved it. Overwrite replaces the file with your document. Reload from disk replaces your document with the file as it is now; Ctrl+Z brings your unsaved text back.",
     ),
     ("dialog.ext_modified.cancel", "Cancel"),
     ("dialog.ext_modified.overwrite", "Overwrite"),
+    ("dialog.ext_modified.reload", "Reload from disk"),
     ("dialog.ext_modified.save_as", "Save As\u{2026}"),
     ("dialog.ext_modified.title", "File Changed on Disk"),
     ("dialog.filter.all_supported", "All supported"),
@@ -351,6 +352,10 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("status.lf", "LF"),
     ("status.mixed_endings", "Mixed"),
     ("status.ready", "Ready"),
+    (
+        "status.reloaded",
+        "Reloaded from disk. Ctrl+Z brings back your unsaved text.",
+    ),
     ("status.saved", "Saved"),
     (
         "status.saved_unconfirmed",

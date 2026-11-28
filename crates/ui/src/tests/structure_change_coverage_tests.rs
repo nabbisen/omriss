@@ -34,6 +34,14 @@ const OUTLINE_MUTATORS: &[&str] = &[
 /// (RFC-054 §0.1).
 const EXEMPT: &[&str] = &["undo", "redo"];
 
+/// Files whose `replace_range` calls are deliberately not bracketed, each with the
+/// number of calls it may hold and why. Reload from disk (RFC-068 §7.7) replaces the
+/// document with the file because the user asked for exactly that: a change of
+/// structure is the expected result, not a surprise, and the notice would only tell
+/// them what they chose. It is **one** call, in one file, and the count is checked,
+/// so a second unbracketed call cannot hide behind this entry.
+const UNBRACKETED_BY_DESIGN: &[(&str, usize)] = &[("disk_sync.rs", 1)];
+
 fn session_sources() -> Vec<(String, String)> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut files = vec![root.join("session.rs")];
@@ -67,7 +75,35 @@ fn count(sources: &[(String, String)], needle: &str) -> usize {
 
 #[test]
 fn every_outline_mutating_call_site_is_bracketed_by_the_detector() {
-    let sources = session_sources();
+    let all_sources = session_sources();
+    for (file, calls) in UNBRACKETED_BY_DESIGN {
+        let held: Vec<_> = all_sources
+            .iter()
+            .filter(|(name, _)| name == file)
+            .collect();
+        assert_eq!(
+            held.len(),
+            1,
+            "{file} is listed as an exception but is not scanned"
+        );
+        let n: usize = OUTLINE_MUTATORS
+            .iter()
+            .map(|m| held[0].1.matches(&format!(".{m}(")).count())
+            .sum();
+        assert_eq!(
+            n, *calls,
+            "{file} may hold {calls} unbracketed mutator call(s), holds {n}"
+        );
+        assert_eq!(
+            held[0].1.matches("begin_change(").count(),
+            0,
+            "{file} is exempt because it does not use the detector"
+        );
+    }
+    let sources: Vec<_> = all_sources
+        .into_iter()
+        .filter(|(name, _)| !UNBRACKETED_BY_DESIGN.iter().any(|(f, _)| f == name))
+        .collect();
     let mutator_calls: usize = OUTLINE_MUTATORS
         .iter()
         .map(|m| count(&sources, &format!(".{m}(")))

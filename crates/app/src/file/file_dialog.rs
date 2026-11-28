@@ -7,9 +7,8 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
-use omriss_ui::FileTextProfile;
+use omriss_ui::{ContentStamp, FileTextProfile};
 
 use super::durable_write::{self, Durability};
 use super::failure::OpenFailure;
@@ -25,13 +24,15 @@ pub enum OpenOutcome {
     Cancelled,
     /// File could not be read, and why.
     Failed { failure: OpenFailure },
-    /// Text (BOM stripped), the file's path, profile, and disk mtime. The path is the
-    /// file's own, byte for byte (RFC-068 §7.5): what saves it again, not what is shown.
+    /// Text (BOM stripped), the file's path, profile, and the stamp of the bytes read.
+    /// The path is the file's own, byte for byte (RFC-068 §7.5): what saves it again,
+    /// not what is shown. The stamp is what a later save compares the file with
+    /// (RFC-068 §7.6).
     Loaded {
         text: String,
         path: PathBuf,
         profile: FileTextProfile,
-        mtime: Option<SystemTime>,
+        stamp: ContentStamp,
     },
 }
 
@@ -42,11 +43,12 @@ pub enum SaveOutcome {
     /// Write failed; in-memory state is untouched. `kind` is why (the operating
     /// system's own text is dropped).
     Failed { kind: std::io::ErrorKind },
-    /// Path written, new disk mtime recorded. The file holds the new text whatever
-    /// `durability` says; `Unconfirmed` is a warning to show, never a failure (RFC-068 §8.2).
+    /// Path written, and the stamp of the bytes written. The file holds the new text
+    /// whatever `durability` says; `Unconfirmed` is a warning to show, never a failure
+    /// (RFC-068 §8.2).
     Saved {
         path: PathBuf,
-        mtime: Option<SystemTime>,
+        stamp: ContentStamp,
         durability: Durability,
     },
 }
@@ -94,13 +96,11 @@ fn markdown_dialog(labels: &DialogLabels) -> rfd::FileDialog {
         .add_filter("JSON", JSON_EXTENSIONS)
 }
 
-/// Reads `path`, strips a UTF-8 BOM if present, and returns text + profile +
-/// mtime, or the typed reason it could not.
-fn read_markdown(
-    path: &Path,
-) -> Result<(String, FileTextProfile, Option<SystemTime>), OpenFailure> {
+/// Reads `path`, strips a UTF-8 BOM if present, and returns text + profile + the
+/// stamp of the bytes as read (BOM included), or the typed reason it could not.
+fn read_markdown(path: &Path) -> Result<(String, FileTextProfile, ContentStamp), OpenFailure> {
     let bytes = fs::read(path).map_err(|e| OpenFailure::from_io(path, &e))?;
-    let mtime = fs::metadata(path).ok().and_then(|m| m.modified().ok());
+    let stamp = ContentStamp::of(&bytes);
 
     let (text_bytes, had_bom) = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
         (&bytes[3..], true)
@@ -110,7 +110,7 @@ fn read_markdown(
 
     let text = String::from_utf8(text_bytes.to_vec()).map_err(|_| OpenFailure::NotUtf8)?;
     let profile = FileTextProfile::detect(&text, had_bom);
-    Ok((text, profile, mtime))
+    Ok((text, profile, stamp))
 }
 
 /// How bytes reach the disk: the one durable write in production, a variant of it in
@@ -119,25 +119,21 @@ type Writer<'a> = &'a dyn Fn(&Path, &[u8]) -> std::io::Result<Durability>;
 
 /// Writes `source` (with its BOM, if the file had one) through `write`
 /// ([`durable_write::write_durably`], RFC-068): decided here is what the bytes are,
-/// there is how they reach the disk. Returns the file's new mtime and whether the disk
-/// confirmed the write.
+/// there is how they reach the disk. Returns the stamp of the bytes written and whether
+/// the disk confirmed the write.
 fn write_atomic(
     path: &Path,
     source: &str,
     profile: &FileTextProfile,
     write: Writer,
-) -> Result<(SystemTime, Durability), std::io::Error> {
+) -> Result<(ContentStamp, Durability), std::io::Error> {
     let mut bytes = Vec::with_capacity(source.len() + 3);
     if profile.had_utf8_bom {
         bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
     }
     bytes.extend_from_slice(source.as_bytes());
     let durability = write(path, &bytes)?;
-    let mtime = fs::metadata(path)
-        .ok()
-        .and_then(|m| m.modified().ok())
-        .unwrap_or(SystemTime::UNIX_EPOCH);
-    Ok((mtime, durability))
+    Ok((ContentStamp::of(&bytes), durability))
 }
 
 // ── public API ────────────────────────────────────────────────────────────────
@@ -165,11 +161,11 @@ pub fn open_markdown_path(path: &Path) -> OpenOutcome {
 
 fn open_path(path: &Path) -> OpenOutcome {
     match read_markdown(path) {
-        Ok((text, profile, mtime)) => OpenOutcome::Loaded {
+        Ok((text, profile, stamp)) => OpenOutcome::Loaded {
             text,
             path: path.to_path_buf(),
             profile,
-            mtime,
+            stamp,
         },
         Err(failure) => OpenOutcome::Failed { failure },
     }
@@ -201,24 +197,35 @@ pub(crate) fn save_to_path(
     write: Writer,
 ) -> SaveOutcome {
     match write_atomic(path, source, profile, write) {
-        Ok((mtime, durability)) => SaveOutcome::Saved {
+        Ok((stamp, durability)) => SaveOutcome::Saved {
             path: path.to_path_buf(),
-            mtime: Some(mtime),
+            stamp,
             durability,
         },
         Err(error) => SaveOutcome::Failed { kind: error.kind() },
     }
 }
 
-/// Returns `true` if the file was modified externally since `saved_mtime`.
-pub fn was_modified_externally(path: &Path, saved_mtime: SystemTime) -> bool {
-    fs::metadata(path)
-        .ok()
-        .and_then(|m| m.modified().ok())
-        .map(|disk_mtime| disk_mtime > saved_mtime)
-        .unwrap_or(false)
+/// Whether the file at `path` is no longer what this document was made from
+/// (RFC-068 §7.6): its bytes, read now, do not have the stamp `known` of the bytes last
+/// read from it or written to it. Another program changed it, whatever its timestamp
+/// says, and a change that left the same bytes is not a change.
+///
+/// **On doubt, true**, so the user is asked and nothing is overwritten unseen: a file
+/// that has been deleted or cannot be read is not what was opened, and a document with
+/// no stamp (not made from this file) cannot be compared.
+pub fn changed_on_disk(path: &Path, known: Option<ContentStamp>) -> bool {
+    let Some(known) = known else {
+        return true;
+    };
+    match fs::read(path) {
+        Ok(bytes) => ContentStamp::of(&bytes) != known,
+        Err(_) => true,
+    }
 }
 
+#[cfg(test)]
+mod disk_change_tests;
 #[cfg(test)]
 mod failure_tests;
 #[cfg(test)]

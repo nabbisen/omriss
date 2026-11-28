@@ -2,8 +2,6 @@
 //! handoff between the `App` component and free-function action/dispatch
 //! handlers in `actions.rs` and `dispatch.rs`.
 
-use std::time::SystemTime;
-
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 use omriss_ui::i18n::{Locale, t};
@@ -54,7 +52,6 @@ pub(crate) struct AppCtx {
     pub status: Signal<String>,
     pub selected_card: Signal<usize>,
     pub modal: Signal<Modal>,
-    pub saved_mtime: Signal<Option<SystemTime>>,
     pub recent_files: Signal<Vec<String>>,
     pub locale: Signal<Locale>,
 }

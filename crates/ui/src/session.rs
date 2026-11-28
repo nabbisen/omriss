@@ -22,6 +22,7 @@ use crate::editor::structure_change::{
     ExpectedChange, Operation, OutlineSummary, StructureChange, detect, expected_change,
 };
 use crate::editor::view_state::{ViewMode, ViewState};
+use crate::file::content_stamp::ContentStamp;
 use crate::file::file_profile::FileTextProfile;
 
 /// The text at the last save, kept whole. Undo and redo mint fresh revisions
@@ -95,8 +96,19 @@ pub struct EditorSession {
     /// The revision the raw draft was composed against, for the strict-equality
     /// check every other edit also makes.
     raw_base: Option<DocumentRevision>,
+    /// The stamp of the file's bytes as the document's history last knew them
+    /// (RFC-068 §7.6): what was read when it was opened or reloaded, or written when
+    /// it was saved. A save compares the file on disk with it. `None` for a document
+    /// that has no file yet. It follows undo and redo across a reload; see
+    /// [`EditorSession::disk_stamp`].
+    disk_stamp: Option<ContentStamp>,
+    /// The states a reload moved between, so that undoing or redoing it puts the
+    /// right [`disk_stamp`](Self::disk_stamp) and profile back. Emptied by a save,
+    /// which makes the disk what the document says.
+    disk_states: Vec<disk_sync::DiskState>,
 }
 
+mod disk_sync;
 mod document_map_bridge;
 mod focus_bridge;
 mod pane_structure;
@@ -155,6 +167,8 @@ impl EditorSession {
             structure_change: None,
             raw_editing: false,
             raw_base: None,
+            disk_stamp: None,
+            disk_states: Vec::new(),
         })
     }
 
@@ -377,6 +391,7 @@ impl EditorSession {
         // Undo restores the outline the user had; there is nothing to warn about.
         self.structure_change = None;
         self.prune_dead_history();
+        self.resync_disk_state();
         Ok(result)
     }
 
@@ -386,6 +401,7 @@ impl EditorSession {
         // Redo re-applies an edit the user already chose to repeat.
         self.structure_change = None;
         self.prune_dead_history();
+        self.resync_disk_state();
         Ok(result)
     }
 

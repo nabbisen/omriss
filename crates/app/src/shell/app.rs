@@ -3,8 +3,6 @@
 //! Action logic lives in [`actions`]. Keyboard/palette dispatch lives in
 //! [`dispatch`]. Modal enum and signal helpers live in [`app_ctx`].
 
-use std::time::SystemTime;
-
 use dioxus::prelude::*;
 use omriss_ui::i18n::Locale;
 use omriss_ui::{EditorSession, EmptyMap, ViewMode};
@@ -49,7 +47,6 @@ pub fn App() -> Element {
     let status = use_signal(|| "status.ready".to_string());
     let selected_card = use_signal(|| 0usize);
     let modal: Signal<Modal> = use_signal(Modal::default);
-    let saved_mtime: Signal<Option<SystemTime>> = use_signal(|| None);
     let recent_files = use_signal(move || initial_settings.valid_recent_files());
     let search_open = use_signal(|| false);
     let palette_open = use_signal(|| false);
@@ -62,7 +59,6 @@ pub fn App() -> Element {
         status,
         selected_card,
         modal,
-        saved_mtime,
         recent_files,
         locale,
     };

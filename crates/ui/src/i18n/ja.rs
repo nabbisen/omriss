@@ -54,10 +54,11 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("dialog.discard.title", "未保存の変更"),
     (
         "dialog.ext_modified.body",
-        "ファイルが開いた後にディスク上で変更されました。現在の変更で上書きしますか？",
+        "omrissが最後にこのファイルを読み込むか保存した後で、別のプログラムがファイルを変更（または削除）しました。「上書き」はファイルを現在の文書で置き換えます。「ディスクから再読み込み」は文書をファイルの現在の内容で置き換えます。Ctrl+Z で未保存のテキストを元に戻せます。",
     ),
     ("dialog.ext_modified.cancel", "キャンセル"),
     ("dialog.ext_modified.overwrite", "上書き"),
+    ("dialog.ext_modified.reload", "ディスクから再読み込み"),
     ("dialog.ext_modified.save_as", "名前を付けて保存…"),
     ("dialog.ext_modified.title", "ディスク上のファイル変更"),
     ("dialog.filter.all_supported", "すべての対応形式"),
@@ -352,6 +353,10 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("status.lf", "LF"),
     ("status.mixed_endings", "混在"),
     ("status.ready", "準備完了"),
+    (
+        "status.reloaded",
+        "ディスクから再読み込みしました。Ctrl+Z で未保存のテキストを元に戻せます。",
+    ),
     ("status.saved", "保存しました"),
     (
         "status.saved_unconfirmed",

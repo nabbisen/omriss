@@ -73,13 +73,28 @@ edit counts.
 
 ## Files changed on disk
 
-When you save an existing file, omriss checks whether the file on disk has a
-newer modification time than the version it opened or last saved. If another
-process changed the file, omriss shows a **File Changed on Disk** dialog before
-writing. Choose **Overwrite** to replace the disk file with the current omriss
-document, **Save As** to write to a different path, or **Cancel** to leave the
-disk file untouched.
+When you save an existing file, omriss reads the file again and compares what is in it
+with what omriss last read from it or wrote to it. If another program changed it — or
+removed it, or it can no longer be read — omriss shows a **File Changed on Disk**
+dialog before writing anything. It compares the file's *contents*, not its
+modification time, so a change is found even when a tool leaves the old time on new
+bytes (a `git checkout`, `rsync --times`, `touch -d`), and a program that rewrites the
+file with the same bytes is not a change at all.
 
-This check happens before saving, not continuously while you edit or navigate.
-It is a practical protection against accidental overwrite, not a hard security
-boundary against every filesystem race.
+The dialog offers four choices, and focus starts on **Cancel**, which changes nothing:
+
+- **Overwrite** replaces the file with your document, as the save you asked for.
+- **Reload from disk** replaces your document with the file as it is now. It is one
+  undo step: **Ctrl+Z** brings your unsaved text back exactly. And because that text was
+  made from the *old* file, saving it after the undo asks again, so the other
+  program's changes are never overwritten without you being asked. Redo returns to the
+  reloaded text.
+- **Save As** writes your document to a different path.
+- **Cancel** leaves the file and your document untouched.
+
+If the file was removed, or is no longer UTF-8 text, Reload cannot read it: omriss says
+why, as when opening it, and your document is left as it was.
+
+This check happens before saving, not continuously while you edit or navigate. Between
+the check and the write another program can still change the file; omriss narrows that
+to the moment, it cannot close it.

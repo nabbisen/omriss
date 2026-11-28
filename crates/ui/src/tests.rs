@@ -4,6 +4,7 @@ mod i18n_tests;
 mod session_tests;
 mod view_state_tests;
 
+mod disk_sync_tests;
 mod document_map_tests;
 mod errors_tests;
 mod line_ending_tests;

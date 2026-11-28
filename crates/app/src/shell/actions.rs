@@ -30,7 +30,7 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
             text,
             path,
             profile,
-            mtime,
+            stamp,
         } => {
             // RFC-054 J3: the format governs which adapter's structure
             // document_map_nodes() projects. detect_format is extension-only
@@ -51,7 +51,8 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
                     // the node the Writing Area shows.
                     ctx.session.write().settle_on_open();
                     sync_draft(ctx);
-                    ctx.saved_mtime.set(mtime);
+                    // What a later save compares the file with (RFC-068 §7.6).
+                    ctx.session.write().set_disk_stamp(Some(stamp));
                     ctx.status.set("status.ready".into());
                     // RFC-036: persist the path to the recent-files list. A settings
                     // file is TOML, so only a path that is text can be kept in it
@@ -92,9 +93,10 @@ pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
     } else {
         ctx.session.read().file_path().map(Path::to_path_buf)
     };
-    // External modification check (RFC-015).
-    if let (Some(path), Some(mtime)) = (existing.as_deref(), *ctx.saved_mtime.read())
-        && file_dialog::was_modified_externally(path, mtime)
+    // External modification check (RFC-015, RFC-068 §7.6): by what the file holds, not
+    // by its timestamp.
+    if let Some(path) = existing.as_deref()
+        && file_dialog::changed_on_disk(path, ctx.session.read().disk_stamp())
     {
         ctx.modal.set(Modal::ExternalModified);
         return;
@@ -112,11 +114,7 @@ pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
 /// Shows a finished save: marks the document saved when the file was written, and sets
 /// the status ([`apply_save_outcome`] decides both).
 fn finish_save(outcome: SaveOutcome, ctx: &mut AppCtx) {
-    let mut mtime = *ctx.saved_mtime.read();
-    let key = apply_save_outcome(&mut ctx.session.write(), &mut mtime, outcome);
-    if mtime != *ctx.saved_mtime.peek() {
-        ctx.saved_mtime.set(mtime);
-    }
+    let key = apply_save_outcome(&mut ctx.session.write(), outcome);
     if let Some(key) = key {
         ctx.status.set(key.into());
     }
@@ -127,7 +125,6 @@ pub(crate) fn handle_new(mut ctx: AppCtx) {
     ctx.session.set(EditorSession::new_document());
     ctx.selected_card.set(0);
     ctx.draft.set(String::new());
-    ctx.saved_mtime.set(None);
     ctx.status.set("status.ready".into());
 }
 
@@ -191,8 +188,44 @@ pub(crate) fn handle_ext_modified_choice(choice: ExtModifiedChoice, mut ctx: App
             );
             finish_save(outcome, &mut ctx);
         }
+        ExtModifiedChoice::Reload => handle_reload(ctx),
         ExtModifiedChoice::SaveAs => handle_save(ctx, true),
         ExtModifiedChoice::Cancel => {}
+    }
+}
+
+/// Replaces the document with the file as it is on disk (RFC-068 §7.7), as one undo
+/// step: Ctrl+Z brings back the unsaved text, and saving that text asks again, because
+/// the session then holds the stamp of the file it was made from. The document is
+/// untouched if the file cannot be read (a file that was removed, or one that is no
+/// longer UTF-8 text): the user is told why, as when opening it.
+pub(crate) fn handle_reload(mut ctx: AppCtx) {
+    let Some(path) = ctx.session.read().file_path().map(Path::to_path_buf) else {
+        return;
+    };
+    match file_dialog::open_markdown_path(&path) {
+        OpenOutcome::Loaded {
+            text,
+            profile,
+            stamp,
+            ..
+        } => {
+            let reloaded = ctx.session.write().reload_from_disk(text, profile, stamp);
+            match reloaded {
+                Ok(()) => {
+                    // The same opening rule as any open (RFC-085 §3.3).
+                    ctx.session.write().settle_on_open();
+                    ctx.selected_card.set(0);
+                    sync_draft(ctx);
+                    ctx.status.set("status.reloaded".into());
+                }
+                Err(_) => ctx.modal.set(Modal::OpenError {
+                    failure: OpenFailure::Internal,
+                }),
+            }
+        }
+        OpenOutcome::Failed { failure } => ctx.modal.set(Modal::OpenError { failure }),
+        OpenOutcome::Cancelled => {}
     }
 }
 

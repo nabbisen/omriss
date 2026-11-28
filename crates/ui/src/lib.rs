@@ -41,6 +41,7 @@ pub use editor::search::{SearchMatch, SearchMatchKind};
 pub use editor::stats::{DocumentStats, StatsUnit};
 pub use editor::structure_change::{StructureChange, StructureChangeKind};
 pub use editor::view_state::{ViewMode, ViewState};
+pub use file::content_stamp::ContentStamp;
 pub use file::file_profile::{FileTextProfile, NewlinePolicy};
 pub use interface::commands::{COMMANDS, CommandSpec, filter_commands};
 pub use interface::document_map::{CapabilityReasonCatalogKey, DocumentMapNode, node_id_from_raw};
