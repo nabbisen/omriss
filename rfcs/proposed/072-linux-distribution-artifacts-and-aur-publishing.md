@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — distribution (0.18.0)
-**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1–3 (`c627b89`, `b71e6ad`, `6d41a97`) landed; decisions in §10–§12; PR 4 open (§12).
+**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1–4 (`c627b89`, `b71e6ad`, `6d41a97`, `2bdcbae`) landed; decisions in §10–§12. **Open, the owner's:** the dry run, the AUR setup and rehearsal, then the 0.18.0 tag; §8's criteria 1–3 are met only by that real tag, and the RFC moves to `done/` then.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-037, RFC-042
@@ -391,3 +391,16 @@ at run time. Pinning the host key would mean forking the action. That is not
 worth it for 0.18.0; revisit if the action changes hands.
 
 **PR 4** is items 4 and 5 only.
+
+## 13. PR 4 accepted (2026-11-28)
+
+Every workflow in CI follows two rules, checked by
+`scripts/check-workflows.sh` in `ci.yml`'s lint job: no `${{ }}` in `run:`
+text, and every `uses:` pinned to a SHA. `windows-build.yml` is included. The
+CHANGELOG has its `Added` entry.
+
+Recorded, not done: `ci.yml`'s docs job downloads mdBook with `curl | tar`
+and no checksum. That job only builds the docs; it deploys nothing and holds
+no secret. It goes with the next change to that job.
+
+**The dev team's part of RFC-072 is complete.**
