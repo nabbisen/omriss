@@ -70,6 +70,20 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **A file whose name is not valid text no longer crashes omriss at startup, and is
+  saved where it was opened** (RFC-068). `omriss <file>`, and opening a file from a
+  file manager, read the command line as text, which panics on a name that is not
+  valid Unicode (a Linux name can hold any bytes, such as an old Latin-1 `café.md`);
+  and a path that survived was carried as a `String` converted for display, so the
+  file would have been saved to a *different* path than the one opened. The path is
+  now the file's own bytes from the command line to the save, and text only to be
+  displayed. Such a file is not added to Recent Files (the list is text); that is
+  documented in Known Limitations.
+- **A save the disk did not confirm is reported as saved, with a warning** (RFC-068).
+  When the file is written and renamed into place but the final flush of its folder
+  fails (Linux and other Unix systems), omriss marks the document saved and says, in
+  English and Japanese, that the disk did not confirm it and to check the disk if it
+  keeps happening. It does not call it a failed save: the new text is on disk.
 - **Saving is crash-safe, keeps your file's permissions, and no longer breaks
   symbolic links** (RFC-068). The write was an atomic rename with nothing around
   it: the data was never flushed to the disk before the name changed, so a power cut

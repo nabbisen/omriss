@@ -26,7 +26,7 @@ pub const STARTUP_HEAD: &str = "<script>document.title = \"Omriss\";</script>";
 /// Applies the title for the open file (or none) to the window and the page.
 #[component]
 pub fn DocumentTitle(session: Signal<EditorSession>) -> Element {
-    let title = window_title(session.read().file_name());
+    let title = window_title(session.read().file_path());
     let for_page = title.clone();
     use_effect(use_reactive!(|for_page| {
         let eval = document::eval(TITLE_SCRIPT);

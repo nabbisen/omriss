@@ -21,7 +21,12 @@ pub fn StatusBar(
 ) -> Element {
     let lang = *locale.read();
     let dirty = session.read().is_dirty();
-    let file = session.read().file_name().unwrap_or_default().to_string();
+    // The path is the file's own bytes; only here, to be read, does it become text.
+    let file = session
+        .read()
+        .file_path()
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_default();
     let raw = session.read().is_raw();
 
     let key = status.read().clone();

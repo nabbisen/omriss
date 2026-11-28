@@ -59,9 +59,26 @@ pub(crate) struct Seams<'a> {
     pub suffix: &'a dyn Fn() -> String,
 }
 
+/// How far a completed write could be confirmed (RFC-068 §8.2).
+///
+/// An `Err` from the write means the target was NOT changed. `Ok` means it holds the new
+/// bytes, and this says whether the last step, making the rename itself durable, also
+/// worked. When it did not, the file is saved all the same; what is missing is the
+/// disk's confirmation that it will still be there after a power cut. The caller says
+/// "saved" and adds the warning; it must never say "failed".
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Durability {
+    /// Every step this platform offers succeeded.
+    Confirmed,
+    /// The file was written and renamed, but fsyncing the folder failed with `kind`.
+    /// (Only a platform with a folder fsync can produce this.)
+    #[cfg_attr(not(unix), allow(dead_code))]
+    Unconfirmed { kind: io::ErrorKind },
+}
+
 /// Writes `bytes` to `target` so that `target` is, at every instant and after any
 /// failure, either what it was or exactly `bytes` (see the module doc for the rest).
-pub(crate) fn write_durably(target: &Path, bytes: &[u8]) -> io::Result<()> {
+pub(crate) fn write_durably(target: &Path, bytes: &[u8]) -> io::Result<Durability> {
     write_durably_with(
         target,
         bytes,
@@ -72,7 +89,11 @@ pub(crate) fn write_durably(target: &Path, bytes: &[u8]) -> io::Result<()> {
     )
 }
 
-pub(crate) fn write_durably_with(target: &Path, bytes: &[u8], seams: &Seams) -> io::Result<()> {
+pub(crate) fn write_durably_with(
+    target: &Path,
+    bytes: &[u8],
+    seams: &Seams,
+) -> io::Result<Durability> {
     let resolved = resolve(target)?;
     if resolved.is_dir() {
         return Err(io::ErrorKind::IsADirectory.into());
@@ -114,12 +135,13 @@ pub(crate) fn write_durably_with(target: &Path, bytes: &[u8], seams: &Seams) -> 
     fs::rename(&temp, &resolved)?;
     guard.armed = false; // the temporary file is now the target
 
+    // From here the file IS saved: a failure to make the rename durable is a warning
+    // for the caller, never an error (RFC-068 §8.2).
     #[cfg(unix)]
-    {
-        (seams.before)(Step::SyncDir, dir)?;
-        sync_dir(dir)?;
+    if let Err(e) = (seams.before)(Step::SyncDir, dir).and_then(|()| sync_dir(dir)) {
+        return Ok(Durability::Unconfirmed { kind: e.kind() });
     }
-    Ok(())
+    Ok(Durability::Confirmed)
 }
 
 /// Removes the temporary file unless the rename has happened.
@@ -215,7 +237,8 @@ fn create_temp(
 /// Makes the rename itself durable. A filesystem that cannot fsync a directory
 /// (`Unsupported`, `InvalidInput`) or a folder that cannot be opened for it
 /// (`PermissionDenied`) is not a failed save: the file is written and renamed, and
-/// there is nothing stronger to ask. Anything else (a device error) is reported.
+/// there is nothing stronger to ask. Anything else (a device error) is returned, and
+/// the caller turns it into [`Durability::Unconfirmed`]: the file is saved regardless.
 #[cfg(unix)]
 fn sync_dir(dir: &Path) -> io::Result<()> {
     match File::open(dir).and_then(|d| d.sync_all()) {
@@ -234,7 +257,7 @@ fn dir_sync_not_possible(kind: io::ErrorKind) -> bool {
 
 /// A suffix no two writes of this process share, and no two processes are likely to:
 /// process id, a counter, and the clock. It names a temporary file, not a secret.
-fn unique_suffix() -> String {
+pub(crate) fn unique_suffix() -> String {
     static COUNTER: AtomicU64 = AtomicU64::new(0);
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)

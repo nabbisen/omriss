@@ -13,7 +13,7 @@ fn scratch(name: &str) -> std::path::PathBuf {
 }
 
 fn failure_of(path: &std::path::Path) -> OpenFailure {
-    match open_markdown_path(path.to_str().unwrap()) {
+    match open_markdown_path(path) {
         OpenOutcome::Failed { failure } => failure,
         _ => panic!("expected a failure for {}", path.display()),
     }

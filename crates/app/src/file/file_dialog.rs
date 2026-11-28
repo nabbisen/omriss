@@ -11,6 +11,7 @@ use std::time::SystemTime;
 
 use omriss_ui::FileTextProfile;
 
+use super::durable_write::{self, Durability};
 use super::failure::OpenFailure;
 
 const MD_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "txt"];
@@ -24,10 +25,11 @@ pub enum OpenOutcome {
     Cancelled,
     /// File could not be read, and why.
     Failed { failure: OpenFailure },
-    /// Text (BOM stripped), display name, profile, and disk mtime.
+    /// Text (BOM stripped), the file's path, profile, and disk mtime. The path is the
+    /// file's own, byte for byte (RFC-068 §7.5): what saves it again, not what is shown.
     Loaded {
         text: String,
-        name: String,
+        path: PathBuf,
         profile: FileTextProfile,
         mtime: Option<SystemTime>,
     },
@@ -40,10 +42,12 @@ pub enum SaveOutcome {
     /// Write failed; in-memory state is untouched. `kind` is why (the operating
     /// system's own text is dropped).
     Failed { kind: std::io::ErrorKind },
-    /// Path written, new disk mtime recorded.
+    /// Path written, new disk mtime recorded. The file holds the new text whatever
+    /// `durability` says; `Unconfirmed` is a warning to show, never a failure (RFC-068 §8.2).
     Saved {
-        name: String,
+        path: PathBuf,
         mtime: Option<SystemTime>,
+        durability: Durability,
     },
 }
 
@@ -109,25 +113,31 @@ fn read_markdown(
     Ok((text, profile, mtime))
 }
 
-/// Writes `source` (with its BOM, if the file had one) through the one durable write
-/// ([`super::durable_write`], RFC-068): decided here is what the bytes are, there is
-/// how they reach the disk. Returns the file's new mtime.
+/// How bytes reach the disk: the one durable write in production, a variant of it in
+/// the tests that need a step to fail.
+type Writer<'a> = &'a dyn Fn(&Path, &[u8]) -> std::io::Result<Durability>;
+
+/// Writes `source` (with its BOM, if the file had one) through `write`
+/// ([`durable_write::write_durably`], RFC-068): decided here is what the bytes are,
+/// there is how they reach the disk. Returns the file's new mtime and whether the disk
+/// confirmed the write.
 fn write_atomic(
     path: &Path,
     source: &str,
     profile: &FileTextProfile,
-) -> Result<SystemTime, std::io::Error> {
+    write: Writer,
+) -> Result<(SystemTime, Durability), std::io::Error> {
     let mut bytes = Vec::with_capacity(source.len() + 3);
     if profile.had_utf8_bom {
         bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
     }
     bytes.extend_from_slice(source.as_bytes());
-    super::durable_write::write_durably(path, &bytes)?;
+    let durability = write(path, &bytes)?;
     let mtime = fs::metadata(path)
         .ok()
         .and_then(|m| m.modified().ok())
         .unwrap_or(SystemTime::UNIX_EPOCH);
-    Ok(mtime)
+    Ok((mtime, durability))
 }
 
 // ── public API ────────────────────────────────────────────────────────────────
@@ -141,24 +151,23 @@ pub fn open_markdown(labels: &DialogLabels) -> OpenOutcome {
 }
 
 /// Opens a Markdown file at a known path without showing a dialog.
-/// Used by the recent-files list (RFC-036).
-pub fn open_markdown_path(path_str: &str) -> OpenOutcome {
-    let path = PathBuf::from(path_str);
+/// Used by the recent-files list (RFC-036) and the command line (RFC-063).
+pub fn open_markdown_path(path: &Path) -> OpenOutcome {
     if !path.exists() {
         return OpenOutcome::Failed {
             failure: OpenFailure::NotFound {
-                path: path_str.to_string(),
+                path: path.display().to_string(),
             },
         };
     }
-    open_path(&path)
+    open_path(path)
 }
 
 fn open_path(path: &Path) -> OpenOutcome {
     match read_markdown(path) {
         Ok((text, profile, mtime)) => OpenOutcome::Loaded {
             text,
-            name: path.display().to_string(),
+            path: path.to_path_buf(),
             profile,
             mtime,
         },
@@ -168,29 +177,41 @@ fn open_path(path: &Path) -> OpenOutcome {
 
 /// Writes `source` to the session's existing path, or prompts for one.
 pub fn save_markdown(
-    existing: Option<&str>,
+    existing: Option<&Path>,
     source: &str,
     profile: &FileTextProfile,
     labels: &DialogLabels,
 ) -> SaveOutcome {
     let target = match existing {
-        Some(name) => Some(PathBuf::from(name)),
+        Some(path) => Some(path.to_path_buf()),
         None => markdown_dialog(labels).save_file(),
     };
     let Some(path) = target else {
         return SaveOutcome::Cancelled;
     };
-    match write_atomic(&path, source, profile) {
-        Ok(mtime) => SaveOutcome::Saved {
-            name: path.display().to_string(),
+    save_to_path(&path, source, profile, &durable_write::write_durably)
+}
+
+/// The save itself, past the dialog: what [`save_markdown`] does with a path, with the
+/// write passed in so a test can make a step of it fail.
+pub(crate) fn save_to_path(
+    path: &Path,
+    source: &str,
+    profile: &FileTextProfile,
+    write: Writer,
+) -> SaveOutcome {
+    match write_atomic(path, source, profile, write) {
+        Ok((mtime, durability)) => SaveOutcome::Saved {
+            path: path.to_path_buf(),
             mtime: Some(mtime),
+            durability,
         },
         Err(error) => SaveOutcome::Failed { kind: error.kind() },
     }
 }
 
 /// Returns `true` if the file was modified externally since `saved_mtime`.
-pub fn was_modified_externally(path: &str, saved_mtime: SystemTime) -> bool {
+pub fn was_modified_externally(path: &Path, saved_mtime: SystemTime) -> bool {
     fs::metadata(path)
         .ok()
         .and_then(|m| m.modified().ok())

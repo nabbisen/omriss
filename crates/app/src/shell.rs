@@ -7,3 +7,4 @@ pub mod csp;
 pub mod dispatch;
 pub mod failure_text;
 pub mod open_error;
+pub mod save_outcome;

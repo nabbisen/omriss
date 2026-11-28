@@ -353,6 +353,10 @@ pub(super) static CATALOG: &[(&str, &str)] = &[
     ("status.ready", "Ready"),
     ("status.saved", "Saved"),
     (
+        "status.saved_unconfirmed",
+        "Saved, but the disk did not confirm it. If this keeps happening, check the disk.",
+    ),
+    (
         "status.structure_change.appeared.one",
         "That change altered this document's structure \u{2014} 1 new section was added.",
     ),

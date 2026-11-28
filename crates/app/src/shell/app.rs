@@ -237,7 +237,7 @@ pub fn App() -> Element {
                     on_open: move |()| do_open_guarded.call(()),
                     on_new: move |()| do_new_guarded.call(()),
                     on_open_recent: move |path: String| {
-                        do_load.call(file_dialog::open_markdown_path(&path));
+                        do_load.call(file_dialog::open_markdown_path(std::path::Path::new(&path)));
                     },
                 }
             } else {

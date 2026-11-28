@@ -22,7 +22,7 @@ fn main() {
     let settings = AppSettings::load();
     // RFC-063: the first argument (excluding the program name) is the file
     // to open at startup, if any.
-    let startup_arg = cli::interpret(std::env::args().skip(1));
+    let startup_arg = cli::interpret(std::env::args_os().skip(1));
 
     let window = WindowBuilder::new()
         .with_title(PRODUCT_NAME)

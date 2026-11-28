@@ -8,6 +8,7 @@
 //! (line endings, BOM, trailing newline — RFC-018).
 
 use std::cell::RefCell;
+use std::path::{Path, PathBuf};
 
 use omriss_core::{
     Document, DocumentError, DocumentFormat, DocumentRevision, EditError, EditResult,
@@ -58,8 +59,10 @@ pub struct EditorSession {
     document: Document,
     view: ViewState,
     saved: SavedFingerprint,
-    /// Display name or path of the backing file, if any.
-    file_name: Option<String>,
+    /// The backing file, if any: its own path, byte for byte (RFC-068 §7.5). It is what
+    /// a save writes to, so it is never converted to text; what is shown comes from
+    /// it, lossily, at the point of showing.
+    file_path: Option<PathBuf>,
     /// File-level text characteristics detected at open time (RFC-018).
     profile: FileTextProfile,
     /// True once the user has explicitly opened or created a document.
@@ -106,9 +109,9 @@ pub use raw_edit::RawCommit;
 
 impl EditorSession {
     /// Opens a session over Markdown text (e.g. file contents just read).
-    pub fn open(markdown: String, file_name: Option<String>) -> Result<Self, DocumentError> {
+    pub fn open(markdown: String, file_path: Option<PathBuf>) -> Result<Self, DocumentError> {
         let profile = FileTextProfile::detect(&markdown, false);
-        Self::open_detected(markdown, file_name, profile, DocumentFormat::Markdown)
+        Self::open_detected(markdown, file_path, profile, DocumentFormat::Markdown)
     }
 
     /// Opens a session with a pre-computed file text profile (RFC-018). Use
@@ -116,10 +119,10 @@ impl EditorSession {
     /// line endings before passing the text here.
     pub fn open_with_profile(
         markdown: String,
-        file_name: Option<String>,
+        file_path: Option<PathBuf>,
         profile: FileTextProfile,
     ) -> Result<Self, DocumentError> {
-        Self::open_detected(markdown, file_name, profile, DocumentFormat::Markdown)
+        Self::open_detected(markdown, file_path, profile, DocumentFormat::Markdown)
     }
 
     /// Opens a session for a file whose format has already been classified
@@ -134,7 +137,7 @@ impl EditorSession {
     /// never read again once `format` is not `Markdown` (RFC-054 §0.1).
     pub fn open_detected(
         text: String,
-        file_name: Option<String>,
+        file_path: Option<PathBuf>,
         profile: FileTextProfile,
         format: DocumentFormat,
     ) -> Result<Self, DocumentError> {
@@ -144,7 +147,7 @@ impl EditorSession {
             document,
             view: ViewState::new(),
             saved,
-            file_name,
+            file_path,
             profile,
             document_open: true,
             format,
@@ -190,9 +193,11 @@ impl EditorSession {
         self.document.source()
     }
 
-    /// Display name of the backing file, if any.
-    pub fn file_name(&self) -> Option<&str> {
-        self.file_name.as_deref()
+    /// The backing file's path, exactly as it was opened or saved to, if any. A save
+    /// writes here. To show it, use `Path::display` or `to_string_lossy`; do not turn it
+    /// into a `String` to keep.
+    pub fn file_path(&self) -> Option<&Path> {
+        self.file_path.as_deref()
     }
 
     /// File text profile detected at open time (line endings, BOM — RFC-018).
@@ -208,10 +213,10 @@ impl EditorSession {
     }
 
     /// Records that the current text was written out successfully.
-    pub fn mark_saved(&mut self, file_name: Option<String>) {
+    pub fn mark_saved(&mut self, file_path: Option<PathBuf>) {
         self.saved = SavedFingerprint::of(self.document.source(), self.document.revision());
-        if file_name.is_some() {
-            self.file_name = file_name;
+        if file_path.is_some() {
+            self.file_path = file_path;
         }
     }
 

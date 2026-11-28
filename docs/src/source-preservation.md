@@ -35,6 +35,11 @@ not write to, a crash — the old file is untouched and no leftover file stays b
 The new file is written under a hidden temporary name in the same folder
 (`.notes.md.omriss-….tmp`), which exists only while the save is running.
 
+If the final step, making the replacement itself durable, is the one that fails (on
+Linux, the flush of the folder), the file **is** saved, and omriss says so: *"Saved,
+but the disk did not confirm it. If this keeps happening, check the disk."* It never
+reports a save as failed when the new text is on disk.
+
 The same holds for omriss's own settings file, so a failed write can no longer
 leave it truncated and reset your preferences and recent files.
 

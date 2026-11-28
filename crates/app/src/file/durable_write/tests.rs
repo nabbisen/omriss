@@ -10,7 +10,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use super::{Seams, Step, unique_suffix, write_durably, write_durably_with};
+use super::{Durability, Seams, Step, unique_suffix, write_durably, write_durably_with};
 
 /// A temp directory for one test, removed when it ends, even on panic.
 struct Scratch(PathBuf);
@@ -63,7 +63,7 @@ fn fail_at(step: Step) -> impl Fn(Step, &Path) -> io::Result<()> {
     }
 }
 
-fn write_with_failure(target: &Path, bytes: &[u8], step: Step) -> io::Result<()> {
+fn write_with_failure(target: &Path, bytes: &[u8], step: Step) -> io::Result<Durability> {
     write_durably_with(
         target,
         bytes,
@@ -169,18 +169,20 @@ fn a_failure_at_any_step_leaves_no_temp_file_and_the_old_file_intact() {
         let target = dir.path().join("a.md");
         fs::write(&target, "old").unwrap();
         let result = write_with_failure(&target, b"new", step);
-        assert!(result.is_err(), "{step:?} was meant to fail");
-        // The rename is the only step after which the new bytes are the file.
-        let expected: &[u8] = if step == Step::SyncDir {
-            b"new"
+        if step == Step::SyncDir {
+            // The rename has happened: the file IS saved. A failure of the step after it
+            // is not a failed save but a save the disk did not confirm (RFC-068 §8.2).
+            assert_eq!(
+                result.unwrap(),
+                Durability::Unconfirmed {
+                    kind: io::ErrorKind::Other
+                }
+            );
+            assert_eq!(fs::read(&target).unwrap(), b"new");
         } else {
-            b"old"
-        };
-        assert_eq!(
-            fs::read(&target).unwrap(),
-            expected,
-            "target after {step:?}"
-        );
+            assert!(result.is_err(), "{step:?} was meant to fail");
+            assert_eq!(fs::read(&target).unwrap(), b"old", "target after {step:?}");
+        }
         assert_eq!(names(dir.path()), ["a.md"], "litter after {step:?}");
     }
 }
@@ -193,14 +195,24 @@ fn a_failure_at_any_step_of_a_new_file_leaves_nothing_behind() {
         }
         let dir = Scratch::new("fail-new");
         let target = dir.path().join("a.md");
-        assert!(write_with_failure(&target, b"new", step).is_err());
-        let expected: Vec<&str> = if step == Step::SyncDir {
-            vec!["a.md"]
+        let result = write_with_failure(&target, b"new", step);
+        if step == Step::SyncDir {
+            assert!(result.is_ok(), "renamed into place: saved, not confirmed");
+            assert_eq!(names(dir.path()), ["a.md"]);
         } else {
-            vec![]
-        };
-        assert_eq!(names(dir.path()), expected, "after {step:?}");
+            assert!(result.is_err());
+            assert!(names(dir.path()).is_empty(), "after {step:?}");
+        }
     }
+}
+
+#[test]
+fn a_completed_write_is_confirmed_where_a_confirmation_exists() {
+    let dir = Scratch::new("confirmed");
+    assert_eq!(
+        write_durably(&dir.path().join("a.md"), b"x").unwrap(),
+        Durability::Confirmed
+    );
 }
 
 #[test]

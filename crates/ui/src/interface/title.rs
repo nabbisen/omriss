@@ -33,11 +33,13 @@ pub const PRODUCT_NAME: &str = "Omriss";
 /// product's name with no file open, and "notes.md — Omriss" with one. It is the
 /// file's *name*, not its path — the status bar shows the path — and the product
 /// name is not translated. Unsaved changes are not in it (RFC-080 §5.4 rule 1).
-pub fn window_title(file: Option<&str>) -> String {
+///
+/// The path is the file's own (RFC-068 §7.5); a name that is not valid text is shown
+/// with its unreadable bytes replaced, which is all a title can do with it.
+pub fn window_title(file: Option<&std::path::Path>) -> String {
     let name = file
-        .map(std::path::Path::new)
         .and_then(|p| p.file_name())
-        .and_then(|n| n.to_str())
+        .map(|n| n.to_string_lossy())
         .filter(|n| !n.is_empty());
     match name {
         Some(name) => format!("{name} \u{2014} {PRODUCT_NAME}"),
@@ -48,31 +50,47 @@ pub fn window_title(file: Option<&str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test]
     fn no_file_is_the_product_name() {
         assert_eq!(window_title(None), "Omriss");
         assert_eq!(window_title(None), PRODUCT_NAME);
-        assert_eq!(window_title(Some("")), "Omriss");
+        assert_eq!(window_title(Some(Path::new(""))), "Omriss");
     }
 
     #[test]
     fn a_file_is_its_name_not_its_path() {
         assert_eq!(
-            window_title(Some("/home/a/docs/notes.md")),
+            window_title(Some(Path::new("/home/a/docs/notes.md"))),
             "notes.md \u{2014} Omriss"
         );
-        assert_eq!(window_title(Some("notes.md")), "notes.md \u{2014} Omriss");
+        assert_eq!(
+            window_title(Some(Path::new("notes.md"))),
+            "notes.md \u{2014} Omriss"
+        );
         // A name with a dash, a quote and Japanese is shown as it is.
         assert_eq!(
-            window_title(Some("/x/\u{30e1}\u{30e2} \"a\" \u{2014} b.md")),
+            window_title(Some(Path::new("/x/\u{30e1}\u{30e2} \"a\" \u{2014} b.md"))),
             "\u{30e1}\u{30e2} \"a\" \u{2014} b.md \u{2014} Omriss"
         );
     }
 
     #[test]
     fn a_path_with_no_file_name_is_the_product_name() {
-        assert_eq!(window_title(Some("/")), "Omriss");
-        assert_eq!(window_title(Some("..")), "Omriss");
+        assert_eq!(window_title(Some(Path::new("/"))), "Omriss");
+        assert_eq!(window_title(Some(Path::new(".."))), "Omriss");
+    }
+
+    /// RFC-068 §7.5: a file name that is not valid text still names the window after
+    /// the file (its unreadable bytes replaced), never the product alone as if no file
+    /// were open.
+    #[cfg(unix)]
+    #[test]
+    fn a_name_that_is_not_valid_text_is_still_the_files_name() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+        let path = std::path::PathBuf::from(OsString::from_vec(b"/x/caf\xe9.md".to_vec()));
+        assert_eq!(window_title(Some(&path)), "caf\u{fffd}.md \u{2014} Omriss");
     }
 }

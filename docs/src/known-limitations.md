@@ -186,6 +186,13 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
   links, are kept on Linux and other Unix systems (the link stays a link and the file it points
   to is saved). On Windows permissions are the folder's, not copied. Why, and what
   each system guarantees after a power cut, is in *How omriss Treats Your Text*.
+- **A file whose name is not valid text is not added to Recent Files.** Names on
+  Linux can hold any bytes, and the recent-files list is a text file that cannot
+  hold a name that is not text without turning it into a different name. Such a file
+  opens (from the command line, from your file manager, or from the Open dialog) and
+  saves at its own path as any other does; omriss just does not remember it. Its name
+  is shown in the title and status bar with the unreadable bytes replaced by the
+  replacement character (U+FFFD).
 - **Linux screen readers: the section-actions button is announced as a "combo
   box".** The "…" button on a Document Map row opens a menu — Move up, Rename,
   Delete and the rest — and omriss says so to assistive technology

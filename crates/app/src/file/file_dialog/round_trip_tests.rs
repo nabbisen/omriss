@@ -60,26 +60,24 @@ fn fixture_bytes(fixture_name: &str) -> Vec<u8> {
 /// Opens `path` exactly as `handle_load` does: `open_markdown_path`, then
 /// extension/content format detection, then `EditorSession::open_detected`.
 fn open_session(path: &Path) -> EditorSession {
-    let path_str = path.to_str().expect("temp path is valid UTF-8").to_string();
     let OpenOutcome::Loaded {
         text,
-        name,
+        path: opened,
         profile,
         ..
-    } = open_markdown_path(&path_str)
+    } = open_markdown_path(path)
     else {
-        panic!("expected OpenOutcome::Loaded for {path_str}");
+        panic!("expected OpenOutcome::Loaded for {}", path.display());
     };
-    let format = omriss_core::formats::detection::detect_format(Some(Path::new(&name)), &text);
-    EditorSession::open_detected(text, Some(name), profile, format)
+    let format = omriss_core::formats::detection::detect_format(Some(&opened), &text);
+    EditorSession::open_detected(text, Some(opened), profile, format)
         .expect("EditorSession::open_detected")
 }
 
 /// Saves `session` back to `path` exactly as `handle_save` does.
 fn save_session(session: &EditorSession, path: &Path) {
-    let path_str = path.to_str().expect("temp path is valid UTF-8");
     let outcome = save_markdown(
-        Some(path_str),
+        Some(path),
         session.source(),
         session.profile(),
         &DialogLabels {
@@ -88,7 +86,8 @@ fn save_session(session: &EditorSession, path: &Path) {
     );
     assert!(
         matches!(outcome, SaveOutcome::Saved { .. }),
-        "save_markdown must succeed for {path_str}"
+        "save_markdown must succeed for {}",
+        path.display()
     );
 }
 
@@ -321,3 +320,61 @@ fn saving_through_a_symlink_updates_the_target_and_keeps_the_link() {
         "no temporary file left"
     );
 }
+
+/// RFC-068 §7.5, from the command line to the disk: a path whose bytes are not text
+/// opens, is saved at its own path (not at some other one the lossy text of it would
+/// name), and is not added to the recent list, which is text. On Linux, whose
+/// filesystems take any bytes in a name; macOS's and Windows's do not.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_path_that_is_not_utf8_opens_saves_at_the_same_path_and_is_not_listed() {
+    use crate::cli::{StartupArg, interpret};
+    use crate::storage::settings::AppSettings;
+    use std::ffi::OsString;
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+
+    let scratch = TempScratch::new("non-utf8");
+    let name = OsString::from_vec(b"caf\xe9-\xff.md".to_vec());
+    let path = scratch.path().join(&name);
+    assert!(path.to_str().is_none(), "the fixture must not be text");
+    fs::write(&path, b"# Title\n\nbody\n").unwrap();
+
+    // What `omriss <file>` does: argv (as OsString) -> the interpreter -> open.
+    let StartupArg::Path(arg) = interpret(std::iter::once(path.clone().into_os_string())) else {
+        panic!("a file name is a path");
+    };
+    assert_eq!(arg, path);
+    let mut session = open_session(&arg);
+    assert_eq!(session.file_path(), Some(path.as_path()));
+
+    let id = session.outline_items()[0].id;
+    let base = session.focus(id).unwrap();
+    session
+        .commit_focused_body(&base, "edited\n".to_string())
+        .unwrap();
+    let saved_to = session.file_path().unwrap().to_path_buf();
+    save_session(&session, &saved_to);
+
+    // The bytes landed at the original path, and nowhere else.
+    assert_eq!(fs::read(&path).unwrap(), session.source().as_bytes());
+    let entries: Vec<OsString> = fs::read_dir(scratch.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert_eq!(entries.len(), 1, "{entries:?}");
+    assert_eq!(entries[0].as_bytes(), name.as_bytes());
+    // The old way (a lossy `String` and back) names a different file.
+    assert_ne!(PathBuf::from(path.display().to_string()), path);
+
+    // A path that is not text cannot be kept in the (TOML) recent list.
+    let mut settings = AppSettings::default();
+    assert!(!settings.push_recent_path(&path));
+    assert!(settings.recent_files.is_empty());
+    assert!(settings.push_recent_path(&scratch.path().join("plain.md")));
+    assert_eq!(settings.recent_files.len(), 1);
+}
+
+#[cfg(not(target_os = "linux"))]
+#[test]
+#[ignore = "needs a filesystem that takes any bytes in a file name; the Linux test covers it"]
+fn a_path_that_is_not_utf8_opens_saves_at_the_same_path_and_is_not_listed() {}

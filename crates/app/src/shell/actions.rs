@@ -3,13 +3,15 @@
 //! Each function corresponds to one `use_callback` in [`super::app`].
 //! Extracting them here keeps `app.rs` to signal wiring and the render tree.
 
+use std::path::Path;
+
 use dioxus::prelude::*;
 use omriss_ui::EditorSession;
 
 use crate::file::failure::OpenFailure;
 use crate::file::file_dialog::{self, OpenOutcome, SaveOutcome};
 use crate::shell::app_ctx::{AppCtx, Modal, commit_pending, has_pending_draft, sync_draft};
-use crate::shell::failure_text::save_failure_key;
+use crate::shell::save_outcome::apply_save_outcome;
 use crate::storage::settings::AppSettings;
 use omriss_components::{
     ConfirmDeleteChoice, ExtModifiedChoice, SectionTitleAction, SectionTitleChoice, UnsavedChoice,
@@ -26,7 +28,7 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
         }
         OpenOutcome::Loaded {
             text,
-            name,
+            path,
             profile,
             mtime,
         } => {
@@ -37,11 +39,8 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
             // so detection happens at this boundary and the result is
             // supplied to the session, matching how `profile` already flows
             // in "detected upstream, passed in".
-            let format = omriss_core::formats::detection::detect_format(
-                Some(std::path::Path::new(&name)),
-                &text,
-            );
-            match EditorSession::open_detected(text, Some(name.clone()), profile, format) {
+            let format = omriss_core::formats::detection::detect_format(Some(&path), &text);
+            match EditorSession::open_detected(text, Some(path.clone()), profile, format) {
                 Ok(opened) => {
                     ctx.session.set(opened);
                     ctx.selected_card.set(0);
@@ -54,9 +53,11 @@ pub(crate) fn handle_load(outcome: OpenOutcome, mut ctx: AppCtx) {
                     sync_draft(ctx);
                     ctx.saved_mtime.set(mtime);
                     ctx.status.set("status.ready".into());
-                    // RFC-036: persist the path to the recent-files list.
+                    // RFC-036: persist the path to the recent-files list. A settings
+                    // file is TOML, so only a path that is text can be kept in it
+                    // (RFC-068 §7.5): any other still opens and saves, and is not listed.
                     let mut settings = AppSettings::load();
-                    settings.push_recent(&name);
+                    settings.push_recent_path(&path);
                     settings.save();
                     ctx.recent_files.set(settings.valid_recent_files());
                 }
@@ -89,7 +90,7 @@ pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
     let existing = if force_new_path {
         None
     } else {
-        ctx.session.read().file_name().map(|s| s.to_string())
+        ctx.session.read().file_path().map(Path::to_path_buf)
     };
     // External modification check (RFC-015).
     if let (Some(path), Some(mtime)) = (existing.as_deref(), *ctx.saved_mtime.read())
@@ -105,14 +106,19 @@ pub(crate) fn handle_save(mut ctx: AppCtx, force_new_path: bool) {
         &profile,
         &ctx.dialog_labels(),
     );
-    match outcome {
-        SaveOutcome::Cancelled => {}
-        SaveOutcome::Failed { kind } => ctx.status.set(save_failure_key(kind).into()),
-        SaveOutcome::Saved { name, mtime } => {
-            ctx.session.write().mark_saved(Some(name));
-            ctx.saved_mtime.set(mtime);
-            ctx.status.set("status.saved".into());
-        }
+    finish_save(outcome, &mut ctx);
+}
+
+/// Shows a finished save: marks the document saved when the file was written, and sets
+/// the status ([`apply_save_outcome`] decides both).
+fn finish_save(outcome: SaveOutcome, ctx: &mut AppCtx) {
+    let mut mtime = *ctx.saved_mtime.read();
+    let key = apply_save_outcome(&mut ctx.session.write(), &mut mtime, outcome);
+    if mtime != *ctx.saved_mtime.peek() {
+        ctx.saved_mtime.set(mtime);
+    }
+    if let Some(key) = key {
+        ctx.status.set(key.into());
     }
 }
 
@@ -175,7 +181,7 @@ pub(crate) fn handle_ext_modified_choice(choice: ExtModifiedChoice, mut ctx: App
             if !commit_pending(ctx) {
                 return;
             }
-            let existing = ctx.session.read().file_name().map(|s| s.to_string());
+            let existing = ctx.session.read().file_path().map(Path::to_path_buf);
             let profile = ctx.session.read().profile().clone();
             let outcome = file_dialog::save_markdown(
                 existing.as_deref(),
@@ -183,15 +189,7 @@ pub(crate) fn handle_ext_modified_choice(choice: ExtModifiedChoice, mut ctx: App
                 &profile,
                 &ctx.dialog_labels(),
             );
-            match outcome {
-                SaveOutcome::Saved { name, mtime } => {
-                    ctx.session.write().mark_saved(Some(name));
-                    ctx.saved_mtime.set(mtime);
-                    ctx.status.set("status.saved".into());
-                }
-                SaveOutcome::Failed { kind } => ctx.status.set(save_failure_key(kind).into()),
-                SaveOutcome::Cancelled => {}
-            }
+            finish_save(outcome, &mut ctx);
         }
         ExtModifiedChoice::SaveAs => handle_save(ctx, true),
         ExtModifiedChoice::Cancel => {}

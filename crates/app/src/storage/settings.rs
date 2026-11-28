@@ -88,7 +88,22 @@ impl AppSettings {
             std::fs::create_dir_all(parent)?;
         }
         let text = toml::to_string_pretty(self).map_err(std::io::Error::other)?;
-        crate::file::durable_write::write_durably(path, text.as_bytes())
+        crate::file::durable_write::write_durably(path, text.as_bytes()).map(|_| ())
+    }
+
+    /// Adds the file at `path` to the recent-files list, if it can be listed: the list
+    /// is TOML, whose strings are text, so a path that is not valid UTF-8 cannot be
+    /// kept in it without being changed into a different path (RFC-068 §7.5). Such a
+    /// file opens and saves at its own path all the same; it just is not remembered.
+    /// Returns whether it was added.
+    pub fn push_recent_path(&mut self, path: &std::path::Path) -> bool {
+        match path.to_str() {
+            Some(text) => {
+                self.push_recent(text);
+                true
+            }
+            None => false,
+        }
     }
 
     /// Adds `path` to the front of the recent-files list, deduplicating and

@@ -23,7 +23,7 @@ fn id_of(session: &EditorSession, title: &str) -> omriss_core::NodeId {
 fn open_session_is_clean_and_shows_top_level_outline() {
     let session = session();
     assert!(!session.is_dirty());
-    assert_eq!(session.file_name(), Some("draft.md"));
+    assert_eq!(session.file_path(), Some(std::path::Path::new("draft.md")));
     assert_eq!(session.view_mode(), ViewMode::Outline);
     let titles: Vec<_> = session
         .outline_items()
@@ -72,7 +72,7 @@ fn mark_saved_adopts_current_revision_and_file_name() {
         .unwrap();
     session.mark_saved(Some("final.md".into()));
     assert!(!session.is_dirty());
-    assert_eq!(session.file_name(), Some("final.md"));
+    assert_eq!(session.file_path(), Some(std::path::Path::new("final.md")));
 }
 
 #[test]
