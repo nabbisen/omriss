@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — distribution (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-037, RFC-042
@@ -239,3 +239,49 @@ real ones. A bad force-push to the AUR is visible to every Arch user.
    actually produced — the audit found three documents describing three
    different releases (AUDIT-0170-016), and this must not add a fourth.
 7. `README.md`'s checksum instruction is true.
+
+## 9. Against today's tree, and the decisions (2026-11-28)
+
+**Done since this RFC was written:**
+- **§2: `Cargo.lock` is committed.** `.gitignore` says so, and CI can pass
+  `--locked`.
+- **§4.4: `LICENSE` is tracked.**
+
+**Still missing:**
+- `packaging/linux/` and `packaging/arch/`;
+- a Linux job in `release.yml`;
+- a GitHub Release created by CI. `RELEASE_CHECKLIST.md` still has it
+  created by hand.
+
+**Decisions:**
+
+1. **Icon.** There is no vector source. `packaging/windows/Assets/StoreLogo.png`
+   is 300×300: scale it **down** to 256×256 and install it as
+   `hicolor/256x256/apps/io.github.nabbisen.omriss.png`. That is a reduction,
+   so §4.3's warning about scaling art up into the wrong box does not apply. An
+   SVG replaces it if the owner provides one.
+2. **AppStream metadata** is written now, to RFC-074 §6's specification,
+   because the AUR package installs it (§4.5). RFC-074 reuses the same file.
+3. **The GitHub Release is created by CI**, titled with the bare version
+   (`X.Y.Z`), the same rule as by hand. It attaches the Linux tarball and its
+   `.sha256`. Release notes come from the tag's `CHANGELOG.md` section. Once
+   this works, `RELEASE_CHECKLIST.md`'s by-hand row goes.
+4. **Nothing reaches the AUR or creates a release until the owner has run
+   it.** The release job has a dry-run mode, a `workflow_dispatch` input,
+   that builds and uploads the artifacts but creates no release and pushes
+   nothing. The AUR jobs run only on a protected environment (§5.4) and are
+   skipped, not failed, until the owner turns them on. They use the same
+   `vars` switch pattern as the Store job (`AUR_PUBLISH`).
+5. **The PKGBUILDs are verified locally before CI publishes anything:**
+   `makepkg` in a clean chroot (`extra-x86_64-build` or an equivalent clean
+   container) and `namcap`, from a tarball built exactly as the CI job builds
+   it.
+
+**What only the owner can do** (RELEASE_CHECKLIST gains these steps):
+- generate a dedicated CI key pair and register its public half on the AUR
+  account;
+- create the protected environment with required reviewers;
+- put the private key on that environment;
+- set `AUR_PUBLISH`;
+- run the dry-run, and choose the scratch package name for the AUR dry run
+  (§7).
