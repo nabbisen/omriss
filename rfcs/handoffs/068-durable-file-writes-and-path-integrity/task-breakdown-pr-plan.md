@@ -57,7 +57,13 @@ Constraints for every PR:
   - after Reload, Ctrl+Z restores the unsaved text, and saving it asks again.
 - GUI, once: change the file from a shell, save in omriss, choose Reload, undo.
 
+**PR 3 landed** (`571b047`).
+
 ## PR 4 — the size ceiling: measure, then stop (§7.8)
+
+- First, RFC-068 §10: Overwrite and Discard drawn as `btn-danger`, never
+  primary; a level-2 test over every dialog that no choice that can lose text
+  is primary.
 
 - Measure opening and one edit at 10, 50 and 100 MB, Markdown and JSON, release
   build: time and peak RSS. Remove the double copy on open first, and measure

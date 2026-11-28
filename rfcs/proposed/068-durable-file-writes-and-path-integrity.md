@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — durability hardening (0.18.0)
-**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1 (`a69e43c`) and PR 2 (`e4165ad`) landed; decisions in §8–§9.
+**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1–3 (`a69e43c`, `e4165ad`, `571b047`) landed; decisions in §8–§10; PR 4 open.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015, RFC-016, RFC-018
@@ -232,3 +232,38 @@ Accepted.
   placeholders. They do not exist on Linux. RFC-070's "no `#[ignore]`"
   check means **no `#[ignore]` on a test that can run on the platform
   running it**, and these satisfy that.
+
+## 10. Decisions on PR 3 (2026-11-28)
+
+Accepted.
+- Changes are found by content. The GUI run rewrote a file with the same
+  size and the same mtime, and the change was detected.
+- Reload is one undo step. After Ctrl+Z the next save asks again, because the
+  disk stamp follows the undo history (`disk_sync.rs`). That was the part that
+  needed care, and it is argued and tested.
+- The Japanese reads naturally.
+
+The dev team's calls: all five accepted.
+- A hash, not a second copy of the file.
+- A deleted or unreadable file counts as changed.
+- No structure notice after Reload.
+- The reload records live in the session.
+- The dialog order.
+
+**The RFC-071 guard exception is accepted as built.** It lists exactly one
+unbracketed call in `disk_sync.rs`, with its reason, and the file must not
+also hold a bracket. Bracketing the call and discarding the result would
+satisfy the guard and mean nothing.
+
+**Found in the screenshot: the destructive button is drawn as the primary
+one.** In *File Changed on Disk*, Overwrite is the filled blue button, and
+Overwrite is the one choice whose loss Undo cannot repair. Focus starts on
+Cancel, but the eye goes to the blue button. The rule for every dialog: **a
+choice that can lose the user's text, or another program's text, is drawn as
+danger (`btn-danger`) and is never primary. Primary is only ever a safe
+choice.**
+- Overwrite becomes danger.
+- *Unsaved Changes*' Discard becomes danger; its Save stays primary.
+- Confirm-delete already follows the rule.
+
+A level-2 test over the dialogs pins it. This is done first in PR 4.
