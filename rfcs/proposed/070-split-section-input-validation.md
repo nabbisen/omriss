@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — published-API correctness (0.18.0)
-**Status.** Proposed — 0.18.0 item 11, with RFC-066's P4; design completed in §8, and **§8.2–§8.3 corrected by §9** (2026-11-28). PR 1 part 1 (`d131b6e`): title rule, CRLF rule.
+**Status.** Proposed — 0.18.0 item 11, with RFC-066's P4; design completed in §8, and **§8.2–§8.3 corrected by §9** (2026-11-28). PR 1 (`d131b6e`, `4e65200`) and PR 2, P4 (`daebed0`) landed; open: PR 3 (§10).
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-025, RFC-026, RFC-065
@@ -212,3 +212,33 @@ freeze, for no more safety than the rule above.
   callers.
 - `InvalidSplitOffset`'s documentation lists exactly the four refusals above.
 - The CHANGELOG says what a library caller now gets refused.
+
+## 10. Decisions on PR 1 part 2 and P4 (2026-11-28)
+
+Accepted.
+- The offset rule is §9's. The property is un-ignored and not vacuous: 3,088
+  of 5,000 cases split. No `#[ignore]` remains in the repository.
+
+**P4 as RFC-066 §3.1b wrote it did not catch §2.8. The dev team measured that
+and said so.** §2.8's damage is *inside* the heading line, which "every byte
+outside N's heading line" permits. The strengthened property is accepted. Each
+operation also states what its own line becomes:
+- rename: the node is titled exactly the requested title;
+- join of a setext heading: the title line, verbatim.
+
+It catches each reverted guard in 8 of 10 runs, and 0 of 10 when nothing is
+reverted. Join writes nothing at the seam, so no exemption was needed there.
+RFC-066 §3.1b's own lesson held one level deeper: a property must pin what the
+operation is *for*, not only what it leaves alone.
+
+**Finding D: renaming a multi-line setext heading replaces only its first
+line.** `"para\nsecond line\n===\n"` renamed to "New" reads "New second line".
+The user asked for "New", and the Document Map showed "para second line" as one
+title. It is reachable from the GUI.
+
+**Decision: rename replaces the whole title.** All of a setext heading's title
+lines become the one requested line. The underline and everything after it
+are untouched. Refusing would leave such a heading impossible to rename, for
+no safety gain. **PR 3** builds it, and P4's one exemption (headings of at most
+two lines) goes. Join keeps refusing a multi-line setext heading
+(`UnsafePreservation`): that is an honest refusal, not a wrong result.

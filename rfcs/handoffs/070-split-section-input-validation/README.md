@@ -9,10 +9,10 @@ Lifecycle status: inherited from RFC-070.
 property and adds the rename/join property that nothing has yet. The design is
 RFC-070 §4.1, §8 and §9; where §8 and §9 differ, §9 wins.
 
-**State:** PR 1 part 1 landed (`d131b6e`). **Next: PR 1 part 2, the offset
-rule (RFC-070 §9), then PR 2 (P4).**
+**State:** PR 1 and PR 2 landed. **Next: PR 3** (RFC-070 §10), then the RFC
+closes.
 
-The report goes to `.git-exclude/review-request/070-split-and-p4-2/README.md`.
+The report goes to `.git-exclude/review-request/070-split-and-p4-3/README.md`.
 
 Files:
 

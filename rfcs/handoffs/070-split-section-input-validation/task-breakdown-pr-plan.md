@@ -33,3 +33,15 @@ character-boundary test.
   it. Quote the shrunk case.
 - If join's seam cannot be stated exactly, stop and report before writing an
   exemption.
+
+**PR 1 part 2 landed** (`4e65200`); **PR 2 landed** (`daebed0`).
+
+## PR 3 — rename replaces the whole setext title (RFC-070 §10)
+
+- All title lines of a setext heading become the requested line; the underline
+  and the rest unchanged, line endings included.
+- P4's rename clause covers every heading; the exemption, its doc and its
+  comment go.
+- Tests: two- and three-line setext titles, in LF and CRLF; undo exact.
+- CHANGELOG `Fixed`: renaming a heading whose title spans lines used to keep
+  all but its first line.
