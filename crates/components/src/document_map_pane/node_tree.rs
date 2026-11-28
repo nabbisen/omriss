@@ -55,6 +55,41 @@ pub(super) fn icon_class(kind: Option<StructureNodeKind>) -> &'static str {
     }
 }
 
+/// Every node of the tree by id, from one walk: what a render looks rows up in,
+/// instead of searching from the root once per row (RFC-086 L2).
+pub(super) fn index_nodes(
+    root: &DocumentMapNode,
+) -> std::collections::HashMap<u64, &DocumentMapNode> {
+    fn walk<'a>(
+        n: &'a DocumentMapNode,
+        out: &mut std::collections::HashMap<u64, &'a DocumentMapNode>,
+    ) {
+        out.insert(n.id, n);
+        for c in &n.children {
+            walk(c, out);
+        }
+    }
+    let mut out = std::collections::HashMap::new();
+    walk(root, &mut out);
+    out
+}
+
+/// Whether two map trees are the same structure: ids, titles, kinds, positions,
+/// capabilities and children. `is_selected` is ignored: it is the only field a
+/// focus change alters, and nothing in the map reads it (RFC-086 L3).
+pub(super) fn same_structure(a: &DocumentMapNode, b: &DocumentMapNode) -> bool {
+    a.id == b.id
+        && a.title == b.title
+        && a.kind == b.kind
+        && a.positional == b.positional
+        && a.capabilities == b.capabilities
+        && a.children.len() == b.children.len()
+        && a.children
+            .iter()
+            .zip(&b.children)
+            .all(|(x, y)| same_structure(x, y))
+}
+
 pub(super) fn find_node(root: &DocumentMapNode, id: u64) -> Option<&DocumentMapNode> {
     if root.id == id {
         return Some(root);

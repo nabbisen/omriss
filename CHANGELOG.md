@@ -70,6 +70,18 @@ project adheres to [Semantic Versioning](https://semver.org/).
   start of the body but may reach into the subsections, and the documentation of
   `InvalidSplitOffset` now says exactly what it refuses. The application is not
   affected: its dialogs and offsets already stayed clear of all of these.
+- **omriss no longer keeps the processor busy while idle, and the Document Map is
+  fast on large files** (RFC-086). omriss 0.17.0 and earlier re-drew the
+  Document Map continuously, even when you were not touching anything: a little
+  with a small file, and a whole processor core with a large one (an 8,000-item
+  JSON file used 96 % of a core while idle). Every click in the map waited behind
+  the drawing in progress, so on that file a click took about a second. Laptop
+  users will have noticed the battery. Idle use is now near zero on every file,
+  and the same click takes about 0.15 s. Two further causes are fixed with it:
+  each row's entry was found by searching the whole tree from the top, and the
+  map's tree was rebuilt on every focus change though only the selection had
+  changed. What remains slow on very large files, the whole-document overview
+  and the cost of a very long map, is planned work, not part of this fix.
 - **Renaming a heading whose title spans several lines renames all of it**
   (RFC-070). A Markdown heading underlined with `===` or `---` can have a title
   over more than one line; omriss shows it as one title, but a rename replaced

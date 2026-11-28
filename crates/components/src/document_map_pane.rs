@@ -5,12 +5,13 @@
 //!
 //! ## Reactive design
 //!
-//! `session` is subscribed exactly once, inside a `use_effect`. The effect
-//! pushes two derived local signals: `item_tree` (for `ItemTreeView`) and
-//! `map_root_sig` (the `DocumentMapNode` tree for row-menu rendering).
-//! The component render body reads only local signals, so a `session` change
-//! does not create a direct render-time subscription that would fight the
-//! effect and cause a re-render loop.
+//! `session` is subscribed in a `use_effect`. The effect pushes two derived
+//! local signals: `item_tree` (for `ItemTreeView`) and `map_root_sig` (the
+//! `DocumentMapNode` tree for row-menu rendering), and only when the structure
+//! changed. Inside the effect every read of a signal it also writes is a
+//! `peek()`: a `read()` there subscribes the effect to its own writes and it
+//! never stops (RFC-086). `settle_tests` pins that no pane keeps
+//! working once it has settled.
 
 mod create_buttons;
 mod draft;
@@ -29,7 +30,9 @@ use crate::structure_request::StructureRequest;
 use crate::unreadable::unreadable_message;
 use create_buttons::SelectedSectionCreateButtons;
 use draft::{commit_draft_if_dirty, sync_draft};
-use node_tree::{collect_ancestors, find_node, icon_class, to_item_node};
+use node_tree::{
+    collect_ancestors, find_node, icon_class, index_nodes, same_structure, to_item_node,
+};
 use row_menu::NodeRowMenu;
 
 #[component]
@@ -67,17 +70,30 @@ pub fn DocumentMapPane(
     // really is Markdown, never the reverse.
     let mut format_sig: Signal<Option<DocumentFormat>> = use_signal(|| None);
 
-    // `session` is subscribed here only. Writing local signals inside this
-    // effect is safe: Dioxus 0.7 tracks reactive deps by what is *read*
-    // during the effect, not what is written. `item_tree` and `map_root_sig`
-    // are therefore not deps of this effect and do not re-trigger it.
+    // `session` is subscribed here only. Dioxus 0.7 tracks an effect's
+    // dependencies by what it *reads*, and a `read()` of a signal the effect
+    // also writes subscribes it to its own writes: each run queues the next, and
+    // the map re-renders forever (RFC-086 L1; this comment used to claim the
+    // opposite). So every read of `item_tree` and of the other local signals in
+    // this effect is a `peek()`, and `settle_tests` fails if one comes
+    // back.
     use_effect(move || {
         let root_node = session.read().document_map_nodes();
         let view = session.read().view_mode();
         let is_raw = session.read().is_raw();
         let format = session.read().format();
 
-        item_tree.write().set_tree(to_item_node(&root_node));
+        // The item tree and the row menus' tree are rebuilt only when the
+        // structure changed. A focus change alters only which row is selected
+        // (`is_selected`, which nothing in the map reads), and the tree below
+        // follows that through `on_selected` (RFC-086 L3).
+        let structure_changed = !map_root_sig
+            .peek()
+            .as_ref()
+            .is_some_and(|old| same_structure(old, &root_node));
+        if structure_changed {
+            item_tree.write().set_tree(to_item_node(&root_node));
+        }
 
         // The root itself is never rendered as a row (the caller renders
         // `root.children`), but `set_tree` starts every node collapsed
@@ -90,7 +106,7 @@ pub fn DocumentMapPane(
         // test. Expand the root unconditionally so top-level rows are visible
         // on open regardless of format or focus state.
         let root_sw_id = SwNodeId(root_node.id);
-        if item_tree.read().is_expanded(root_sw_id) == Some(false) {
+        if item_tree.peek().is_expanded(root_sw_id) == Some(false) {
             item_tree.write().on_toggled(root_sw_id);
         }
 
@@ -105,7 +121,7 @@ pub fn DocumentMapPane(
             // outermost first so each level becomes visible.
             ancestors.reverse();
             for id in ancestors {
-                if item_tree.read().is_expanded(id) == Some(false) {
+                if item_tree.peek().is_expanded(id) == Some(false) {
                     item_tree.write().on_toggled(id);
                 }
             }
@@ -127,9 +143,16 @@ pub fn DocumentMapPane(
                 .on_selected(root_sw_id, SelectionMode::Replace);
         }
 
-        map_root_sig.set(Some(root_node));
-        is_raw_sig.set(is_raw);
-        format_sig.set(Some(format));
+        // A write wakes every reader, so write only what changed.
+        if structure_changed {
+            map_root_sig.set(Some(root_node));
+        }
+        if *is_raw_sig.peek() != is_raw {
+            is_raw_sig.set(is_raw);
+        }
+        if *format_sig.peek() != Some(format) {
+            format_sig.set(Some(format));
+        }
     });
 
     let mut on_event = move |ev: ItemTreeEvent| match ev {
@@ -171,8 +194,11 @@ pub fn DocumentMapPane(
         .into_iter()
         .find(|row| row.is_selected && row.id.0 != doc_root_raw_id)
         .map(|row| row.id.0);
+    // One walk per render gives every row its node; no row searches from the
+    // root (RFC-086 L2: that search was 89 % of a render at 8,000 rows).
+    let node_index = map_root.as_ref().map(index_nodes).unwrap_or_default();
     let selected_node = selected_raw_id
-        .and_then(|id| map_root.as_ref().and_then(|root| find_node(root, id)))
+        .and_then(|id| node_index.get(&id).copied())
         .cloned();
     let is_raw = *is_raw_sig.read();
     let empty_map = session.read().empty_map();
@@ -297,7 +323,7 @@ pub fn DocumentMapPane(
                         } else { " " };
                         let mut row_class = "dx-swdir-row".to_string();
                         if row.is_selected { row_class.push_str(" dx-swdir-row--selected"); }
-                        let map_node = map_root.as_ref().and_then(|root| find_node(root, raw_id));
+                        let map_node = node_index.get(&raw_id).copied();
                         let row_icon_class = icon_class(map_node.map(|n| n.kind));
                         // The title as a person reads it (RFC-073 §8.6): a list member's
                         // number gets its word, in the current language, here.
@@ -476,3 +502,5 @@ pub fn DocumentMapPane(
 
 #[cfg(test)]
 mod empty_tests;
+#[cfg(test)]
+mod rfc086_tests;

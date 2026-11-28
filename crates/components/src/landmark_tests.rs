@@ -26,7 +26,7 @@ const BROKEN_JSON: &str = "{\"a\": ";
 
 /// A view of the application, as the shell routes to it.
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum View {
+pub(crate) enum View {
     Welcome,
     /// Markdown, whole document (the overview's cards).
     Overview,
@@ -38,28 +38,34 @@ enum View {
     FocusPreview,
     /// JSON, a member focused.
     FocusJson,
+    /// JSON, the whole document (the overview's cards).
+    OverviewJson,
     /// Plain file text.
     PlainText,
+    /// Plain file text of a JSON file.
+    PlainTextJson,
     /// A file whose structure cannot be shown, plain text not open.
     Unreadable,
     /// Search open over the Writing Area.
     Search,
 }
 
-const VIEWS: [View; 9] = [
+pub(crate) const VIEWS: [View; 11] = [
     View::Welcome,
     View::Overview,
     View::OverviewEmpty,
     View::Focus,
     View::FocusPreview,
     View::FocusJson,
+    View::OverviewJson,
     View::PlainText,
+    View::PlainTextJson,
     View::Unreadable,
     View::Search,
 ];
 
 thread_local! {
-    static CASE: std::cell::Cell<(View, Locale)> =
+    pub(crate) static CASE: std::cell::Cell<(View, Locale)> =
         const { std::cell::Cell::new((View::Welcome, Locale::En)) };
 }
 
@@ -93,13 +99,19 @@ fn session_for(view: View) -> EditorSession {
             s.show_raw();
             s
         }
+        View::PlainTextJson => {
+            let mut s = open(JSON, DocumentFormat::Json);
+            s.show_raw();
+            s
+        }
+        View::OverviewJson => open(JSON, DocumentFormat::Json),
         View::Unreadable => open(BROKEN_JSON, DocumentFormat::Json),
     }
 }
 
 /// The shell's composition (`omriss/src/shell/app.rs`): the same components in the
 /// same places, routed by the same three questions.
-fn host() -> Element {
+pub(crate) fn host() -> Element {
     let (view, locale) = CASE.with(|c| c.get());
     let session = use_signal(|| session_for(view));
     let locale = use_signal(move || locale);
@@ -115,7 +127,11 @@ fn host() -> Element {
     let unreadable = session.read().empty_map() == Some(omriss_ui::EmptyMap::Unreadable);
     let mode = session.read().view_mode();
 
+    // The shell's own effects too, so `settle_tests` mounts what the shell mounts.
+    crate::use_structure_requests(session, request, status, Callback::new(|_| {}));
+
     rsx! {
+        crate::DocumentTitle { session }
         div {
             Toolbar {
                 session, locale, draft, status,
