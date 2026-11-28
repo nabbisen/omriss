@@ -70,6 +70,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
   start of the body but may reach into the subsections, and the documentation of
   `InvalidSplitOffset` now says exactly what it refuses. The application is not
   affected: its dialogs and offsets already stayed clear of all of these.
+- **Renaming a heading whose title spans several lines renames all of it**
+  (RFC-070). A Markdown heading underlined with `===` or `---` can have a title
+  over more than one line; omriss shows it as one title, but a rename replaced
+  only the first line, so `para` / `second line` renamed to "New" read "New second
+  line". Now every title line becomes the new title, and the underline, the body and
+  the file's line endings are unchanged. Undo restores the original exactly.
 - **A screen reader can tell the regions apart** (RFC-060). The toolbar was
   announced as "File", a menu that does not exist; it is now "Toolbar" /
   「ツールバー」. The footer had no name and is now "Status bar" /
