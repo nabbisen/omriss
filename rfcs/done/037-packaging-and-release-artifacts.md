@@ -21,7 +21,14 @@ Language: English
 > `layered`, which did publish three-platform binaries. The last 46 tags have no
 > release. **RFC-072** rebuilds the Linux half of this in CI and corrects the
 > matrix; the Store channel is recorded in RFC-064 §9 and
-> `.git-exclude/release/0.17.0/ci-and-store-publishing.md`.  
+> `.git-exclude/release/0.17.0/ci-and-store-publishing.md`.
+>
+> **Update, 2026-11-28 (RFC-072 PR 2).** `release.yml` now builds the Linux
+> tarball and its SHA-256 and creates the GitHub Release that carries them, on a
+> protected environment; the AUR packages follow in RFC-072 PR 3. The one place
+> that says what a release produces is the Artifact Matrix in
+> `RELEASE_CHECKLIST.md`. §3 and §4 below are the original plan, kept as history,
+> and are not a description of the current process.  
 **Document type:** Detailed RFC design  
 **Primary audience:** Architect, Rust developer, UI/UX designer, QA engineer  
 

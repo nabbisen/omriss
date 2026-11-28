@@ -98,8 +98,10 @@ for the support matrix, required system packages, and known platform
 constraints.
 
 > **Unsigned builds:** Early releases are not code-signed. On macOS, use
-> Right-click → Open to bypass Gatekeeper. Verify the SHA-256 checksum
-> published with each release.
+> Right-click → Open to bypass Gatekeeper. The Linux tarball on each GitHub
+> release is published with its SHA-256 checksum (`…tar.gz.sha256`); check it with
+> `sha256sum -c omriss-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz.sha256` in the
+> folder you downloaded both files to.
 
 ## Documentation
 

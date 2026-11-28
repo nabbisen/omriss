@@ -16,6 +16,17 @@ product owner. No automated process may bypass this gate.
       written in advance.** 0.17.0's entry was created months early carrying
       `2026-08-16`, which would have shipped as a false release date had it not
       been caught.
+- [ ] **The AppStream release entry, in that same commit.**
+      `packaging/linux/io.github.nabbisen.omriss.metainfo.xml` gets
+      `<release version="X.Y.Z" date="YYYY-MM-DD"/>`, with the same date as the
+      CHANGELOG heading and for the same reason: it is the release date, never
+      written in advance. `scripts/build-linux-tarball.sh` refuses to build
+      without it, so a forgotten entry stops the Linux job rather than shipping
+      a package that claims to be the previous version.
+- [ ] **A fresh screenshot.** `docs/assets/screenshot-01.png` is what GNOME
+      Software, KDE Discover and the AppStream metainfo show. Replace it with a
+      screenshot of the release candidate before the tag; an old one shows an
+      interface the release no longer has (RFC-072 §10).
 - [ ] Version bumped in `Cargo.toml` workspace package
 - [ ] RFC index up to date: `./scripts/check-rfcs.sh`
 - [ ] Internal dependency versions match the release: the `version` of
@@ -35,6 +46,18 @@ product owner. No automated process may bypass this gate.
       secret unset: `verify` and `package` passed, the MSIX was built, and
       `publish` failed on a credential that was never there. A gate that
       checks the build but not the thing that ships it is only half a gate.
+- [ ] **The GitHub Release can be created.** The `release` job runs on the
+      `github-release` environment: create it (Settings → Environments) with
+      yourself as a required reviewer, which is RFC-042 §5's explicit
+      confirmation. Without reviewers it proceeds without waiting. It needs no
+      secret: the workflow's own token has `contents: write` for that job only.
+- [ ] **Dry run, before the tag.** Actions → Release → *Run workflow*, with
+      `tag` set to `main` and **dry run ticked** (the default). Every job must be
+      green except `release` and `publish`, which are skipped by design: a dry
+      run creates no release and publishes nothing. Download the `omriss-linux`
+      artifact and check `sha256sum -c omriss-*.tar.gz.sha256`. (A branch is
+      accepted only in a dry run, because the tag that holds these files does
+      not exist until the real run.)
 - [ ] **crates.io publish, in this order** (RFC-062 §10.1), by hand after the
       gate passes — a published version can never be deleted, only yanked:
       1. `cargo publish -p omriss-core`
@@ -56,7 +79,7 @@ product owner. No automated process may bypass this gate.
 
 ## Artifact Matrix (RFC-037)
 
-What a release actually produces, as of 0.17.0. Rows say what happens, not
+What a release actually produces, as of RFC-072 (0.18.0). Rows say what happens, not
 what was once intended — the previous version of this table promised an
 `omriss-X.Y.Z.tar.gz` that no part of the release process has ever built.
 
@@ -65,14 +88,15 @@ what was once intended — the previous version of this table promised an
 | Windows | `omriss-X.Y.Z.msix` | **built automatically** by `release.yml` on a bare-semver tag, after `cargo test --workspace` passes, and uploaded as a run artifact. **Submitted to the Store by hand** — automated publishing is deferred (owner decision, 2026-11-03); the `publish` job is skipped unless the repository variable `STORE_PUBLISH` is `true` |
 | Any | crates.io: `omriss-core`, then `omriss-ui` | **by hand** at the tag, in that order (RFC-062 §10.1) |
 | Any | source archive of the tag | GitHub serves one for every tag; the release process does not build it |
-| Any | GitHub release | **by hand** at the tag. Its title is the bare version, `X.Y.Z` — the same as the tag, with no product name and no label: `gh release create X.Y.Z --title X.Y.Z` |
-| Linux | binary tarball, AUR `omriss` and `omriss-bin` | planned — RFC-072 |
+| Any | GitHub release | **created by `release.yml`** (the `release` job) once `verify`, the Windows `package` job and the Linux job have passed and the `github-release` environment is approved. Its title is the bare version, `X.Y.Z` — the same as the tag, with no product name and no label — and its notes are the tag's `CHANGELOG.md` section. Skipped in a dry run |
+| Linux | `omriss-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz` and its `.sha256` | **built automatically** by the `linux` job (`scripts/build-linux-tarball.sh`, after `cargo test --workspace --locked`), uploaded as a run artifact and attached to the GitHub release. The binary, `LICENSE`, `README.md`, the desktop entry, the 256×256 icon and the AppStream metainfo |
+| Linux | AUR `omriss` and `omriss-bin` | planned — RFC-072 PR 3. Their PKGBUILDs are templates in `packaging/arch/`, filled by `scripts/render-pkgbuild.sh`; nothing reaches the AUR from this workflow yet |
 | Linux | Flatpak via Flathub | planned — RFC-074 |
 | macOS | app bundle | **not planned.** No Mac has been available to build or test on, and RFC-038 forbids claiming a platform that has not been run |
 
-Checksums apply to a downloadable binary, which today means the MSIX. The
-Store distributes it; a published checksum matters once RFC-072's tarball
-exists, and that RFC specifies it.
+Checksums apply to a downloadable binary. The Linux tarball is published with
+its SHA-256 beside it on the GitHub release (`omriss-X.Y.Z-….tar.gz.sha256`,
+one line in `sha256sum -c` format); the MSIX is distributed by the Store.
 
 ---
 

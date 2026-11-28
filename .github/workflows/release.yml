@@ -1,4 +1,4 @@
-name: Release to Microsoft Store
+name: Release
 
 # Tag-triggered, but a tag alone cannot reach the Store.
 #
@@ -14,6 +14,19 @@ name: Release to Microsoft Store
 #   3. The Store credentials live in that environment, not at repo level, so no
 #      other workflow or branch can read them.
 #
+# Since RFC-072 the same tag also builds the Linux tarball (and its checksum) and
+# creates the GitHub Release that carries it. The release is created only after
+# `verify`, the Windows `package` job and the Linux job have all passed, on the
+# `github-release` environment, and never in dry-run mode.
+#
+# DRY RUN: a manual run (`workflow_dispatch`) with `dry_run` ticked, the default,
+# builds and uploads everything and then stops. It creates no release and
+# publishes nothing, to the Store or anywhere else. Only a pushed tag, or a manual
+# run with `dry_run` unticked, can publish.
+#
+# Every action is pinned to a commit SHA with its tag in a comment: these jobs run
+# with credentials in scope, and a moving tag could change under us.
+#
 # See RELEASE_CHECKLIST.md: the GUI smoke workflow cannot run here and remains
 # a human step before approving the deployment.
 
@@ -27,8 +40,12 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing tag to release (e.g. 0.17.0)'
+        description: 'Existing tag to release (e.g. 0.17.0); for a dry run, a branch such as main will do'
         required: true
+      dry_run:
+        description: 'Dry run: build and upload the artifacts, create no release, publish nothing'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -42,19 +59,30 @@ jobs:
     outputs:
       version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
           fetch-depth: 0
 
       - name: Tag must match Cargo.toml and AppxManifest, and be on main
         id: check
+        env:
+          REF: ${{ github.event.inputs.tag || github.ref_name }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
           set -euo pipefail
-          version="${{ github.event.inputs.tag || github.ref_name }}"
+          cargo_version=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          if [ "$DRY_RUN" = "true" ]; then
+            # A dry run exists to be run BEFORE the tag does: the tag that holds
+            # the packaging files is the one this rehearses. So it may name a
+            # branch (main), and its version is whatever Cargo.toml says.
+            version="$cargo_version"
+            echo "::notice::DRY RUN of '$REF' as version $version: no release, nothing published"
+          else
+            version="$REF"
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-          cargo_version=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
           if [ "$cargo_version" != "$version" ]; then
             echo "::error::tag $version does not match Cargo.toml version $cargo_version"
             exit 1
@@ -69,6 +97,11 @@ jobs:
             exit 1
           fi
 
+          # A release without its notes is a release nobody can read: the dated
+          # CHANGELOG section must exist (and so must the metainfo <release>,
+          # which the Linux job's tarball script checks).
+          bash scripts/changelog-section.sh "$version" > /dev/null
+
           # Use the checked-out HEAD, not GITHUB_SHA: under workflow_dispatch
           # GITHUB_SHA is the dispatching ref, not the tag being released.
           tagged_commit=$(git rev-parse HEAD)
@@ -82,7 +115,7 @@ jobs:
     needs: verify
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
@@ -120,11 +153,95 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "makeappx failed with $LASTEXITCODE" }
 
       - name: Upload MSIX
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: omriss-msix
           path: omriss-*.msix
           if-no-files-found: error
+
+  # RFC-072 §5.1. Same script as the local proof of the PKGBUILDs
+  # (scripts/build-linux-tarball.sh), so the artifact cannot drift from what was
+  # checked. Tests first, as the Windows job does: nothing ships that failed them.
+  linux:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      # The same packages ci.yml installs; crates/app links the system WebView.
+      - name: Install Linux WebView build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libwebkit2gtk-4.1-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libgtk-3-dev \
+            libxdo-dev \
+            libssl-dev
+
+      - name: Test before packaging
+        run: cargo test --workspace --locked
+
+      - name: Build the tarball and its checksum
+        run: scripts/build-linux-tarball.sh "${{ needs.verify.outputs.version }}"
+
+      - name: Verify the checksum and list the contents
+        working-directory: target/dist
+        run: |
+          sha256sum -c ./*.sha256
+          tar -tzvf ./*.tar.gz
+
+      - name: Upload tarball and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: omriss-linux
+          path: |
+            target/dist/*.tar.gz
+            target/dist/*.tar.gz.sha256
+          if-no-files-found: error
+
+  # RFC-072 §9.3. Creates the public GitHub Release for the tag: the title is the
+  # bare version, the notes are the tag's CHANGELOG section, and the Linux tarball
+  # and its checksum are attached (omriss-bin downloads them from here). Skipped in
+  # a dry run. The environment is where the owner's approval (RFC-042 §5) belongs:
+  # give it required reviewers, as `microsoft-store` has. A rerun of a release that
+  # exists uploads the files again and leaves its title and notes alone.
+  release:
+    needs: [verify, package, linux]
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    runs-on: ubuntu-latest
+    environment: github-release
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: omriss-linux
+          path: dist
+
+      - name: Create the release, or add the files to it
+        run: |
+          set -euo pipefail
+          bash scripts/changelog-section.sh "$VERSION" > notes.md
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "::notice::Release $VERSION exists; uploading the files again, leaving its title and notes"
+            gh release upload "$VERSION" dist/*.tar.gz dist/*.tar.gz.sha256 --clobber
+          else
+            gh release create "$VERSION" dist/*.tar.gz dist/*.tar.gz.sha256 \
+              --verify-tag --title "$VERSION" --notes-file notes.md
+          fi
 
   publish:
     needs: [verify, package]
@@ -140,7 +257,7 @@ jobs:
     # "true" and put the five secrets on the `microsoft-store` environment.
     # `vars` is used rather than `secrets` because only `vars` is available
     # in a job-level `if`.
-    if: ${{ vars.STORE_PUBLISH == 'true' }}
+    if: ${{ vars.STORE_PUBLISH == 'true' && github.event.inputs.dry_run != 'true' }}
     # Configure this environment with required reviewers, and put all five
     # Store secrets on it rather than at repository level.
     environment: microsoft-store
@@ -172,7 +289,7 @@ jobs:
           fi
           echo "All five Store credentials are present."
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: omriss-msix
 

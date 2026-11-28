@@ -168,6 +168,17 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
 - **Unsigned macOS builds**: Gatekeeper will warn. Right-click → Open to bypass.
 - **Linux Wayland**: Runs via XWayland; native Wayland support follows upstream.
 - **File dialogs on headless Linux**: May silently return no file if no portal is available.
+- **Linux: omriss may open your Markdown files without your having chosen it.**
+  Installing omriss registers it as *an* application for Markdown (`.md`) files, in
+  the "Open With" list. It never sets itself as the default, and it does not
+  register for JSON at all. But a desktop where you have never chosen a Markdown
+  editor uses the first registered one in alphabetical order, and omriss's name can
+  sort before GNOME Text Editor or Kate, so `.md` files may open in omriss. A
+  default you chose before installing is never changed. To choose another, use
+  your desktop's Default Applications setting, or run
+  `xdg-mime default <application>.desktop text/markdown` (for example
+  `xdg-mime default org.kde.kate.desktop text/markdown`). `gio mime text/markdown`
+  shows what is chosen now.
 - **Linux screen readers: the section-actions button is announced as a "combo
   box".** The "…" button on a Document Map row opens a menu — Move up, Rename,
   Delete and the rest — and omriss says so to assistive technology

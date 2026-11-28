@@ -15,9 +15,9 @@
       work on one idea at a time and see where it sits in the whole.
     </p>
     <p>
-      Your file is never rewritten behind your back. An edit changes only the
-      bytes you edited, and everything else in the file, including its line
-      endings and formatting, is saved exactly as it was.
+      Omriss keeps your file as you wrote it: an edit changes the text you
+      edited, and the rest of the file, including its line endings and
+      formatting, stays as it was.
     </p>
   </description>
   <launchable type="desktop-id">io.github.nabbisen.omriss.desktop</launchable>
@@ -32,9 +32,8 @@
     <control>keyboard</control>
   </supports>
   <categories>
-    <category>Office</category>
-    <category>TextEditor</category>
     <category>Utility</category>
+    <category>TextEditor</category>
   </categories>
   <screenshots>
     <screenshot type="default">
