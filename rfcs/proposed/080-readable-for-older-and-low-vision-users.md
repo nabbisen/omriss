@@ -120,7 +120,8 @@ than about five main choices overload [COGA 4.6.3]. Presented by RFC-083.
    that needs action — a failed save, a structure-change warning — appears
    beside the work it concerns and stays until dismissed or acted on.
    **Messages never blame the user** and say how to fix the problem [NNG;
-   COGA 4.5.10].
+   COGA 4.5.10]. Known cases: a failed save; a save the disk did not confirm
+   (RFC-068 §9); a structure-change warning.
 9. **Keep the user's place** when text size, colours or spacing change, and
    when a view is left and re-entered (plain file text, preview): the caret
    returns where it was and the focused section stays in view [LV 3.6.1].

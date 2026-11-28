@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — durability hardening (0.18.0)
-**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1 landed (`a69e43c`); decisions in §8.
+**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28). PR 1 (`a69e43c`) and PR 2 (`e4165ad`) landed; decisions in §8–§9.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015, RFC-016, RFC-018
@@ -211,3 +211,24 @@ The dev team's calls:
 5. All temporary names taken maps to `error.save_failed`. Accepted.
 6. Leftover `*.tmp.omriss` files from older versions are left alone.
    Accepted: omriss does not delete files by pattern.
+
+## 9. Decisions on PR 2 (2026-11-28)
+
+Accepted.
+- A save the disk did not confirm is **saved, with a warning**. It is a typed
+  `Durability`, and the status says it in both locales. The Japanese reads
+  naturally.
+- Paths are the file's own bytes from argv to the save. The release build was
+  launched on `caf\351-\377.md`: it does not crash, it saves to the same
+  name, and it keeps that name out of the recent list. The old build panicked.
+
+- **The warning is a status today.** RFC-080 §5.4 rule 8 (0.19.0) moves
+  messages that need action beside the work, and keeps them until dismissed.
+  This warning is one of them, and RFC-080 lists it.
+- `file_name()` was removed in favour of `file_path()`, and `window_title`
+  takes a path (public `omriss-ui` API, used only here). Accepted.
+- **Platform skips.** Two tests that exist only on platforms whose file names
+  cannot hold arbitrary bytes are compiled there as named `#[ignore]`
+  placeholders. They do not exist on Linux. RFC-070's "no `#[ignore]`"
+  check means **no `#[ignore]` on a test that can run on the platform
+  running it**, and these satisfy that.

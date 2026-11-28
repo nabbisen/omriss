@@ -44,6 +44,8 @@ Constraints for every PR:
 - No panic reachable from argv: a test feeds non-UTF-8 argv to the CLI
   interpreter.
 
+**PR 2 landed** (`e4165ad`).
+
 ## PR 3 — external changes and Reload (§7.6–§7.7)
 
 - Content-hash detection; the `mtime` comparison goes.
