@@ -72,18 +72,23 @@ impl AppSettings {
         toml::from_str::<Self>(&text).unwrap_or_default()
     }
 
-    /// Saves settings to disk. Errors are silently discarded.
+    /// Saves settings to disk. Errors are silently discarded (RFC-036), but a save
+    /// that fails part-way can no longer damage the file: it goes through the same
+    /// durable write as a document (RFC-068 §7.1), so the old settings are intact
+    /// until the new ones are complete and renamed over them.
     pub fn save(&self) {
-        let Some(path) = Self::settings_path() else {
-            return;
-        };
-        // Ensure the parent directory exists.
+        if let Some(path) = Self::settings_path() {
+            let _ = self.save_to(&path);
+        }
+    }
+
+    /// Saves to `path`, creating its folder, and says why it could not.
+    pub(crate) fn save_to(&self, path: &std::path::Path) -> std::io::Result<()> {
         if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
+            std::fs::create_dir_all(parent)?;
         }
-        if let Ok(text) = toml::to_string_pretty(self) {
-            let _ = std::fs::write(&path, text);
-        }
+        let text = toml::to_string_pretty(self).map_err(std::io::Error::other)?;
+        crate::file::durable_write::write_durably(path, text.as_bytes())
     }
 
     /// Adds `path` to the front of the recent-files list, deduplicating and

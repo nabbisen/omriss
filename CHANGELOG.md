@@ -70,6 +70,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Saving is crash-safe, keeps your file's permissions, and no longer breaks
+  symbolic links** (RFC-068). The write was an atomic rename with nothing around
+  it: the data was never flushed to the disk before the name changed, so a power cut
+  could leave the file empty or truncated. Now the new file is flushed first and the
+  folder after (on Linux and other Unix systems; Windows has no folder flush, and says so in
+  *How omriss Treats Your Text*). A file you had set to `0600` stayed readable by
+  others after a save, and was readable by others at a predictable path *during* it;
+  it now keeps its permissions and its text is never more readable than the file was.
+  Saving through a symbolic link replaced the link with a regular file, so a vault,
+  a dotfiles repository or a synced folder silently stopped receiving edits; the link
+  is now followed and kept. The temporary file's name used the file's stem only, so
+  `notes.md` and `notes.txt` could collide, and a failed save left `.tmp.omriss`
+  behind; the name is now unique, never reuses an existing file, and is removed on
+  every failure. Settings were written in place, so a crash mid-write truncated them
+  and the next start silently reset every preference and the recent-files list; they
+  now take the same path as a document. Not carried over by a save, and now documented:
+  hard links, extended attributes, and another user's ownership. Application code only;
+  `omriss-core` is unchanged.
 - **`omriss-core`: `Document::split_section` refuses a title `rename_section` would
   refuse, and an offset that would cut through a heading** (RFC-070). A title with a
   line break (`"Evil\n# Injected H1"` added two outline nodes) or an empty one (a

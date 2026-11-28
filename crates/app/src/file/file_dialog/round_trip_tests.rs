@@ -274,3 +274,50 @@ fn bom_prefixed_file_round_trips_with_one_edit() {
         "sacrifices navigability",
     );
 }
+
+/// RFC-068: through the real save entry point, a file reached by a symbolic link is
+/// saved in place — the link stays a link, the target's bytes (BOM included) are the
+/// session's, and its permissions and folder hold nothing else.
+#[cfg(unix)]
+#[test]
+fn saving_through_a_symlink_updates_the_target_and_keeps_the_link() {
+    use std::os::unix::fs::{PermissionsExt, symlink};
+    let scratch = TempScratch::new("symlink");
+    let vault = scratch.path().join("vault");
+    fs::create_dir(&vault).unwrap();
+    let real = vault.join("notes.md");
+    let mut original = vec![0xEF, 0xBB, 0xBF];
+    original.extend_from_slice(&fixture_bytes("crlf.md"));
+    fs::write(&real, &original).unwrap();
+    fs::set_permissions(&real, fs::Permissions::from_mode(0o600)).unwrap();
+    let link = scratch.path().join("link.md");
+    symlink(&real, &link).unwrap();
+
+    let mut session = open_session(&link);
+    let child_id = find_node_id(&session, "Child");
+    let base = session.focus(child_id).expect("focus the Child section");
+    session
+        .commit_focused_body(&base, "Edited body.\r\n".to_string())
+        .expect("commit the edited body");
+    let expected = session.source().to_string();
+    save_session(&session, &link);
+
+    assert!(
+        fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
+    let mut want = vec![0xEF, 0xBB, 0xBF];
+    want.extend_from_slice(expected.as_bytes());
+    assert_eq!(fs::read(&real).unwrap(), want);
+    assert_eq!(
+        fs::metadata(&real).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    assert_eq!(
+        fs::read_dir(&vault).unwrap().count(),
+        1,
+        "no temporary file left"
+    );
+}

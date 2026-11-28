@@ -109,21 +109,20 @@ fn read_markdown(
     Ok((text, profile, mtime))
 }
 
-/// Writes `source` atomically: writes a temp file then renames (NFR-REL-003).
+/// Writes `source` (with its BOM, if the file had one) through the one durable write
+/// ([`super::durable_write`], RFC-068): decided here is what the bytes are, there is
+/// how they reach the disk. Returns the file's new mtime.
 fn write_atomic(
     path: &Path,
     source: &str,
     profile: &FileTextProfile,
 ) -> Result<SystemTime, std::io::Error> {
-    let temp = path.with_extension("tmp.omriss");
+    let mut bytes = Vec::with_capacity(source.len() + 3);
     if profile.had_utf8_bom {
-        let mut bytes = vec![0xEF, 0xBB, 0xBF];
-        bytes.extend_from_slice(source.as_bytes());
-        fs::write(&temp, &bytes)?;
-    } else {
-        fs::write(&temp, source)?;
+        bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
     }
-    fs::rename(&temp, path)?;
+    bytes.extend_from_slice(source.as_bytes());
+    super::durable_write::write_durably(path, &bytes)?;
     let mtime = fs::metadata(path)
         .ok()
         .and_then(|m| m.modified().ok())

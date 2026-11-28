@@ -179,6 +179,13 @@ See `PLATFORMS.md` for the full platform support matrix. Key notes:
   `xdg-mime default <application>.desktop text/markdown` (for example
   `xdg-mime default org.kde.kate.desktop text/markdown`). `gio mime text/markdown`
   shows what is chosen now.
+- **A save makes a new file, so some file properties are not carried over.** A file
+  with several hard links becomes a separate file after you save it; extended
+  attributes (macOS Finder tags, for example) are dropped; a file owned by someone
+  else that you are allowed to write is yours afterwards. Permissions, and symbolic
+  links, are kept on Linux and other Unix systems (the link stays a link and the file it points
+  to is saved). On Windows permissions are the folder's, not copied. Why, and what
+  each system guarantees after a power cut, is in *How omriss Treats Your Text*.
 - **Linux screen readers: the section-actions button is announced as a "combo
   box".** The "…" button on a Document Map row opens a menu — Move up, Rename,
   Delete and the rest — and omriss says so to assistive technology
