@@ -32,7 +32,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install Rust toolchain
         run: rustup toolchain install stable --profile minimal --component rustfmt
@@ -48,6 +48,14 @@ jobs:
       - name: AUR publish guards
         run: bash scripts/test-aur-scripts.sh
 
+      # RFC-072 §12: no `${{ }}` in any `run:` text, and every action pinned to a
+      # commit SHA, in all of .github/workflows/. The self-test first, so a checker
+      # that stopped checking cannot pass.
+      - name: Workflow rules
+        run: |
+          bash scripts/check-workflows.sh --self-test
+          bash scripts/check-workflows.sh
+
   test:
     name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -56,12 +64,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install Rust toolchain
         run: rustup toolchain install stable --profile minimal --component clippy
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.os }}
 
@@ -88,7 +96,7 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install mdBook
         run: |

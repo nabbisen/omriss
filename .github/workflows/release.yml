@@ -171,8 +171,12 @@ jobs:
           Copy-Item packaging/windows/AppxManifest.xml staging/
           Copy-Item -Recurse packaging/windows/Assets staging/Assets
 
+      # The version reaches the script as an environment variable, never as
+      # expression text (scripts/check-workflows.sh enforces this for all of CI).
       - name: Pack MSIX
         shell: pwsh
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
         run: |
           $makeappx = Get-ChildItem `
             -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" `
@@ -181,7 +185,7 @@ jobs:
             Sort-Object FullName -Descending |
             Select-Object -First 1
           if (-not $makeappx) { throw "makeappx.exe not found in the Windows SDK" }
-          & $makeappx.FullName pack /d staging /p omriss-${{ needs.verify.outputs.version }}.msix /o
+          & $makeappx.FullName pack /d staging /p "omriss-${env:VERSION}.msix" /o
           if ($LASTEXITCODE -ne 0) { throw "makeappx failed with $LASTEXITCODE" }
 
       - name: Upload MSIX
@@ -425,18 +429,29 @@ jobs:
       - name: Configure Microsoft Store CLI
         uses: microsoft/microsoft-store-apppublisher@15abd1c50fcc164b19cb240fb04ef3c49bf715a2
 
-      # Every secret is quoted: an empty one must become an empty argument,
-      # never a flag that eats the next flag.
+      # The secrets and the version reach PowerShell as environment variables, never
+      # as expression text in the script: a value is data, not code, whatever it
+      # contains. Every one is quoted, so an empty one would be an empty argument and
+      # never a flag that eats the next flag (the check step above refuses an empty
+      # one before this runs).
       - name: Reconfigure store credentials
+        env:
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          SELLER_ID: ${{ secrets.SELLER_ID }}
+          AZURE_AD_APPLICATION_CLIENT_ID: ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
+          AZURE_AD_APPLICATION_SECRET: ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
         run: >
           msstore reconfigure
-          --tenantId "${{ secrets.AZURE_AD_TENANT_ID }}"
-          --sellerId "${{ secrets.SELLER_ID }}"
-          --clientId "${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}"
-          --clientSecret "${{ secrets.AZURE_AD_APPLICATION_SECRET }}"
+          --tenantId "${env:AZURE_AD_TENANT_ID}"
+          --sellerId "${env:SELLER_ID}"
+          --clientId "${env:AZURE_AD_APPLICATION_CLIENT_ID}"
+          --clientSecret "${env:AZURE_AD_APPLICATION_SECRET}"
 
       - name: Publish package
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          STORE_PRODUCT_ID: ${{ secrets.STORE_PRODUCT_ID }}
         run: >
           msstore publish
-          '${{ github.workspace }}/omriss-${{ needs.verify.outputs.version }}.msix'
-          -id "${{ secrets.STORE_PRODUCT_ID }}"
+          "${env:GITHUB_WORKSPACE}/omriss-${env:VERSION}.msix"
+          -id "${env:STORE_PRODUCT_ID}"

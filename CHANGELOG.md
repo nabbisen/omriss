@@ -42,6 +42,21 @@ project adheres to [Semantic Versioning](https://semver.org/).
   is required: **an adapter written outside omriss must implement it** (return
   `None` for a format with no text of its own). The panes' search and statistics use
   it, so on a 374 KiB JSON file a search takes about 2 ms instead of about 95 ms.
+- **Linux: a release tarball with its checksum, and the AUR packages `omriss` and
+  `omriss-bin`** (RFC-072). Every GitHub Release now carries
+  `omriss-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz` and a `.sha256` beside it, which
+  `sha256sum -c` verifies — the line in the README that told you to check a
+  checksum had nothing to check against until now. The tarball holds the binary, a
+  desktop entry, an icon and the AppStream metadata that software centres read.
+  The AUR packages are published by CI from those same files (`omriss` builds from
+  source, `omriss-bin` installs the tarball). **omriss registers for Markdown only, as an option in "Open With", and
+  never sets itself as the default; it does not register for JSON at all.** But a
+  desktop where you have never chosen a Markdown editor opens `.md` files with the
+  first registered one in alphabetical order, which can be omriss; a default you
+  chose before is never changed, and removing the package leaves nothing behind.
+  How to choose another is in Known Limitations. The release process, the
+  checksum and the owner's steps are in `RELEASE_CHECKLIST.md`. Nothing in the
+  application changed.
 
 ### Changed
 
