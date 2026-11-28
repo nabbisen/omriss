@@ -5,11 +5,12 @@ Related RFC: `../../proposed/072-linux-distribution-artifacts-and-aur-publishing
 Lifecycle status: inherited from RFC-072.
 
 **0.18.0's first stretch item** (owner, 2026-11-28). The design is RFC-072
-§4–§5 as §9 updates it. **Start after Task 029.**
+§4–§5 as §9 updates it. **After RFC-086.**
 
-**State:** ready. **Next: PR 1.**
+**State:** PR 1 landed (`c627b89`). **Next: PR 2**, starting with RFC-072
+§10's corrections.
 
-The report goes to `.git-exclude/review-request/072-linux-artifacts/README.md`.
+The report goes to `.git-exclude/review-request/072-linux-artifacts-2/README.md`.
 
 Files:
 

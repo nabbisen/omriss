@@ -19,13 +19,20 @@ Lifecycle status: inherited from RFC-072.
   entry and the icon, check that the default `.md`/`.json` handler is
   unchanged, then `pacman -R` and check that nothing is left.
 
+**PR 1 landed** (`c627b89`).
+
 ## PR 2 — the Linux release job and the GitHub Release
+
+- First, RFC-072 §10's corrections: `MimeType=text/markdown;`, the categories,
+  the metainfo paragraph, and the docs note for `.md`.
 
 - A job in `release.yml` that runs PR 1's script, with `--locked`, and
   uploads the tarball and `.sha256`.
 - Creating the release: bare-version title, notes from `CHANGELOG.md`.
   Skipped in dry-run mode.
-- `RELEASE_CHECKLIST.md` and RFC-037 §3 updated.
+- `RELEASE_CHECKLIST.md` and RFC-037 §3 updated, including the metainfo
+  `<release>` step and the fresh screenshot (§10.3). `README.md`'s checksum line
+  points at the published `.sha256`.
 
 ## PR 3 — AUR jobs, off until the owner turns them on
 

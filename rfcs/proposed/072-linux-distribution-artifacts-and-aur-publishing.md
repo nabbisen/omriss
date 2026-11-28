@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — distribution (0.18.0)
-**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9.
+**Status.** Proposed — taken as 0.18.0's first stretch item (owner, 2026-11-28); state and decisions in §9; PR 1 landed (`c627b89`), with corrections in §10.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, release engineer
 **Depends on:** RFC-037, RFC-042
@@ -285,3 +285,42 @@ real ones. A bad force-push to the AUR is visible to every Arch user.
 - set `AUR_PUBLISH`;
 - run the dry-run, and choose the scratch package name for the AUR dry run
   (§7).
+
+## 10. Decisions on PR 1 (2026-11-28)
+
+Accepted. Both packages build in a clean Arch container. `namcap` reports
+no errors, `pacman -R` leaves nothing behind, and the tarball is
+reproducible byte for byte.
+
+**§4.2 was not fully true, and the owner has decided.** The package writes no
+`mimeapps.list`. But a user who has never chosen a default gets the
+alphabetically first handler from `mimeinfo.cache`, and
+`io.github.nabbisen.omriss.desktop` sorts before GNOME Text Editor and Kate. A
+desktop entry has no priority field. **Owner, 2026-11-28: Markdown only.**
+- `MimeType=text/markdown;`.
+- `.json` is never claimed, so a developer's JSON editor cannot be displaced.
+  JSON opens from inside omriss, or with "Open With → Other application".
+- For `.md` the same rule still holds, so the docs say it plainly: on a system
+  with no chosen Markdown default, the desktop may pick omriss, and how to
+  change that.
+
+**Corrections, made first in PR 2:**
+1. **Categories:** `Utility;TextEditor;`, in the desktop entry and the
+   metainfo. `TextEditor` belongs under `Utility`, and `Office` was a second
+   main category (the `desktop-file-validate` hint).
+2. **The metainfo's second paragraph** promises more than
+   `source-preservation.md` does ("never", "only the bytes"). It becomes:
+   *"omriss keeps your file as you wrote it: an edit changes the text you
+   edited, and the rest of the file, including its line endings and
+   formatting, stays as it was."*
+3. **The screenshot is current at release.** The present one shows an older
+   UI. A fresh screenshot of the release candidate replaces
+   `docs/assets/screenshot-01.png` before the tag. `RELEASE_CHECKLIST.md`
+   gains the step, beside the metainfo `<release>` entry that is dated in the
+   same commit as the CHANGELOG heading.
+
+**Accepted as built:**
+- no `check()` in the source package;
+- the licence directory named after each package (the Arch convention);
+- the implicit dependencies `namcap` warns about left unlisted, because they
+  come through `webkit2gtk-4.1` and `gtk3`.
