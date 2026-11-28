@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — durability hardening (0.18.0)
-**Status.** Proposed
+**Status.** Proposed — 0.18.0's second stretch item; checked against today's code and completed in §7 (2026-11-28).
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-015, RFC-016, RFC-018
@@ -129,3 +129,58 @@ producing RFC-052's `TooLarge`.
 5. `TooLarge` produced by a documented ceiling.
 6. NFR-REL-003's "atomic" claim is true of the implementation, or the claim is
    narrowed to what is actually guaranteed.
+
+## 7. Against today's code, and the decisions (2026-11-28)
+
+**Every defect in §2 is still present.** `write_atomic`
+(`file_dialog.rs:113`) is `fs::write` of a temp file named by
+`with_extension`, followed by `fs::rename`. `settings.rs:85` is a plain
+`fs::write`. `main.rs:25` reads `std::env::args()`. Those three are the only
+places the application writes a file or reads argv.
+
+Decisions where §3 left a choice:
+
+1. **One primitive in `crates/app/src/file/`,** taking bytes. Documents and
+   settings both call it. The BOM, and anything else about the document's
+   bytes, is decided before the call, not inside it.
+2. **Durability, per platform, stated.**
+   - Everywhere: `write_all`, `sync_all` on the temp file, then `rename`.
+   - Unix: fsync the directory, and copy the target's mode onto the temp
+     file before any byte is written, so there is no window in which it is
+     readable by others.
+   - Windows: there is no directory fsync, and permissions are inherited
+     (§4.3). This is written in the code and the docs, not skipped silently.
+3. **Symlinks are followed:** resolve the target, put the temp file beside
+   the real file, and the link survives. **Hard links are not preserved.** An
+   atomic rename makes a new file, and preserving the link would mean writing
+   in place, which is exactly the power-loss risk this RFC removes. Atomicity
+   wins. `known-limitations.md` says a file with several hard links becomes
+   separate after a save, and that extended attributes are not carried over.
+4. **Temp names:** unique in the target's directory, made from the full file
+   name plus a random or process-unique suffix. They are created with
+   create-new semantics, so an existing file is never reused, and removed on
+   every failure path.
+5. **Paths are `PathBuf` from argv to save.** `args_os()` is read at startup.
+   `StartupArg`, `OpenOutcome`, the session's file identity and the save target
+   carry the path; a lossy string exists only for display. **Recent files:**
+   TOML strings must be UTF-8, so a path that is not valid UTF-8 is not added
+   to the recent list. It still opens and saves at its own path, and
+   `known-limitations.md` says so.
+6. **External changes are detected by content, not by time.** omriss keeps a
+   hash of the bytes it last read or wrote. Before a save, the file on disk is
+   read and compared. A difference means another program changed the file,
+   whatever its timestamp says. Files are bounded by item 8's ceiling, so the
+   read is bounded too. The `mtime` check goes.
+7. **Reload is offered, and it can be undone.** The dialog adds "Reload from
+   disk". It is never the default: focus starts on the safest choice
+   (RFC-060 §9.3). Reload replaces the document as **one undo step** and marks
+   it saved as the disk has it, so Ctrl+Z returns the user's unsaved text and
+   nothing is lost. The dialog says this in words.
+8. **The size ceiling is set from a measurement.** It is not guessed. The dev
+   team measures opening and one edit for Markdown and JSON at 10, 50 and
+   100 MB: time and peak memory, release build. The architect sets the
+   ceiling from the numbers. Above it, opening produces RFC-052's `TooLarge`,
+   said through RFC-073's typed failure ("too large to open safely", with the
+   limit in it). The open path stops copying the bytes twice.
+9. **NFR-REL-003** is stated as what is now guaranteed, per platform, in
+   `docs/src/source-preservation.md`'s saving section.
