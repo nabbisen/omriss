@@ -60,6 +60,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **A choice that can lose text is drawn as a danger button, never as the main one**
+  (RFC-068). In *File Changed on Disk* the filled blue button was **Overwrite**, the one
+  choice Undo cannot repair, and in *Unsaved Changes* **Discard** was a plain button
+  beside a filled **Save**. Overwrite and Discard now have the red danger style, as
+  Delete already had, and a test over every dialog fails if a choice that loses text is
+  ever primary again. Focus still starts on Cancel. Opening a file also no longer holds
+  its bytes twice while it reads: the text is made from the buffer that was read, so a
+  100 MB file needs 100 MB less at that moment (the overall peak is set later and is
+  unchanged).
 - **The Dioxus components moved into a new crate, `omriss-components`**
   (RFC-075). The 23 component files and `draft_sync` left `crates/app`; the
   desktop host keeps `main`, the shell wiring, file I/O, settings and the

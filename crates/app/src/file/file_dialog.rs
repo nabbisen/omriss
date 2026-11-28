@@ -99,16 +99,17 @@ fn markdown_dialog(labels: &DialogLabels) -> rfd::FileDialog {
 /// Reads `path`, strips a UTF-8 BOM if present, and returns text + profile + the
 /// stamp of the bytes as read (BOM included), or the typed reason it could not.
 fn read_markdown(path: &Path) -> Result<(String, FileTextProfile, ContentStamp), OpenFailure> {
-    let bytes = fs::read(path).map_err(|e| OpenFailure::from_io(path, &e))?;
+    let mut bytes = fs::read(path).map_err(|e| OpenFailure::from_io(path, &e))?;
     let stamp = ContentStamp::of(&bytes);
 
-    let (text_bytes, had_bom) = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
-        (&bytes[3..], true)
-    } else {
-        (&bytes[..], false)
-    };
-
-    let text = String::from_utf8(text_bytes.to_vec()).map_err(|_| OpenFailure::NotUtf8)?;
+    // The text is made from the same allocation the bytes were read into: the BOM is
+    // taken off in place and the buffer is validated and moved, never copied. It used to
+    // be copied (`to_vec`), so opening held the file twice at once (RFC-068 §7.8).
+    let had_bom = bytes.starts_with(&[0xEF, 0xBB, 0xBF]);
+    if had_bom {
+        bytes.drain(..3);
+    }
+    let text = String::from_utf8(bytes).map_err(|_| OpenFailure::NotUtf8)?;
     let profile = FileTextProfile::detect(&text, had_bom);
     Ok((text, profile, stamp))
 }
