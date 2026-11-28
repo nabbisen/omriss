@@ -201,7 +201,7 @@ and both are why neither property could see `#Foo` or a deleted `#`. Measured:
 with §2.8's guards reverted and the widened generator in place, each property
 failed **0 of 10** runs.
 
-**The missing property, for 0.18.0.** Rename and join need an invariant that is
+**The missing property, for 0.18.0** — *landed with RFC-070 (`daebed0`, `4d5080f`), strengthened to also pin what each operation's own line becomes (RFC-070 §10).* Rename and join need an invariant that is
 not about titles or counts:
 
 ```text

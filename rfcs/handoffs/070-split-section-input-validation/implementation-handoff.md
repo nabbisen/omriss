@@ -1,6 +1,6 @@
 # RFC-070 — Implementation Handoff
 
-Related RFC: `../../proposed/070-split-section-input-validation.md`
+Related RFC: `../../done/070-split-section-input-validation.md`
 
 Lifecycle status: inherited from RFC-070.
 

@@ -2,7 +2,7 @@
 
 **Project:** omriss — Omriss Editor
 **Milestone:** M13 — published-API correctness (0.18.0)
-**Status.** Proposed — 0.18.0 item 11, with RFC-066's P4; design completed in §8, and **§8.2–§8.3 corrected by §9** (2026-11-28). PR 1 (`d131b6e`, `4e65200`) and PR 2, P4 (`daebed0`) landed; open: PR 3 (§10).
+**Status.** Implemented (0.18.0) — `d131b6e`, `4e65200`, `daebed0`, `4d5080f`: shared title validation; an insertion never cuts through heading syntax (§9); RFC-066's P4, strengthened (§10); finding D, a multi-line setext rename, fixed. No `#[ignore]` remains in the repository.
 **Document type:** Detailed RFC design
 **Primary audience:** Architect, Rust developer, QA engineer
 **Depends on:** RFC-025, RFC-026, RFC-065

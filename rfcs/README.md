@@ -91,7 +91,7 @@ RFC-059, RFC-060, and RFC-061, which remain Proposed.
 | 061 | [Non-Technical User Role-Split Validation Plan](./proposed/061-non-technical-user-role-split-validation-plan.md) | M15 |
 | 068 | [Durable File Writes and Path Integrity](./proposed/068-durable-file-writes-and-path-integrity.md) | M13 |
 | 069 | [Draft Lifecycle and Session Guards](./proposed/069-draft-lifecycle-and-session-guards.md) | M13 |
-| 070 | [`split_section` Input Validation](./proposed/070-split-section-input-validation.md) | M13 |
+| 070 | [`split_section` Input Validation](./done/070-split-section-input-validation.md) | M13 |
 | 071 | [Structure-Change Warning on Body Commit](./proposed/071-structure-change-warning-on-body-commit.md) | M13 |
 | 072 | [Linux Distribution Artifacts and AUR Publishing](./proposed/072-linux-distribution-artifacts-and-aur-publishing.md) | M13 |
 | 073 | [Complete Localization and Locale Persistence](./done/073-complete-localization-and-locale-persistence.md) | M13 |
